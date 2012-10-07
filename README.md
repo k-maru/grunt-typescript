@@ -18,10 +18,11 @@ Then add some configuration for the plugin like so:
         ...
         typescript: {
           base: {
-            src: ['path/to/typescript/files/*.ts'],
+            src: ['path/to/typescript/files/**/*.ts'],
             dest: 'where/you/want/your/js/files',
             options: {
-              module: 'amd' //or commonjs
+              module: 'amd', //or commonjs
+              base_path: 'path/to/typescript/files'
             }
           }
         },
