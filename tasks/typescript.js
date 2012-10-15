@@ -37,7 +37,21 @@ module.exports = function (grunt) {
                     }
                 }
             }
-        };
+        },
+        resolveTypeScriptBinPath = function(gruntPath, depth){
+        	var targetPath = path.resolve(__dirname,
+        			(new Array(depth + 1)).join("../../"),
+        			"../node_modules/typescript/bin");
+        	if(path.resolve(gruntPath, "node_modules/typescript/bin").length >
+        		targetPath.length){
+        		return;
+        	}
+        	if(fs.existsSync(path.resolve(targetPath, "typescript.js"))){
+        		return targetPath;
+        	}
+        	
+        	return resolveTypeScriptBinPath(gruntPath, ++depth);
+    	};
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var dest = this.file.dest,
@@ -49,6 +63,7 @@ module.exports = function (grunt) {
             if (filepath.substr(-5) === ".d.ts") {
                 return;
             }
+            console.log(filepath);
             files.push(filepath);
         });
 
@@ -63,10 +78,16 @@ module.exports = function (grunt) {
 
     grunt.registerHelper('compile', function (srces, destPath, options, extension) {
 
-        var typeScriptPath = path.resolve(__dirname, '../node_modules/typescript/bin/typescript.js'),
-            gruntPath = path.resolve("."),
-            basePath = options.base_path;
-
+        var gruntPath = path.resolve("."),
+            basePath = options.base_path,
+            typeScriptBinPath = resolveTypeScriptBinPath(gruntPath, 0),
+            typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
+            libDPath = path.resolve(typeScriptBinPath, "lib.d.ts");
+		
+		if(!typeScriptBinPath){
+			throw "typescript.js not found. please 'npm install typescript'.";
+		}
+        
         if (!ts) {
             var code = fs.readFileSync(typeScriptPath);
             vm.runInThisContext(code, typeScriptPath);
@@ -102,9 +123,9 @@ module.exports = function (grunt) {
         var setting = new ts.CompilationSettings();
         var io = gruntIO(gruntPath, destPath, basePath);
         var compiler = new ts.TypeScriptCompiler(io.createFile, outerr, undefined, setting);
-        compiler.addUnit("" + fs.readFileSync(path.resolve(__dirname, '../node_modules/typescript/bin/lib.d.ts')),
-            path.resolve(__dirname, '../node_modules/typescript/bin/lib.d.ts'), false);
+        compiler.addUnit("" + fs.readFileSync(libDPath), libDPath, false);
         srces.forEach(function (src) {
+        	
             compiler.addUnit("" + grunt.file.read(src), path.resolve(gruntPath, src), false);
         });
 
