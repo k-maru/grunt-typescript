@@ -11,9 +11,9 @@ module.exports = function (grunt) {
         ts,
         gruntIO = function (gruntPath, destPath, basePath) {
             return {
-                createFile:function (writeFile) {
+                createFile:function (writeFile, outputSingle) {
                     var source = "";
-
+					
                     return {
                         Write:function (str) {
                             source += str;
@@ -26,12 +26,13 @@ module.exports = function (grunt) {
                             if (source.trim().length < 1) {
                                 return;
                             }
-                            if(basePath){
+                            
+                            if(basePath && !outputSingle){
                                 var g = path.join(gruntPath, basePath);
                                 writeFile = writeFile.substr(g.length);
                                 writeFile = path.join(gruntPath, destPath, writeFile);
                             }
-
+							
                             grunt.file.write(writeFile, source);
                         }
                     }
@@ -63,7 +64,6 @@ module.exports = function (grunt) {
             if (filepath.substr(-5) === ".d.ts") {
                 return;
             }
-            console.log(filepath);
             files.push(filepath);
         });
 
@@ -94,14 +94,6 @@ module.exports = function (grunt) {
             ts = TypeScript;
         }
 
-        var outfile = {
-            Write:function (s) {
-            },
-            WriteLine:function (s) {
-            },
-            Close:function () {
-            }
-        };
         var outerr = {
             Write:function (s) {
             },
@@ -121,21 +113,21 @@ module.exports = function (grunt) {
         }
 
         var setting = new ts.CompilationSettings();
-        if (options && options.output_many === false) {
-            setting.outputOne(destPath);
+        if(path.extname(destPath) === ".js"){
+        	destPath = path.resolve(gruntPath, destPath);
+        	setting.outputOne(destPath);
         }
 
         var io = gruntIO(gruntPath, destPath, basePath);
-        var output = setting.outputMany ? io.createFile : io.createFile(destPath);
+        var output = setting.outputMany ? null : io.createFile(destPath, true);
         var compiler = new ts.TypeScriptCompiler(output, outerr, undefined, setting);
         compiler.addUnit("" + fs.readFileSync(libDPath), libDPath, false);
         srces.forEach(function (src) {
-
             compiler.addUnit("" + grunt.file.read(src), path.resolve(gruntPath, src), false);
         });
 
         compiler.typeCheck();
-        compiler.emit(setting.outputMany, io.createFile);
+        compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : null);
         if (!setting.outputMany) {
             output.Close();
         }
