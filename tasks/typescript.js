@@ -49,7 +49,7 @@ module.exports = function (grunt) {
         	if(fs.existsSync(path.resolve(targetPath, "typescript.js"))){
         		return targetPath;
         	}
-        	
+
         	return resolveTypeScriptBinPath(gruntPath, ++depth);
     	};
 
@@ -83,11 +83,11 @@ module.exports = function (grunt) {
             typeScriptBinPath = resolveTypeScriptBinPath(gruntPath, 0),
             typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
             libDPath = path.resolve(typeScriptBinPath, "lib.d.ts");
-		
+
 		if(!typeScriptBinPath){
 			throw "typescript.js not found. please 'npm install typescript'.";
 		}
-        
+
         if (!ts) {
             var code = fs.readFileSync(typeScriptPath);
             vm.runInThisContext(code, typeScriptPath);
@@ -103,12 +103,21 @@ module.exports = function (grunt) {
             }
         };
         var outerr = {
+            str : "",
+            empty: true,
             Write:function (s) {
+                outerr.str += s;
+                outerr.empty = false;
             },
             WriteLine:function (s) {
+                outerr.str += s + "\n";
+                outerr.empty = false;
             },
             Close:function () {
-            }
+                if (!outerr.empty) {
+                    grunt.fail.warn("\n" + outerr.str);
+                }
+            },
         };
 
         if (options && options.module) {
@@ -125,12 +134,13 @@ module.exports = function (grunt) {
         var compiler = new ts.TypeScriptCompiler(io.createFile, outerr, undefined, setting);
         compiler.addUnit("" + fs.readFileSync(libDPath), libDPath, false);
         srces.forEach(function (src) {
-        	
+
             compiler.addUnit("" + grunt.file.read(src), path.resolve(gruntPath, src), false);
         });
 
         compiler.typeCheck();
         compiler.emit(true, io.createFile);
+        outerr.Close();
 
         return true;
     });
