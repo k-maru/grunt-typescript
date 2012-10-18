@@ -95,12 +95,21 @@ module.exports = function (grunt) {
         }
 
         var outerr = {
+            str : "",
+            empty: true,
             Write:function (s) {
+                outerr.str += s;
+                outerr.empty = false;
             },
             WriteLine:function (s) {
+                outerr.str += s + "\n";
+                outerr.empty = false;
             },
             Close:function () {
-            }
+                if (!outerr.empty) {
+                    grunt.fail.warn("\n" + outerr.str);
+                }
+            },
         };
 
         if (options && options.module) {
@@ -131,6 +140,7 @@ module.exports = function (grunt) {
         if (!setting.outputMany) {
             output.Close();
         }
+        outerr.Close();
 
         return true;
     });
