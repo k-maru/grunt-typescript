@@ -112,20 +112,30 @@ module.exports = function (grunt) {
             },
         };
 
-        if (options && options.module) {
-            var module = options.module.toLowerCase();
-            if (module === 'commonjs' || module === 'node') {
-                ts.moduleGenTarget = ts.ModuleGenTarget.Synchronous;
-            } else if (module === 'amd') {
-                ts.moduleGenTarget = ts.ModuleGenTarget.Asynchronous;
-            }
-        }
-
         var setting = new ts.CompilationSettings();
         var env = new ts.CompilationEnvironment(setting, getNodeIO());
         if(path.extname(destPath) === ".js"){
         	destPath = path.resolve(gruntPath, destPath);
         	setting.outputOne(destPath);
+        }
+
+        if (options) {
+            if (options.target) {
+                var target = options.target.toLowerCase();
+                if (target === 'es3') {
+                    setting.codeGenTarget = ts.CodeGenTarget.ES3;
+                } else if (target == 'es5') {
+                    setting.codeGenTarget = ts.CodeGenTarget.ES5;
+                }
+            }
+            if (options.module) {
+                var module = options.module.toLowerCase();
+                if (module === 'commonjs' || module === 'node') {
+                    ts.moduleGenTarget = ts.ModuleGenTarget.Synchronous;
+                } else if (module === 'amd') {
+                    ts.moduleGenTarget = ts.ModuleGenTarget.Asynchronous;
+                }
+            }
         }
 
         var io = gruntIO(gruntPath, destPath, basePath);
