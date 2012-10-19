@@ -128,6 +128,9 @@ module.exports = function (grunt) {
                     setting.codeGenTarget = ts.CodeGenTarget.ES5;
                 }
             }
+            if (options.style) {
+                setting.setStyleOptions(options.style);
+            }
             if (options.module) {
                 var module = options.module.toLowerCase();
                 if (module === 'commonjs' || module === 'node') {
@@ -158,6 +161,7 @@ module.exports = function (grunt) {
             resolver.resolveCode(src, "", false, resolutionDispatcher);
         });
 
+        compiler.setErrorOutput(outerr);
         compiler.typeCheck();
         compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : null);
         if (!setting.outputMany) {
