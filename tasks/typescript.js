@@ -149,12 +149,16 @@ module.exports = function (grunt) {
 
         var resolver = new ts.CodeResolver(env);
         var resolutionDispatcher = {
+            sources = {},
             postResolutionError : function (errorFile, errorMessage) {
                  grunt.fail.warn(errorFile + " : " + errorMessage);
             },
             postResolution : function (path, code) {
-                compiler.addSourceUnit(code, path);
-                grunt.verbose.writeln("Compiling " + path.cyan);
+                if (!sources[path]) {
+                    compiler.addSourceUnit(code, path);
+                    grunt.verbose.writeln("Compiling " + path.cyan);
+                    sources[path] = true;
+                }
             }
         };
         srces.forEach(function (src) {
