@@ -22,6 +22,7 @@ Then add some configuration for the plugin like so:
             dest: 'where/you/want/your/js/files',
             options: {
               module: 'amd', //or commonjs
+              target: 'es5', //or es3
               base_path: 'path/to/typescript/files'
             }
           }
