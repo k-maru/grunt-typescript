@@ -9,15 +9,15 @@ module.exports = function (grunt) {
         fs = require('fs'),
         vm = require('vm'),
         gruntIO = function (gruntPath, destPath, basePath) {
-        	basePath = basePath || ".";
+            basePath = basePath || ".";
             return {
-				resolvePath: path.resolve,
+                resolvePath: path.resolve,
                 readFile: grunt.file.read,
                 dirName: path.dirname,
 
                 createFile:function (writeFile, outputSingle) {
                     var source = "";
-					
+
                     return {
                         Write:function (str) {
                             source += str;
@@ -30,7 +30,7 @@ module.exports = function (grunt) {
                             if (source.trim().length < 1) {
                                 return;
                             }
-                            
+
                             if(!outputSingle){
                                 var g = path.join(gruntPath, basePath);
                                 writeFile = writeFile.substr(g.length);
@@ -39,47 +39,47 @@ module.exports = function (grunt) {
                             grunt.file.write(writeFile, source);
                         }
                     }
-                },                
-	            findFile: function (rootPath, partialFilePath) {
+                },
+                findFile: function (rootPath, partialFilePath) {
 
-		            var file = path.join(rootPath, partialFilePath);
-		            while(true) {
-		                if(fs.existsSync(file)) {
-		                    try  {
-		                        var content = grunt.file.read(file);
-		                        return {
-		                            content: content,
-		                            path: file
-		                        };
-		                    } catch (err) {
-		                    }
-		                } else {
-		                    var parentPath = path.resolve(rootPath, "..");
-		                    if(rootPath === parentPath) {
-		                        return null;
-		                    } else {
-		                        rootPath = parentPath;
-		                        file = path.resolve(rootPath, partialFilePath);
-		                    }
-		                }
-		            }
-		        }
+                    var file = path.join(rootPath, partialFilePath);
+                    while(true) {
+                        if(fs.existsSync(file)) {
+                            try  {
+                                var content = grunt.file.read(file);
+                                return {
+                                    content: content,
+                                    path: file
+                                };
+                            } catch (err) {
+                            }
+                        } else {
+                            var parentPath = path.resolve(rootPath, "..");
+                            if(rootPath === parentPath) {
+                                return null;
+                            } else {
+                                rootPath = parentPath;
+                                file = path.resolve(rootPath, partialFilePath);
+                            }
+                        }
+                    }
+                }
             }
         },
         resolveTypeScriptBinPath = function(gruntPath, depth){
-        	var targetPath = path.resolve(__dirname,
-        			(new Array(depth + 1)).join("../../"),
-        			"../node_modules/typescript/bin");
-        	if(path.resolve(gruntPath, "node_modules/typescript/bin").length >
-        		targetPath.length){
-        		return;
-        	}
-        	if(fs.existsSync(path.resolve(targetPath, "typescript.js"))){
-        		return targetPath;
-        	}
+            var targetPath = path.resolve(__dirname,
+                (new Array(depth + 1)).join("../../"),
+                "../node_modules/typescript/bin");
+            if(path.resolve(gruntPath, "node_modules/typescript/bin").length >
+                targetPath.length){
+                return;
+            }
+            if(fs.existsSync(path.resolve(targetPath, "typescript.js"))){
+                return targetPath;
+            }
 
-        	return resolveTypeScriptBinPath(gruntPath, ++depth);
-    	};
+            return resolveTypeScriptBinPath(gruntPath, ++depth);
+        };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var dest = this.file.dest,
@@ -111,13 +111,13 @@ module.exports = function (grunt) {
             typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
             libDPath = path.resolve(typeScriptBinPath, "lib.d.ts");
 
-		if(!typeScriptBinPath){
-			grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
-			return false;
-		}
-		var code = grunt.file.read(typeScriptPath);
+        if(!typeScriptBinPath){
+            grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
+            return false;
+        }
+        var code = grunt.file.read(typeScriptPath);
         vm.runInThisContext(code, typeScriptPath);
-        
+
         var outerr = {
             str : "",
             Write:function (s) {
@@ -133,7 +133,7 @@ module.exports = function (grunt) {
             },
         };
 
-		var setting = new TypeScript.CompilationSettings();
+        var setting = new TypeScript.CompilationSettings();
         if (options) {
             if (options.target) {
                 var target = options.target.toLowerCase();
@@ -155,52 +155,52 @@ module.exports = function (grunt) {
                 }
             }
         }
-        
+
         if(path.extname(destPath) === ".js"){
-        	destPath = path.resolve(gruntPath, destPath);
-        	setting.outputOne(destPath);
+            destPath = path.resolve(gruntPath, destPath);
+            setting.outputOne(destPath);
         }
-		
+
         var io = gruntIO(gruntPath, destPath, basePath);
         var env = new TypeScript.CompilationEnvironment(setting, io);
         var resolver = new TypeScript.CodeResolver(env);
-        
+
         var units = [
-	        {
-	        	fileName: libDPath,
-	        	code: grunt.file.read(libDPath)
-	        }
+            {
+                fileName: libDPath,
+                code: grunt.file.read(libDPath)
+            }
         ];
-        
+
         var resolutionDispatcher = {
             postResolutionError : function (errorFile, errorMessage) {
                 grunt.fail.warn(errorFile + " : " + errorMessage);
             },
             postResolution : function (path, code) {
-            	if(!units.some(function(u) { return u.fileName === path;})){
-            		units.push({fileName: path, code: code.content});
-            	}
+                if(!units.some(function(u) { return u.fileName === path;})){
+                    units.push({fileName: path, code: code.content});
+                }
                 grunt.verbose.writeln("Compiling " + path.cyan);
             }
         };
-        
+
         srces.forEach(function(src){
-        	resolver.resolveCode(path.resolve(gruntPath, src), "", false, resolutionDispatcher);
+            resolver.resolveCode(path.resolve(gruntPath, src), "", false, resolutionDispatcher);
         });
-        
+
         var output = setting.outputMany ? null : io.createFile(destPath, true);
         var compiler = new TypeScript.TypeScriptCompiler(
-        	output, outerr, 
-        	new TypeScript.NullLogger(), setting);
-        
-        units.forEach(function(unit) {
-	        if (!unit.code){
-	            unit.code = grunt.file.read(unit.fileName);
-			}
-	        compiler.addUnit(unit.code, unit.fileName, false);
-	    });
+            output, outerr,
+            new TypeScript.NullLogger(), setting);
 
-		compiler.setErrorOutput(outerr);
+        units.forEach(function(unit) {
+            if (!unit.code){
+                unit.code = grunt.file.read(unit.fileName);
+            }
+            compiler.addUnit(unit.code, unit.fileName, false);
+        });
+
+        compiler.setErrorOutput(outerr);
         compiler.typeCheck();
         compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : null);
         if (!setting.outputMany) {
