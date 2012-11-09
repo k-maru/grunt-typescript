@@ -82,8 +82,9 @@ module.exports = function (grunt) {
     	};
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
+        var helpers = require('grunt-lib-contrib').init(grunt);
         var dest = this.file.dest,
-            options = this.data.options,
+            options = helpers.options(this, {}),
             extension = this.data.extension,
             files = [];
 
