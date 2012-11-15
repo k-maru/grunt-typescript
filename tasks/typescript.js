@@ -157,8 +157,9 @@ module.exports = function (grunt) {
         }
         
         if(path.extname(destPath) === ".js"){
-        	destPath = path.resolve(gruntPath, destPath);
-        	setting.outputOne(destPath);
+            var originalDestPath = destPath;
+            destPath = path.resolve(gruntPath, destPath);
+            setting.outputOne(destPath);
         }
 		
         var io = gruntIO(gruntPath, destPath, basePath);
@@ -205,6 +206,7 @@ module.exports = function (grunt) {
         compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : null);
         if (!setting.outputMany) {
             output.Close();
+            grunt.log.writeln('File ' + (originalDestPath ? originalDestPath : destPath).cyan + ' created.');
         }
         outerr.Close();
 
