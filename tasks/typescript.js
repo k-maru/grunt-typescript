@@ -79,6 +79,26 @@ module.exports = function (grunt) {
             }
 
             return resolveTypeScriptBinPath(gruntPath, ++depth);
+        },
+        simpleCreateFile = function (writeFile) {
+            var source = "";
+
+            return {
+                Write:function (str) {
+                    source += str;
+                },
+                WriteLine:function (str) {
+                    source += str + grunt.utils.linefeed;
+                },
+                Close:function () {
+
+                    if (source.trim().length < 1) {
+                        return;
+                    }
+
+                    grunt.file.write(writeFile, source);
+                }
+            }
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -155,6 +175,12 @@ module.exports = function (grunt) {
                     TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
                 }
             }
+            if (options.sourcemap) {
+                setting.mapSourceFiles = options.sourcemap;
+            }
+            if (options.declaration_file) {
+                setting.generateDeclarationFiles = options.declaration_file;
+            }
         }
 
         if(path.extname(destPath) === ".js"){
@@ -204,7 +230,7 @@ module.exports = function (grunt) {
 
         compiler.setErrorOutput(outerr);
         compiler.typeCheck();
-        compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : null);
+        compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : simpleCreateFile);
         if (!setting.outputMany) {
             output.Close();
             grunt.log.writeln('File ' + (originalDestPath ? originalDestPath : destPath).cyan + ' created.');
