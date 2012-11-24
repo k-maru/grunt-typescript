@@ -215,10 +215,9 @@ module.exports = function (grunt) {
         srces.forEach(function(src){
             resolver.resolveCode(path.resolve(gruntPath, src), "", false, resolutionDispatcher);
         });
-
+		
         var output = setting.outputMany ? null : io.createFile(destPath, true);
-        var compiler = new TypeScript.TypeScriptCompiler(
-            output, outerr,
+        var compiler = new TypeScript.TypeScriptCompiler(outerr,
             new TypeScript.NullLogger(), setting);
 
         units.forEach(function(unit) {
@@ -230,7 +229,7 @@ module.exports = function (grunt) {
 
         compiler.setErrorOutput(outerr);
         compiler.typeCheck();
-        compiler.emit(setting.outputMany, setting.outputMany ? io.createFile : simpleCreateFile);
+        compiler.emit(setting.outputMany ? io.createFile : simpleCreateFile);
         if (!setting.outputMany) {
             output.Close();
             grunt.log.writeln('File ' + (originalDestPath ? originalDestPath : destPath).cyan + ' created.');
