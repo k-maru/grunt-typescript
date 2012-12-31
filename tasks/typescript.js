@@ -5,6 +5,9 @@
  */
 
 module.exports = function (grunt) {
+    // TODO: ditch this when grunt v0.4 is released
+    grunt.util = grunt.util || grunt.utils;
+    
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
@@ -23,7 +26,7 @@ module.exports = function (grunt) {
                             source += str;
                         },
                         WriteLine:function (str) {
-                            source += str + grunt.utils.linefeed;
+                            source += str + grunt.util.linefeed;
                         },
                         Close:function () {
 
@@ -88,7 +91,7 @@ module.exports = function (grunt) {
                     source += str;
                 },
                 WriteLine:function (str) {
-                    source += str + grunt.utils.linefeed;
+                    source += str + grunt.util.linefeed;
                 },
                 Close:function () {
 
@@ -114,9 +117,8 @@ module.exports = function (grunt) {
             }
             files.push(filepath);
         });
-
-        grunt.helper('compile', files, dest, grunt.utils._.clone(options), extension);
-
+        
+        compile(files, dest, grunt.util._.clone(options), extension);
         if (grunt.task.current.errorCount) {
             return false;
         } else {
@@ -124,8 +126,7 @@ module.exports = function (grunt) {
         }
     });
 
-    grunt.registerHelper('compile', function (srces, destPath, options, extension) {
-
+    compile = function (srces, destPath, options, extension) {
         var gruntPath = path.resolve("."),
             basePath = options.base_path,
             typeScriptBinPath = resolveTypeScriptBinPath(gruntPath, 0),
@@ -151,7 +152,7 @@ module.exports = function (grunt) {
                 if (outerr.str.trim()) {
                     grunt.fail.warn("\n" + outerr.str);
                 }
-            },
+            }
         };
 
         var setting = new TypeScript.CompilationSettings();
@@ -233,9 +234,10 @@ module.exports = function (grunt) {
         if (!setting.outputMany) {
             output.Close();
             grunt.log.writeln('File ' + (originalDestPath ? originalDestPath : destPath).cyan + ' created.');
+            
         }
         outerr.Close();
 
         return true;
-    });
+    };
 };
