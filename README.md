@@ -23,7 +23,9 @@ Then add some configuration for the plugin like so:
             options: {
               module: 'amd', //or commonjs
               target: 'es5', //or es3
-              base_path: 'path/to/typescript/files'
+              base_path: 'path/to/typescript/files',
+              sourcemap: true,
+              declaration: true
             }
           }
         },

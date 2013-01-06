@@ -11,14 +11,20 @@ module.exports = function (grunt) {
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
-        gruntIO = function (gruntPath, destPath, basePath) {
+        gruntIO = function (currentPath, destPath, basePath, compSetting) {
+            var createdFiles = [];
             basePath = basePath || ".";
+
             return {
+                getCreatedFiles: function(){
+                    return createdFiles;
+                },
+
                 resolvePath: path.resolve,
                 readFile: grunt.file.read,
                 dirName: path.dirname,
 
-                createFile:function (writeFile, outputSingle) {
+                createFile:function (writeFile, useUTF8) {
                     var source = "";
 
                     return {
@@ -33,13 +39,14 @@ module.exports = function (grunt) {
                             if (source.trim().length < 1) {
                                 return;
                             }
-
-                            if(!outputSingle){
-                                var g = path.join(gruntPath, basePath);
+                            if(compSetting.outputMany){
+                                var g = path.join(currentPath, basePath);
                                 writeFile = writeFile.substr(g.length);
-                                writeFile = path.join(gruntPath, destPath, writeFile);
+                                writeFile = path.join(currentPath, destPath, writeFile);
                             }
+
                             grunt.file.write(writeFile, source);
+                            createdFiles.push(writeFile);
                         }
                     }
                 },
@@ -66,42 +73,31 @@ module.exports = function (grunt) {
                             }
                         }
                     }
+                },
+                stderr:  {
+                    Write: function (str) {
+                        grunt.fail.warn(str);
+                    },
+                    WriteLine: function (str) {
+                        grunt.fail.warn(str + '\n');
+                    },
+                    Close: function () {
+                    }
                 }
             }
         },
-        resolveTypeScriptBinPath = function(gruntPath, depth){
+        resolveTypeScriptBinPath = function(currentPath, depth){
             var targetPath = path.resolve(__dirname,
                 (new Array(depth + 1)).join("../../"),
                 "../node_modules/typescript/bin");
-            if(path.resolve(gruntPath, "node_modules/typescript/bin").length >
-                targetPath.length){
+            if(path.resolve(currentPath, "node_modules/typescript/bin").length > targetPath.length){
                 return;
             }
             if(fs.existsSync(path.resolve(targetPath, "typescript.js"))){
                 return targetPath;
             }
 
-            return resolveTypeScriptBinPath(gruntPath, ++depth);
-        },
-        simpleCreateFile = function (writeFile) {
-            var source = "";
-
-            return {
-                Write:function (str) {
-                    source += str;
-                },
-                WriteLine:function (str) {
-                    source += str + grunt.util.linefeed;
-                },
-                Close:function () {
-
-                    if (source.trim().length < 1) {
-                        return;
-                    }
-
-                    grunt.file.write(writeFile, source);
-                }
-            }
+            return resolveTypeScriptBinPath(currentPath, ++depth);
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -117,7 +113,7 @@ module.exports = function (grunt) {
             }
             files.push(filepath);
         });
-        
+
         compile(files, dest, grunt.util._.clone(options), extension);
         if (grunt.task.current.errorCount) {
             return false;
@@ -126,10 +122,10 @@ module.exports = function (grunt) {
         }
     });
 
-    compile = function (srces, destPath, options, extension) {
-        var gruntPath = path.resolve("."),
+    var compile = function (srces, destPath, options, extension) {
+        var currentPath = path.resolve("."),
             basePath = options.base_path,
-            typeScriptBinPath = resolveTypeScriptBinPath(gruntPath, 0),
+            typeScriptBinPath = resolveTypeScriptBinPath(currentPath, 0),
             typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
             libDPath = path.resolve(typeScriptBinPath, "lib.d.ts");
 
@@ -139,23 +135,12 @@ module.exports = function (grunt) {
         }
         var code = grunt.file.read(typeScriptPath);
         vm.runInThisContext(code, typeScriptPath);
-
-        var outerr = {
-            str : "",
-            Write:function (s) {
-                outerr.str += s;
-            },
-            WriteLine:function (s) {
-                outerr.str += s + "\n";
-            },
-            Close:function () {
-                if (outerr.str.trim()) {
-                    grunt.fail.warn("\n" + outerr.str);
-                }
-            }
-        };
-
+        
         var setting = new TypeScript.CompilationSettings();
+        var io = gruntIO(currentPath, destPath, basePath, setting);
+        var env = new TypeScript.CompilationEnvironment(setting, io);
+        var resolver = new TypeScript.CodeResolver(env);
+
         if (options) {
             if (options.target) {
                 var target = options.target.toLowerCase();
@@ -179,27 +164,24 @@ module.exports = function (grunt) {
             if (options.sourcemap) {
                 setting.mapSourceFiles = options.sourcemap;
             }
-            if (options.declaration_file) {
-                setting.generateDeclarationFiles = options.declaration_file;
+            if (options.declaration_file || options.declaration) {
+                setting.generateDeclarationFiles = true; 
+                if(options.declaration_file){
+                    //grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option");
+                }
             }
         }
 
         if(path.extname(destPath) === ".js"){
             var originalDestPath = destPath;
-            destPath = path.resolve(gruntPath, destPath);
+            destPath = path.resolve(currentPath, destPath);
             setting.outputOne(destPath);
         }
 
-        var io = gruntIO(gruntPath, destPath, basePath);
-        var env = new TypeScript.CompilationEnvironment(setting, io);
-        var resolver = new TypeScript.CodeResolver(env);
-
-        var units = [
-            {
-                fileName: libDPath,
-                code: grunt.file.read(libDPath)
-            }
-        ];
+        var units = [{
+            fileName: libDPath,
+            code: grunt.file.read(libDPath)
+        }];
 
         var resolutionDispatcher = {
             postResolutionError : function (errorFile, errorMessage) {
@@ -209,17 +191,15 @@ module.exports = function (grunt) {
                 if(!units.some(function(u) { return u.fileName === path;})){
                     units.push({fileName: path, code: code.content});
                 }
-                grunt.verbose.writeln("Compiling " + path.cyan);
             }
         };
 
         srces.forEach(function(src){
-            resolver.resolveCode(path.resolve(gruntPath, src), "", false, resolutionDispatcher);
+            resolver.resolveCode(path.resolve(currentPath, src), "", false, resolutionDispatcher);
         });
-		
-        var output = setting.outputMany ? null : io.createFile(destPath, true);
-        var compiler = new TypeScript.TypeScriptCompiler(outerr,
-            new TypeScript.NullLogger(), setting);
+
+        var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting);
+        compiler.setErrorOutput(io.stderr);
 
         units.forEach(function(unit) {
             if (!unit.code){
@@ -228,15 +208,28 @@ module.exports = function (grunt) {
             compiler.addUnit(unit.code, unit.fileName, false);
         });
 
-        compiler.setErrorOutput(outerr);
         compiler.typeCheck();
-        compiler.emit(setting.outputMany ? io.createFile : simpleCreateFile);
-        if (!setting.outputMany) {
-            output.Close();
-            grunt.log.writeln('File ' + (originalDestPath ? originalDestPath : destPath).cyan + ' created.');
-            
+        compiler.emit(io.createFile);
+        compiler.emitDeclarationFile(io.createFile);
+
+        var result = {js: [], m: [], d: [], other: []};
+        io.getCreatedFiles().forEach(function(item){
+            var file = item.substr(currentPath.length + 1);
+            if(/\.js$/.test(file)) result.js.push(file);
+            else if(/\.js\.map$/.test(file)) result.m.push(file);
+            else if(/\.d\.ts$/.test(file)) result.d.push(file);
+            else result.other.push(file);
+        });
+        var resultMessage = "js:" + result.js.length + " files, map:" + 
+                result.m.length + " files, declaration:" + 
+                result.d.length + " files";
+
+        if(!setting.outputMany){
+            grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
+            grunt.log.writeln(resultMessage);
+        }else{
+            grunt.log.writeln(io.getCreatedFiles().length + " Files created. " + resultMessage);
         }
-        outerr.Close();
 
         return true;
     };
