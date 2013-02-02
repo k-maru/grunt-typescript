@@ -11,7 +11,7 @@ module.exports = function (grunt) {
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
-        gruntIO = function (currentPath, destPath, basePath, compSetting) {
+        gruntIO = function (currentPath, destPath, basePath, compSetting, outputOne) {
             var createdFiles = [];
             basePath = basePath || ".";
 
@@ -26,7 +26,6 @@ module.exports = function (grunt) {
 
                 createFile:function (writeFile, useUTF8) {
                     var source = "";
-
                     return {
                         Write:function (str) {
                             source += str;
@@ -35,11 +34,11 @@ module.exports = function (grunt) {
                             source += str + grunt.util.linefeed;
                         },
                         Close:function () {
-
                             if (source.trim().length < 1) {
                                 return;
                             }
-                            if(compSetting.outputMany){
+
+                            if(!outputOne){
                                 var g = path.join(currentPath, basePath);
                                 writeFile = writeFile.substr(g.length);
                                 writeFile = path.join(currentPath, destPath, writeFile);
@@ -50,36 +49,43 @@ module.exports = function (grunt) {
                         }
                     }
                 },
-                findFile: function (rootPath, partialFilePath) {
-
-                    var file = path.join(rootPath, partialFilePath);
-                    while(true) {
-                        if(fs.existsSync(file)) {
-                            try  {
-                                var content = grunt.file.read(file);
-                                return {
-                                    content: content,
-                                    path: file
-                                };
-                            } catch (err) {
-                            }
-                        } else {
-                            var parentPath = path.resolve(rootPath, "..");
-                            if(rootPath === parentPath) {
-                                return null;
-                            } else {
-                                rootPath = parentPath;
-                                file = path.resolve(rootPath, partialFilePath);
-                            }
-                        }
-                    }
+//                findFile: function (rootPath, partialFilePath) {
+//                    var file = path.join(rootPath, partialFilePath);
+//                    while(true) {
+//                        if(fs.existsSync(file)) {
+//                            try  {
+//                                var content = grunt.file.read(file);
+//                                return {
+//                                    content: content,
+//                                    path: file
+//                                };
+//                            } catch (err) {
+//                            }
+//                        } else {
+//                            var parentPath = path.resolve(rootPath, "..");
+//                            if(rootPath === parentPath) {
+//                                return null;
+//                            } else {
+//                                rootPath = parentPath;
+//                                file = path.resolve(rootPath, partialFilePath);
+//                            }
+//                        }
+//                    }
+//                },
+                directoryExists: function (path) {
+                    return fs.existsSync(path) && fs.lstatSync(path).isDirectory();
+                },
+                fileExists: function (path) {
+                    return fs.existsSync(path);
                 },
                 stderr:  {
                     Write: function (str) {
-                        grunt.fail.warn(str);
+                        console.log(str);
+                        //grunt.fail.warn(str);
                     },
                     WriteLine: function (str) {
-                        grunt.fail.warn(str + '\n');
+                        console.log(str);
+                        //grunt.fail.warn(str + '\n');
                     },
                     Close: function () {
                     }
@@ -115,29 +121,27 @@ module.exports = function (grunt) {
         });
 
         compile(files, dest, grunt.util._.clone(options), extension);
-        if (grunt.task.current.errorCount) {
-            return false;
-        } else {
-            return true;
-        }
+
+        return !grunt.task.current.errorCount;
     });
 
     var compile = function (srces, destPath, options, extension) {
-        var currentPath = path.resolve("."),
+	    var currentPath = path.resolve("."),
             basePath = options.base_path,
             typeScriptBinPath = resolveTypeScriptBinPath(currentPath, 0),
             typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
-            libDPath = path.resolve(typeScriptBinPath, "lib.d.ts");
+            libDPath = path.resolve(typeScriptBinPath, "lib.d.ts"),
+            outputOne = !!destPath && path.extname(destPath) === ".js";
 
         if(!typeScriptBinPath){
             grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
             return false;
         }
+
         var code = grunt.file.read(typeScriptPath);
         vm.runInThisContext(code, typeScriptPath);
-        
         var setting = new TypeScript.CompilationSettings();
-        var io = gruntIO(currentPath, destPath, basePath, setting);
+        var io = gruntIO(currentPath, destPath, basePath, setting, outputOne);
         var env = new TypeScript.CompilationEnvironment(setting, io);
         var resolver = new TypeScript.CodeResolver(env);
 
@@ -170,19 +174,22 @@ module.exports = function (grunt) {
                     //grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option");
                 }
             }
+            if(options.comment){
+                //setting.emitComments = true;
+            }
         }
-
-        if(path.extname(destPath) === ".js"){
-            var originalDestPath = destPath;
+        if(outputOne){
             destPath = path.resolve(currentPath, destPath);
-            setting.outputOne(destPath);
+            setting.outputOption = destPath;
         }
-
+//        if(destPath){
+//            destPath = path.resolve(currentPath, destPath);
+//            setting.outputOption = destPath;
+//        }
         var units = [{
             fileName: libDPath,
             code: grunt.file.read(libDPath)
         }];
-
         var resolutionDispatcher = {
             postResolutionError : function (errorFile, errorMessage) {
                 grunt.fail.warn(errorFile + " : " + errorMessage);
@@ -193,11 +200,9 @@ module.exports = function (grunt) {
                 }
             }
         };
-
         srces.forEach(function(src){
             resolver.resolveCode(path.resolve(currentPath, src), "", false, resolutionDispatcher);
         });
-
         var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting);
         compiler.setErrorOutput(io.stderr);
 
@@ -207,10 +212,9 @@ module.exports = function (grunt) {
             }
             compiler.addUnit(unit.code, unit.fileName, false);
         });
-
         compiler.typeCheck();
-        compiler.emit(io.createFile);
-        compiler.emitDeclarationFile(io.createFile);
+        compiler.emit(io);
+        compiler.emitDeclarations();
 
         var result = {js: [], m: [], d: [], other: []};
         io.getCreatedFiles().forEach(function(item){
@@ -220,17 +224,15 @@ module.exports = function (grunt) {
             else if(/\.d\.ts$/.test(file)) result.d.push(file);
             else result.other.push(file);
         });
-        var resultMessage = "js:" + result.js.length + " files, map:" + 
+        var resultMessage = "js:" + result.js.length + " files, map:" +
                 result.m.length + " files, declaration:" + 
                 result.d.length + " files";
-
-        if(!setting.outputMany){
+        if(outputOne){
             grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
             grunt.log.writeln(resultMessage);
         }else{
-            grunt.log.writeln(io.getCreatedFiles().length + " Files created. " + resultMessage);
+            grunt.log.writeln((io.getCreatedFiles().length + " Files").cyan + " created. " + resultMessage);
         }
-
         return true;
     };
 };

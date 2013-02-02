@@ -1,37 +1,80 @@
-module.exports = function(grunt) {
-	
-  grunt.initConfig({
-    test: {
-      files: ['test/**/*.js']
-    },
-    lint: {
-      files: ['grunt.js', 'tasks/**/*.js', 'test/**/*.js']
-    },
-    watch: {
-      files: '<config:lint.files>',
-      tasks: 'default'
-    },
-    jshint: {
-      options: {
-        curly:   true,
-        eqeqeq:  true,
-        immed:   true,
-        latedef: true,
-        newcap:  true,
-        noarg:   true,
-        sub:     true,
-        undef:   true,
-        boss:    true,
-        eqnull:  true,
-        node:    true,
-        es5:     true
-      },
-      globals: {}
-    }
-  });
+module.exports = function (grunt) {
+    "use strict";
 
-  grunt.loadTasks('tasks');
+    grunt.initConfig({
+        clean:{
+            test:[
+                "test/fixtures/*.js",
+                "test/fixtures/*.js.map",
+                "test/fixtures/*.d.ts",
+                "test/temp/**/*.*",
+                "test/temp"
+            ]
+        },
+        typescript:{
+            simple:{
+                src:"test/fixtures/simple.ts"
+            },
+            declaration:{
+                src:"test/fixtures/declaration.ts",
+                options:{
+                    declaration:true
+                }
+            },
+            sourcemap:{
+                src:"test/fixtures/sourcemap.ts",
+                options:{
+                    sourcemap:true
+                }
+            },
+            es5:{
+                src:"test/fixtures/es5.ts",
+                options:{
+                    target:"ES5"
+                }
+            },
+            "no-module":{
+                src:"test/fixtures/no-module.ts"
+            },
+            amd:{
+                src:"test/fixtures/amd.ts",
+                options:{
+                    module:"amd"
+                }
+            },
+            commonjs:{
+                src:"test/fixtures/commonjs.ts",
+                options:{
+                    module:"commonjs"
+                }
+            },
+            single:{
+                src:"test/fixtures/single/**/*.ts",
+                dest: "test/temp/single.js"
+            },
+            multi:{
+                src:"test/fixtures/multi/**/*.ts",
+                dest:"test/temp/multi"
+            },
+            basePath:{
+                src:"test/fixtures/multi/**/*.ts",
+                dest:"test/temp/basePath",
+                options: {
+                    base_path: "test/fixtures/multi"
+                }
+            }
 
-  grunt.registerTask('default', 'lint test');
+        },
+        nodeunit:{
+            tasks:["test/test.js"]
+        }
+    });
+
+    grunt.loadTasks("tasks");
+    grunt.loadNpmTasks("grunt-contrib-clean");
+    grunt.renameTask("test", "nodeunit");
+    grunt.registerTask("test", "clean typescript nodeunit");
+
+    grunt.registerTask("default", "test");
 
 };
