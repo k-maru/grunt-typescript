@@ -58,11 +58,11 @@ module.exports = function (grunt) {
                 },
                 stderr:{
                     Write:function (str) {
-                        console.log(str);
+                        grunt.log.error(str);
                         //grunt.fail.warn(str);
                     },
                     WriteLine:function (str) {
-                        console.log(str);
+                        grunt.log.error(str);
                         //grunt.fail.warn(str + '\n');
                     },
                     Close:function () {
@@ -128,8 +128,6 @@ module.exports = function (grunt) {
                 return !grunt.task.current.errorCount;
             })();
         }
-
-
     });
 
     var compile = function (srces, destPath, options, extension) {
@@ -216,14 +214,24 @@ module.exports = function (grunt) {
         compiler.setErrorOutput(io.stderr);
 
         units.forEach(function (unit) {
-            if (!unit.code) {
-                unit.code = grunt.file.read(unit.fileName);
+            try{
+                if (!unit.code) {
+                    unit.code = grunt.file.read(unit.fileName);
+                }
+                compiler.addUnit(unit.code, unit.fileName, false);
+            }catch(err){
+                compiler.errorReporter.hasErrors = true;
+                io.stderr.WriteLine(err.message);
             }
-            compiler.addUnit(unit.code, unit.fileName, false);
+
         });
         compiler.typeCheck();
         compiler.emit(io);
         compiler.emitDeclarations();
+
+        if(compiler.errorReporter.hasErrors){
+            return false;
+        }
 
         var result = {js:[], m:[], d:[], other:[]};
         io.getCreatedFiles().forEach(function (item) {

@@ -63,6 +63,10 @@ module.exports = function (grunt) {
                     base_path: "test/fixtures/multi"
                 }
             }
+//            ,
+//            err:{
+//                src:"test/error.ts"
+//            }
 
         },
         nodeunit:{
