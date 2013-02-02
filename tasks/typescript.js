@@ -7,7 +7,7 @@
 module.exports = function (grunt) {
     // TODO: ditch this when grunt v0.4 is released
     grunt.util = grunt.util || grunt.utils;
-    
+
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
@@ -102,24 +102,27 @@ module.exports = function (grunt) {
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var helpers = require('grunt-lib-contrib').init(grunt);
-        var dest = this.file.dest,
-            options = helpers.options(this, {}),
-            extension = this.data.extension,
-            files = [];
+        var that = this;
 
-        grunt.file.expandFiles(this.file.src).forEach(function (filepath) {
-            if (filepath.substr(-5) === ".d.ts") {
-                return;
+        this.files.forEach(function(f) {
+            var dest = f.dest,
+                options = helpers.options(that, {}),
+                extension = that.data.extension,
+                files = [];
+
+            grunt.file.expand(f.src).forEach(function (filepath) {
+                if (filepath.substr(-5) === ".d.ts") {
+                    return;
+                }
+                files.push(filepath);
+            });
+
+            compile(files, dest, grunt.util._.clone(options), extension);
+
+            if (grunt.task.current.errorCount) {
+                return false;
             }
-            files.push(filepath);
         });
-
-        compile(files, dest, grunt.util._.clone(options), extension);
-        if (grunt.task.current.errorCount) {
-            return false;
-        } else {
-            return true;
-        }
     });
 
     var compile = function (srces, destPath, options, extension) {
@@ -135,7 +138,7 @@ module.exports = function (grunt) {
         }
         var code = grunt.file.read(typeScriptPath);
         vm.runInThisContext(code, typeScriptPath);
-        
+
         var setting = new TypeScript.CompilationSettings();
         var io = gruntIO(currentPath, destPath, basePath, setting);
         var env = new TypeScript.CompilationEnvironment(setting, io);
@@ -165,7 +168,7 @@ module.exports = function (grunt) {
                 setting.mapSourceFiles = options.sourcemap;
             }
             if (options.declaration_file || options.declaration) {
-                setting.generateDeclarationFiles = true; 
+                setting.generateDeclarationFiles = true;
                 if(options.declaration_file){
                     //grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option");
                 }
@@ -220,8 +223,8 @@ module.exports = function (grunt) {
             else if(/\.d\.ts$/.test(file)) result.d.push(file);
             else result.other.push(file);
         });
-        var resultMessage = "js:" + result.js.length + " files, map:" + 
-                result.m.length + " files, declaration:" + 
+        var resultMessage = "js: " + result.js.length + " files, map: " +
+                result.m.length + " files, declaration: " +
                 result.d.length + " files";
 
         if(!setting.outputMany){
