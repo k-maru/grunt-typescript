@@ -1,7 +1,7 @@
 var grunt = require("grunt");
 var fs = require("fs");
 
-module.exports.type = {
+module.exports.typescript = {
     simple:function (test) {
         "use strict";
 

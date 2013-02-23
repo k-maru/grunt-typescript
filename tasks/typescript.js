@@ -6,9 +6,6 @@
 
 module.exports = function (grunt) {
 
-    // TODO: ditch this when grunt v0.4 is released
-    grunt.util = grunt.util || grunt.utils;
-
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
@@ -94,11 +91,9 @@ module.exports = function (grunt) {
                 stderr:{
                     Write:function (str) {
                         grunt.log.error(str);
-                        //grunt.fail.warn(str);
                     },
                     WriteLine:function (str) {
                         grunt.log.error(str);
-                        //grunt.fail.warn(str + '\n');
                     },
                     Close:function () {
                     }
@@ -120,49 +115,27 @@ module.exports = function (grunt) {
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var helpers = require('grunt-lib-contrib').init(grunt);
         var that = this;
 
-        //TODO: 0.4 以上が出たら確認
-        if(grunt.version.indexOf("0.4") === 0){
-            this.files.forEach(function (f) {
-                var dest = f.dest,
-                    options = helpers.options(that, {}),
-                    extension = that.data.extension,
-                    files = [];
+        this.files.forEach(function (f) {
+            var dest = f.dest,
+                options = that.options(),
+                extension = that.data.extension,
+                files = [];
 
-                grunt.file.expand(f.src).forEach(function (filepath) {
-                    if (filepath.substr(-5) === ".d.ts") {
-                        return;
-                    }
-                    files.push(filepath);
-                });
-
-                compile(files, dest, grunt.util._.clone(options), extension);
-
-                if (grunt.task.current.errorCount) {
-                    return false;
+            grunt.file.expand(f.src).forEach(function (filepath) {
+                if (filepath.substr(-5) === ".d.ts") {
+                    return;
                 }
+                files.push(filepath);
             });
-        }else{
-            return (function(){
-                var dest = that.file.dest,
-                    options = helpers.options(that, {}),
-                    extension = that.data.extension,
-                    files = [];
 
-                grunt.file.expandFiles(that.file.src).forEach(function (filepath) {
-                    if (filepath.substr(-5) === ".d.ts") {
-                        return;
-                    }
-                    files.push(filepath);
-                });
+            compile(files, dest, grunt.util._.clone(options), extension);
 
-                compile(files, dest, grunt.util._.clone(options), extension);
-
-                return !grunt.task.current.errorCount;
-            })();
-        }
+            if (grunt.task.current.errorCount) {
+                return false;
+            }
+        });
     });
 
     var compile = function (srces, destPath, options, extension) {

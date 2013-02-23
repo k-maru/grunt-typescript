@@ -73,15 +73,15 @@ module.exports = function (grunt) {
 
         },
         nodeunit:{
-            tasks:["test/test.js"]
+            tests:["test/test.js"]
         }
     });
 
     grunt.loadTasks("tasks");
+    grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
-    grunt.renameTask("test", "nodeunit");
-    grunt.registerTask("test", "clean typescript nodeunit");
+    grunt.registerTask("test", ["clean", "typescript", "nodeunit"]);
 
-    grunt.registerTask("default", "test");
+    grunt.registerTask("default", ["test"]);
 
 };
