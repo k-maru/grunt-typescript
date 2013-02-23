@@ -63,9 +63,9 @@ module.exports = function (grunt) {
                     base_path: "test/fixtures/multi"
                 }
             },
-			"utf8-with-bom":{
-				src:"test/fixtures/utf8-with-bom.ts"
-			}
+            "utf8-with-bom":{
+                src:"test/fixtures/utf8-with-bom.ts"
+            }
 //            ,
 //            err:{
 //                src:"test/error.ts"

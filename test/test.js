@@ -81,8 +81,8 @@ module.exports.type = {
 
         test.expect(1);
 
-		var actual = grunt.file.read("test/fixtures/commonjs.js");
-		var expected = grunt.file.read("test/expected/commonjs.js");
+        var actual = grunt.file.read("test/fixtures/commonjs.js");
+        var expected = grunt.file.read("test/expected/commonjs.js");
         test.equal(expected, actual);
 
         test.done();
