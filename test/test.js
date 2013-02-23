@@ -81,8 +81,8 @@ module.exports.type = {
 
         test.expect(1);
 
-        var actual = grunt.file.read("test/fixtures/commonjs.js");
-        var expected = grunt.file.read("test/expected/commonjs.js");
+		var actual = grunt.file.read("test/fixtures/commonjs.js");
+		var expected = grunt.file.read("test/expected/commonjs.js");
         test.equal(expected, actual);
 
         test.done();
@@ -123,6 +123,17 @@ module.exports.type = {
 
         actual = grunt.file.read("test/temp/basePath/dir/multi2.js");
         expected = grunt.file.read("test/expected/multi/dir/multi2.js");
+
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    "utf8-with-bom":function(test){
+        "use strict";
+
+        test.expect(1);
+        var actual = grunt.file.read("test/fixtures/utf8-with-bom.js");
+        var expected = grunt.file.read("test/expected/utf8-with-bom.js");
 
         test.equal(expected, actual);
 

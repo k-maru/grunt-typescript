@@ -22,7 +22,15 @@ module.exports = function (grunt) {
                 },
 
                 resolvePath:path.resolve,
-                readFile:grunt.file.read,
+                readFile:function (file){
+                    var content = grunt.file.read(file);
+                    // strip UTF BOM
+                    if(content.charCodeAt(0) === 0xFEFF){
+                        content = content.slice(1);
+                    }
+
+                    return content;
+                },
                 dirName:path.dirname,
 
                 createFile:function (writeFile, useUTF8) {
