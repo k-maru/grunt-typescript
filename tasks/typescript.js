@@ -58,6 +58,33 @@ module.exports = function (grunt) {
                         }
                     }
                 },
+                findFile: function (rootPath, partialFilePath) {
+                    var file = path.join(rootPath, partialFilePath);
+                    while(true) {
+                        if(fs.existsSync(file)) {
+                            try  {
+                                var content = grunt.file.read(file);
+                                // strip UTF BOM
+                                if(content.charCodeAt(0) === 0xFEFF){
+                                    content = content.slice(1);
+                                }
+                                return {
+                                    content: content,
+                                    path: file
+                                };
+                            } catch (err) {
+                            }
+                        } else {
+                            var parentPath = path.resolve(rootPath, "..");
+                            if(rootPath === parentPath) {
+                                return null;
+                            } else {
+                                rootPath = parentPath;
+                                file = path.resolve(rootPath, partialFilePath);
+                            }
+                        }
+                    }
+                },
                 directoryExists:function (path) {
                     return fs.existsSync(path) && fs.lstatSync(path).isDirectory();
                 },
