@@ -65,6 +65,11 @@ module.exports = function (grunt) {
             },
             "utf8-with-bom":{
                 src:"test/fixtures/utf8-with-bom.ts"
+            },
+            "no-output":{
+                //存在しないファイル
+                src:"text/fixtures/no-output.ts",
+                dest:"test/temp/no-output.js"
             }
 //            ,
 //            err:{

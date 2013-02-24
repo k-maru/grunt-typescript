@@ -252,8 +252,10 @@ module.exports = function (grunt) {
         var resultMessage = "js: " + result.js.length + " files, map: " +
             result.m.length + " files, declaration: " +
             result.d.length + " files";
-        if (outputOne && result.js.length > 0) {
-            grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
+        if (outputOne) {
+            if(result.js.length > 0){
+                grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
+            }
             grunt.log.writeln(resultMessage);
         } else {
             grunt.log.writeln((io.getCreatedFiles().length + " Files").cyan + " created. " + resultMessage);
