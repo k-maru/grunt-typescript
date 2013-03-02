@@ -188,8 +188,8 @@ module.exports = function (grunt) {
                     grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option".yellow);
                 }
             }
-            if (options.comment) {
-                //setting.emitComments = true;
+            if (options.comments) {
+                setting.emitComments = true;
             }
         }
         if (outputOne) {
@@ -220,7 +220,9 @@ module.exports = function (grunt) {
         });
         var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting);
         compiler.setErrorOutput(io.stderr);
-
+        if(setting.emitComments){
+            compiler.emitCommentsToOutput();
+        }
         units.forEach(function (unit) {
             try{
                 if (!unit.code) {
@@ -233,6 +235,9 @@ module.exports = function (grunt) {
             }
 
         });
+
+
+
         compiler.typeCheck();
         compiler.emit(io);
         compiler.emitDeclarations();

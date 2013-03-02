@@ -70,6 +70,12 @@ module.exports = function (grunt) {
                 //存在しないファイル
                 src:"text/fixtures/no-output.ts",
                 dest:"test/temp/no-output.js"
+            },
+            comments:{
+                src:"test/fixtures/comments.ts",
+                options:{
+                    comments:true
+                }
             }
 //            ,
 //            err:{

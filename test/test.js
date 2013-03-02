@@ -138,5 +138,16 @@ module.exports.typescript = {
         test.equal(expected, actual);
 
         test.done();
+    },
+    comments:function(test){
+        "use strict";
+
+        test.expect(1);
+        var actual = grunt.file.read("test/fixtures/comments.js");
+        var expected = grunt.file.read("test/expected/comments.js");
+
+        test.equal(expected, actual);
+
+        test.done();
     }
 };
