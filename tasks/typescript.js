@@ -112,6 +112,12 @@ module.exports = function (grunt) {
             }
 
             return resolveTypeScriptBinPath(currentPath, ++depth);
+        },
+        pluralizeFile = function (n) {
+            if (n === 1) {
+                return "1 file";
+            }
+            return n + " files";
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -255,16 +261,16 @@ module.exports = function (grunt) {
             else if (/\.d\.ts$/.test(file)) result.d.push(file);
             else result.other.push(file);
         });
-        var resultMessage = "js: " + result.js.length + " files, map: " +
-            result.m.length + " files, declaration: " +
-            result.d.length + " files";
+        var resultMessage = "js: " + pluralizeFile(result.js.length)
+            + ", map: " + pluralizeFile(result.m.length)
+            + ", declaration: " + pluralizeFile(result.d.length);
         if (outputOne) {
             if(result.js.length > 0){
                 grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
             }
             grunt.log.writeln(resultMessage);
         } else {
-            grunt.log.writeln((io.getCreatedFiles().length + " Files").cyan + " created. " + resultMessage);
+            grunt.log.writeln(pluralizeFile(io.getCreatedFiles().length).cyan + " created. " + resultMessage);
         }
         return true;
     };
