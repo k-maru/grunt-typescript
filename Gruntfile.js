@@ -4,7 +4,7 @@ module.exports = function (grunt) {
     grunt.initConfig({
         clean:{
             test:[
-                "test/fixtures/*.js",
+                "test/fixtures/**/*.js",
                 "test/fixtures/*.js.map",
                 "test/fixtures/*.d.ts",
                 "test/temp/**/*.*",
@@ -77,11 +77,6 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
-//            ,
-//            err:{
-//                src:"test/error.ts"
-//            }
-
         },
         nodeunit:{
             tests:["test/test.js"]

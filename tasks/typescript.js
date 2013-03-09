@@ -131,9 +131,8 @@ module.exports = function (grunt) {
             });
 
             compile(files, dest, grunt.util._.clone(options), extension);
-
             if (grunt.task.current.errorCount) {
-                return false;
+                grunt.fail.warn(grunt.task.current.errorCount + " error(s)");
             }
         });
     });
@@ -203,22 +202,25 @@ module.exports = function (grunt) {
                 code:grunt.file.read(libDPath)
             }
         ];
-        var resolutionDispatcher = {
-            postResolutionError:function (errorFile, errorMessage) {
-                grunt.fail.warn(errorFile + " : " + errorMessage);
-            },
-            postResolution:function (path, code) {
-                if (!units.some(function (u) {
-                    return u.fileName === path;
-                })) {
-                    units.push({fileName:path, code:code.content});
+        var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting),
+            resolutionDispatcher = {
+                postResolutionError:function (errorFile, line, col, errorMessage) {
+                    io.stderr.Write(errorFile + "(" + line + "," + col + ") " + (errorMessage == "" ? "" : ": " + errorMessage));
+                    compiler.errorReporter.hasErrors = true;
+                },
+                postResolution:function (path, code) {
+                    if (!units.some(function (u) {
+                        return u.fileName === path;
+                    })) {
+                        units.push({fileName:path, code:code.content});
+                    }
                 }
-            }
-        };
+            };
+
         srces.forEach(function (src) {
             resolver.resolveCode(path.resolve(currentPath, src), "", false, resolutionDispatcher);
         });
-        var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting);
+
         compiler.setErrorOutput(io.stderr);
         if(setting.emitComments){
             compiler.emitCommentsToOutput();
@@ -233,15 +235,14 @@ module.exports = function (grunt) {
                 compiler.errorReporter.hasErrors = true;
                 io.stderr.WriteLine(err.message);
             }
-
         });
-
-
-
         compiler.typeCheck();
+        if(compiler.errorReporter.hasErrors){
+            return false;
+        }
         compiler.emit(io);
-        compiler.emitDeclarations();
 
+        compiler.emitDeclarations();
         if(compiler.errorReporter.hasErrors){
             return false;
         }
