@@ -138,7 +138,7 @@ module.exports = function (grunt) {
 
             compile(files, dest, grunt.util._.clone(options), extension);
             if (grunt.task.current.errorCount) {
-                grunt.fail.warn(grunt.task.current.errorCount + " error(s)");
+                return false;
             }
         });
     });
