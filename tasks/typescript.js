@@ -47,7 +47,7 @@ module.exports = function (grunt) {
                             if (!outputOne) {
                                 var g = path.join(currentPath, basePath);
                                 writeFile = writeFile.substr(g.length);
-                                writeFile = path.join(currentPath, destPath, writeFile);
+                                writeFile = path.join(currentPath, destPath ? destPath.toString() : '', writeFile);
                             }
 
                             grunt.file.write(writeFile, source);
