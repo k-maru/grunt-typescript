@@ -9,8 +9,9 @@ module.exports = function (grunt) {
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
+        errorBuffer = "",
         gruntIO = function (currentPath, destPath, basePath, compSetting, outputOne) {
-            var createdFiles = [];
+            var createdFiles = [],
             basePath = basePath || ".";
 
             return {
@@ -90,9 +91,11 @@ module.exports = function (grunt) {
                 },
                 stderr:{
                     Write:function (str) {
+                        errorBuffer += str;
                         grunt.log.error(str);
                     },
                     WriteLine:function (str) {
+                        errorBuffer += str + "\n";
                         grunt.log.error(str);
                     },
                     Close:function () {
@@ -141,6 +144,11 @@ module.exports = function (grunt) {
                 return false;
             }
         });
+
+        if (grunt.task.current.errorCount) {
+            grunt.fail.warn(errorBuffer);
+            return false;
+        }
     });
 
     var compile = function (srces, destPath, options, extension) {
