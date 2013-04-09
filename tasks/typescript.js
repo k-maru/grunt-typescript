@@ -11,7 +11,7 @@ module.exports = function (grunt) {
         vm = require('vm'),
         errorBuffer = "",
         gruntIO = function (currentPath, destPath, basePath, compSetting, outputOne) {
-            var createdFiles = [],
+            var createdFiles = [];
             basePath = basePath || ".";
 
             return {
