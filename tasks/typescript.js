@@ -11,7 +11,6 @@ module.exports = function (grunt) {
         vm = require('vm'),
         gruntIO = function (currentPath, destPath, basePath, compSetting, outputOne) {
             var createdFiles = [];
-            basePath = basePath || ".";
 
             return {
                 getCreatedFiles:function () {
@@ -31,6 +30,7 @@ module.exports = function (grunt) {
                 dirName:path.dirname,
 
                 createFile:function (writeFile, useUTF8) {
+                    //console.log("writeFile = " + writeFile + ", destPath = " + destPath + ", basePath = " + basePath + ", output one = " + outputOne);
                     var source = "";
                     return {
                         Write:function (str) {
@@ -43,11 +43,16 @@ module.exports = function (grunt) {
                             if (source.trim().length < 1) {
                                 return;
                             }
-
-                            if (!outputOne) {
-                                var g = path.join(currentPath, basePath);
-                                writeFile = writeFile.substr(g.length);
-                                writeFile = path.join(currentPath, destPath ? destPath.toString() : '', writeFile);
+                            if(!outputOne){
+                                if(basePath){
+                                    writeFile = writeFile.substr(basePath.length);
+                                    if(writeFile.charAt(0) === "/" || writeFile.charAt(0) === "\\"){
+                                        writeFile = writeFile.substr(1);
+                                    }
+                                }
+                                if(destPath){
+                                    writeFile = path.join(destPath, writeFile);
+                                }
                             }
 
                             grunt.file.write(writeFile, source);
@@ -172,30 +177,33 @@ module.exports = function (grunt) {
             if (options.target) {
                 var target = options.target.toLowerCase();
                 if (target === 'es3') {
-                    setting.codeGenTarget = TypeScript.CodeGenTarget.ES3;
+                    setting.codeGenTarget = 0; //TypeScript.CodeGenTarget.ES3;
                 } else if (target == 'es5') {
-                    setting.codeGenTarget = TypeScript.CodeGenTarget.ES5;
+                    setting.codeGenTarget = 1; //TypeScript.CodeGenTarget.ES5;
                 }
             }
-            if (options.style) {
-                setting.setStyleOptions(options.style);
-            }
+//            if (options.style) {
+//                setting.setStyleOptions(options.style);
+//            }
             if (options.module) {
                 var module = options.module.toLowerCase();
                 if (module === 'commonjs' || module === 'node') {
-                    TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+                    //TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+                    setting.moduleGenTarget = 0;
                 } else if (module === 'amd') {
-                    TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
+                    //TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
+                    setting.moduleGenTarget = 1;
                 }
             }
             if (options.sourcemap) {
                 setting.mapSourceFiles = options.sourcemap;
             }
-            if (options.declaration_file || options.declaration) {
+            //if (options.declaration_file || options.declaration) {
+            if (options.declaration) {
                 setting.generateDeclarationFiles = true;
-                if (options.declaration_file) {
-                    grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option".yellow);
-                }
+//                if (options.declaration_file) {
+//                    grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option".yellow);
+//                }
             }
             if (options.comments) {
                 setting.emitComments = true;
@@ -212,7 +220,8 @@ module.exports = function (grunt) {
                 code:grunt.file.read(libDPath)
             }
         ];
-        var compiler = new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting),
+        var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
+            //new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting),
             resolutionDispatcher = {
                 postResolutionError:function (errorFile, line, col, errorMessage) {
                     io.stderr.Write(errorFile + "(" + line + "," + col + ") " + (errorMessage == "" ? "" : ": " + errorMessage));
@@ -226,36 +235,35 @@ module.exports = function (grunt) {
                     }
                 }
             };
+        var sources = [libDPath];
+        sources.push.apply(sources, srces);
+        sources.forEach(function(src){
+            var unit = new TypeScript.SourceUnit(src, null);
+            unit.content = grunt.file.read(src);
+            unit.referencedFiles = TypeScript.getReferencedFiles(src, unit);
 
-        srces.forEach(function (src) {
-            resolver.resolveCode(path.resolve(currentPath, src), "", false, resolutionDispatcher);
+            compiler.addSourceUnit(unit.path, TypeScript.ScriptSnapshot.fromString(unit.content), 0, false, unit.referencedFiles);
         });
 
-        compiler.setErrorOutput(io.stderr);
-        if(setting.emitComments){
-            compiler.emitCommentsToOutput();
-        }
-        units.forEach(function (unit) {
-            try{
-                if (!unit.code) {
-                    unit.code = grunt.file.read(unit.fileName);
-                }
-                compiler.addUnit(unit.code, unit.fileName, false);
-            }catch(err){
-                compiler.errorReporter.hasErrors = true;
-                io.stderr.WriteLine(err.message);
-            }
-        });
-        compiler.typeCheck();
-        if(compiler.errorReporter.hasErrors){
-            return false;
-        }
-        compiler.emit(io);
+        compiler.pullTypeCheck();
 
-        compiler.emitDeclarations();
-        if(compiler.errorReporter.hasErrors){
-            return false;
-        }
+        var emitterIOHost = {
+            createFile: function (fileName, useUTF8) {
+                return io.createFile(fileName, useUTF8);
+            },
+            directoryExists: io.directoryExists,
+            fileExists: io.fileExists,
+            resolvePath: io.resolvePath
+        };
+        var inputOutput = new TypeScript.StringHashTable();
+        var mapInputToOutput = function (inputFile, outputFile) {
+            inputOutput.addOrUpdate(inputFile, outputFile);
+        };
+
+        compiler.emitAll(emitterIOHost, mapInputToOutput);
+
+        //var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
+        compiler.emitAllDeclarations();
 
         var result = {js:[], m:[], d:[], other:[]};
         io.getCreatedFiles().forEach(function (item) {

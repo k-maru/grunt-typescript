@@ -1,3 +1,3 @@
-module Simple2 {
+declare module Simple2 {
     function main(): string;
 }

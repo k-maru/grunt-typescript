@@ -77,6 +77,10 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
+//            , error: {
+//                src: "test/fixtures/error.ts"
+//            }
+
         },
         nodeunit:{
             tests:["test/test.js"]
