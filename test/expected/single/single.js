@@ -5,6 +5,7 @@ var Single2;
     }
     Single2.main = main;
 })(Single2 || (Single2 = {}));
+
 Single2.main();
 var Single1;
 (function (Single1) {
@@ -13,4 +14,5 @@ var Single1;
     }
     Single1.main = main;
 })(Single1 || (Single1 = {}));
+
 Single1.main();

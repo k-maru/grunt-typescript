@@ -5,4 +5,5 @@ var Multi2;
     }
     Multi2.main = main;
 })(Multi2 || (Multi2 = {}));
+
 Multi2.main();

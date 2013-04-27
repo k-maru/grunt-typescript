@@ -5,5 +5,6 @@ var Simple3;
     }
     Simple3.main = main;
 })(Simple3 || (Simple3 = {}));
+
 Simple3.main();
 //@ sourceMappingURL=sourcemap.js.map
