@@ -6,6 +6,8 @@
 
 module.exports = function (grunt) {
 
+    "use strict";
+
     var path = require('path'),
         fs = require('fs'),
         vm = require('vm'),
@@ -228,7 +230,15 @@ module.exports = function (grunt) {
             if (options.comments) {
                 setting.emitComments = true;
             }
+
+            //0.9 disallowbool
+            if(options.disallowBool){
+                setting.disallowBool = true;
+            }
         }
+
+
+
         if (outputOne) {
             destPath = path.resolve(currentPath, destPath);
             setting.outputOption = destPath;
