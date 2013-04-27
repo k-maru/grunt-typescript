@@ -30,7 +30,6 @@ module.exports = function (grunt) {
                 dirName:path.dirname,
 
                 createFile:function (writeFile, useUTF8) {
-                    //console.log("writeFile = " + writeFile + ", destPath = " + destPath + ", basePath = " + basePath + ", output one = " + outputOne);
                     var source = "";
                     return {
                         Write:function (str) {
@@ -93,11 +92,18 @@ module.exports = function (grunt) {
                 fileExists:function (path) {
                     return fs.existsSync(path);
                 },
+                stdout:{
+                    WriteLine: function(str){
+                        grunt.log.writeln(str);
+                    }
+                },
                 stderr:{
                     Write:function (str) {
+                        //grunt.log.error(str);
                         grunt.log.error(str);
                     },
                     WriteLine:function (str) {
+                        //grunt.log.error(str);
                         grunt.log.error(str);
                     },
                     Close:function () {
@@ -123,6 +129,28 @@ module.exports = function (grunt) {
                 return "1 file";
             }
             return n + " files";
+        },
+        getErrorReporter = function(io, sourceUnits){
+            return {
+                addDiagnostic: function(diagnostic){
+                    var pre = "";
+                    if (diagnostic.fileName()) {
+                        var diagFileName = diagnostic.fileName().toUpperCase(),
+                            targetUnit = sourceUnits.filter(function(unit){
+                                return unit.path.toUpperCase() === diagFileName;
+                            })[0];
+                        if(!targetUnit){
+                            targetUnit = new TypeScript.SourceUnit(diagnostic.fileName(), io.readFile(diagnostic.fileName()));
+                        }
+
+                        var lineMap = new TypeScript.LineMap(targetUnit.getLineStartPositions(), targetUnit.getLength());
+                        var lineCol = { line: -1, character: -1 };
+                        lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
+                        pre = diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character + 1) + "): ";
+                    }
+                    io.stderr.WriteLine(pre + diagnostic.message());
+                }
+            }
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -168,10 +196,11 @@ module.exports = function (grunt) {
         var code = grunt.file.read(typeScriptPath);
         vm.runInThisContext(code, typeScriptPath);
 
-        var setting = new TypeScript.CompilationSettings();
-        var io = gruntIO(currentPath, destPath, basePath, setting, outputOne);
-        var env = new TypeScript.CompilationEnvironment(setting, io);
-        var resolver = new TypeScript.CodeResolver(env);
+        var setting = new TypeScript.CompilationSettings(),
+            sourceUnits = [],
+            io = gruntIO(currentPath, destPath, basePath, setting, outputOne),
+            errorReporter = getErrorReporter(io, sourceUnits),
+            env = new TypeScript.CompilationEnvironment(setting, io);
 
         if (options) {
             if (options.target) {
@@ -182,28 +211,19 @@ module.exports = function (grunt) {
                     setting.codeGenTarget = 1; //TypeScript.CodeGenTarget.ES5;
                 }
             }
-//            if (options.style) {
-//                setting.setStyleOptions(options.style);
-//            }
             if (options.module) {
                 var module = options.module.toLowerCase();
                 if (module === 'commonjs' || module === 'node') {
-                    //TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
                     setting.moduleGenTarget = 0;
                 } else if (module === 'amd') {
-                    //TypeScript.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
                     setting.moduleGenTarget = 1;
                 }
             }
             if (options.sourcemap) {
                 setting.mapSourceFiles = options.sourcemap;
             }
-            //if (options.declaration_file || options.declaration) {
             if (options.declaration) {
                 setting.generateDeclarationFiles = true;
-//                if (options.declaration_file) {
-//                    grunt.log.writeln("'declaration_file' option now obsolate. use 'declaration' option".yellow);
-//                }
             }
             if (options.comments) {
                 setting.emitComments = true;
@@ -214,38 +234,45 @@ module.exports = function (grunt) {
             setting.outputOption = destPath;
         }
 
-        var units = [
-            {
-                fileName:libDPath,
-                code:grunt.file.read(libDPath)
-            }
-        ];
         var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
-            //new TypeScript.TypeScriptCompiler(io.stderr, new TypeScript.NullLogger(), setting),
-            resolutionDispatcher = {
-                postResolutionError:function (errorFile, line, col, errorMessage) {
-                    io.stderr.Write(errorFile + "(" + line + "," + col + ") " + (errorMessage == "" ? "" : ": " + errorMessage));
-                    compiler.errorReporter.hasErrors = true;
-                },
-                postResolution:function (path, code) {
-                    if (!units.some(function (u) {
-                        return u.fileName === path;
-                    })) {
-                        units.push({fileName:path, code:code.content});
-                    }
-                }
-            };
         var sources = [libDPath];
+        var hasError = false;
         sources.push.apply(sources, srces);
         sources.forEach(function(src){
+
             var unit = new TypeScript.SourceUnit(src, null);
             unit.content = grunt.file.read(src);
             unit.referencedFiles = TypeScript.getReferencedFiles(src, unit);
+            sourceUnits.push(unit);
 
             compiler.addSourceUnit(unit.path, TypeScript.ScriptSnapshot.fromString(unit.content), 0, false, unit.referencedFiles);
+
+            var syntacticDiagnostics = compiler.getSyntacticDiagnostics(unit.path);
+            compiler.reportDiagnostics(syntacticDiagnostics, errorReporter);
+
+            if(syntacticDiagnostics.length){
+                hasError = true;
+            }
         });
 
+        if(hasError){
+            return false;
+        }
+
         compiler.pullTypeCheck();
+
+        var fileNames = compiler.fileNameToDocument.getAllKeys();
+        for(var i = 0, n = fileNames.length; i < n; i++) {
+            var fileName = fileNames[i];
+            var semanticDiagnostics = compiler.getSemanticDiagnostics(fileName);
+            if (semanticDiagnostics.length > 0) {
+                hasError = true;
+                compiler.reportDiagnostics(semanticDiagnostics, errorReporter);
+            }
+        }
+        if(hasError){
+            return false;
+        }
 
         var emitterIOHost = {
             createFile: function (fileName, useUTF8) {
@@ -260,18 +287,18 @@ module.exports = function (grunt) {
             inputOutput.addOrUpdate(inputFile, outputFile);
         };
 
-        compiler.emitAll(emitterIOHost, mapInputToOutput);
+        var emitDiagnostics = compiler.emitAll(emitterIOHost, mapInputToOutput);
+        compiler.reportDiagnostics(emitDiagnostics, errorReporter);
 
-        //var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
-        compiler.emitAllDeclarations();
+        var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
+        compiler.reportDiagnostics(emitDeclarationsDiagnostics, errorReporter);
 
         var result = {js:[], m:[], d:[], other:[]};
         io.getCreatedFiles().forEach(function (item) {
-            var file = item.substr(currentPath.length + 1);
-            if (/\.js$/.test(file)) result.js.push(file);
-            else if (/\.js\.map$/.test(file)) result.m.push(file);
-            else if (/\.d\.ts$/.test(file)) result.d.push(file);
-            else result.other.push(file);
+            if (/\.js$/.test(item)) result.js.push(item);
+            else if (/\.js\.map$/.test(item)) result.m.push(item);
+            else if (/\.d\.ts$/.test(item)) result.d.push(item);
+            else result.other.push(item);
         });
         var resultMessage = "js: " + pluralizeFile(result.js.length)
             + ", map: " + pluralizeFile(result.m.length)

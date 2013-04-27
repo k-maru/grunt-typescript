@@ -77,9 +77,12 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
-//            , error: {
-//                src: "test/fixtures/error.ts"
-//            }
+            , errortypescheck: {
+                src: "test/fixtures/error-typecheck.ts"
+            },
+            errorsyntax:{
+                src: "test/fixtures/error-syntax.ts"
+            }
 
         },
         nodeunit:{
