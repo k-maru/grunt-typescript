@@ -201,8 +201,7 @@ module.exports = function (grunt) {
         var setting = new TypeScript.CompilationSettings(),
             sourceUnits = [],
             io = gruntIO(currentPath, destPath, basePath, setting, outputOne),
-            errorReporter = getErrorReporter(io, sourceUnits),
-            env = new TypeScript.CompilationEnvironment(setting, io);
+            errorReporter = getErrorReporter(io, sourceUnits);
 
         if (options) {
             if (options.target) {
@@ -232,12 +231,10 @@ module.exports = function (grunt) {
             }
 
             //0.9 disallowbool
-            if(options.disallowBool){
+            if(options.disallowbool){
                 setting.disallowBool = true;
             }
         }
-
-
 
         if (outputOne) {
             destPath = path.resolve(currentPath, destPath);
@@ -245,7 +242,7 @@ module.exports = function (grunt) {
         }
 
         var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
-        var sources = [libDPath];
+        var sources = options.nolib ? [] : [libDPath];
         var hasError = false;
         sources.push.apply(sources, srces);
         sources.forEach(function(src){

@@ -24,7 +24,7 @@ module.exports = function (grunt) {
             sourcemap:{
                 src:"test/fixtures/sourcemap.ts",
                 options:{
-                    sourcemap:true
+                    sourcemap: true
                 }
             },
             es5:{
@@ -77,7 +77,7 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
-//            , errortypescheck: {
+//            , errortypecheck: {
 //                src: "test/fixtures/error-typecheck.ts"
 //            }
 //            , errorsyntax:{

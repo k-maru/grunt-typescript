@@ -1,8 +1,12 @@
+mkdir test/expected/multi/dir -p
+mkdir test/expected/single
+
 node_modules/typescript/bin/tsc test/fixtures/simple.ts
-mv test/fixtures/simple.js test/expected/simple.js
+mv test/fixtures/simple.js test/expected/simple.js -f
 
 node_modules/typescript/bin/tsc test/fixtures/declaration.ts --declaration
 mv test/fixtures/declaration.js test/expected/declaration.js
+mv test/fixtures/declaration.d.ts test/expected/declaration.d.ts
 
 node_modules/typescript/bin/tsc test/fixtures/sourcemap.ts --sourcemap
 mv test/fixtures/sourcemap.js test/expected/sourcemap.js
