@@ -35,7 +35,7 @@ module.exports = function (grunt) {
                 options:{
                     base_path: "test/fixtures/",
                     sourcemap:true,
-                    sourcemapFullPath:true
+                    fullSourceMapPath:true
                 }
             },
             es5:{

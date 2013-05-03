@@ -141,7 +141,7 @@ module.exports = function (grunt) {
             return n + " files";
         },
         prepareSourceMapPath = function(currentPath, options, createdFiles){
-            var useFullPath = options.sourcemapFullPath;
+            var useFullPath = options.fullSourceMapPath;
 
             if(!options.sourcemap){
                 return;
@@ -241,8 +241,8 @@ module.exports = function (grunt) {
             if (options.sourcemap) {
                 setting.mapSourceFiles = options.sourcemap;
             }
-            if (outputOne && options.sourcemapFullPath) {
-                setting.emitFullSourceMapPath = options.sourcemapFullPath;
+            if (outputOne && options.fullSourceMapPath) {
+                setting.emitFullSourceMapPath = options.fullSourceMapPath;
             }
             if (options.declaration_file || options.declaration) {
                 setting.generateDeclarationFiles = true;
