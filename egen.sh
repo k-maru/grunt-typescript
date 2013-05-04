@@ -1,5 +1,6 @@
 mkdir test/expected/multi/dir -p
 mkdir test/expected/single
+mkdir test/expected/sourcemap
 
 node_modules/typescript/bin/tsc test/fixtures/simple.ts
 mv test/fixtures/simple.js test/expected/simple.js -f
@@ -8,9 +9,13 @@ node_modules/typescript/bin/tsc test/fixtures/declaration.ts --declaration
 mv test/fixtures/declaration.js test/expected/declaration.js
 mv test/fixtures/declaration.d.ts test/expected/declaration.d.ts
 
-node_modules/typescript/bin/tsc test/fixtures/sourcemap.ts --sourcemap
-mv test/fixtures/sourcemap.js test/expected/sourcemap.js
-mv test/fixtures/sourcemap.js.map test/expected/sourcemap.js.map
+node_modules/typescript/bin/tsc test/fixtures/sourcemap.ts --sourcemap --out test/fixtures/sourcemap
+mv test/fixtures/sourcemap/sourcemap.js test/expected/sourcemap/sourcemap.js
+mv test/fixtures/sourcemap/sourcemap.js.map test/expected/sourcemap/sourcemap.js.map
+
+node_modules/typescript/bin/tsc test/fixtures/sourcemap-fullpath.ts --sourcemap --fullSourceMapPath --out test/fixtures/sourcemap
+mv test/fixtures/sourcemap/sourcemap-fullpath.js test/expected/sourcemap/sourcemap-fullpath.js
+mv test/fixtures/sourcemap/sourcemap-fullpath.js.map test/expected/sourcemap/sourcemap-fullpath.js.map
 
 node_modules/typescript/bin/tsc test/fixtures/es5.ts --target ES5
 mv test/fixtures/es5.js test/expected/es5.js

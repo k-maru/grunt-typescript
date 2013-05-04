@@ -8,9 +8,9 @@ module.exports = function (grunt) {
 
     "use strict";
 
-    var path = require('path'),
-        fs = require('fs'),
-        vm = require('vm'),
+    var _path = require('path'),
+        _fs = require('fs'),
+        _vm = require('vm'),
         gruntIO = function (currentPath, destPath, basePath, compSetting, outputOne) {
             var createdFiles = [];
 
@@ -19,7 +19,7 @@ module.exports = function (grunt) {
                     return createdFiles;
                 },
 
-                resolvePath:path.resolve,
+                resolvePath: _path.resolve,
                 readFile:function (file){
                     var content = grunt.file.read(file);
                     // strip UTF BOM
@@ -29,42 +29,58 @@ module.exports = function (grunt) {
 
                     return content;
                 },
-                dirName:path.dirname,
+                dirName:_path.dirname,
 
                 createFile:function (writeFile, useUTF8) {
-                    var source = "";
+                    var code = "";
                     return {
                         Write:function (str) {
-                            source += str;
+                            code += str;
                         },
                         WriteLine:function (str) {
-                            source += str + grunt.util.linefeed;
+                            code += str + grunt.util.linefeed;
                         },
                         Close:function () {
-                            if (source.trim().length < 1) {
+                            var created = (function(){
+                                var source, type;
+                                if (/\.js$/.test(writeFile)) {
+                                    source = writeFile.substr(0, writeFile.length - 3) + ".ts";
+                                    type = "js";
+                                }
+                                else if (/\.js\.map$/.test(writeFile)) {
+                                    source = writeFile.substr(0, writeFile.length - 7) + ".ts";
+                                    type = "map";
+                                }
+                                else if (/\.d\.ts$/.test(writeFile)) {
+                                    source = writeFile.substr(0, writeFile.length - 5) + ".ts";
+                                    type = "declaration";
+                                }
+                                if(outputOne){
+                                    source = "";
+                                }
+                                return {
+                                    source: source,
+                                    type: type
+                                };
+                            })();
+                            if (code.trim().length < 1) {
                                 return;
                             }
-                            if(!outputOne){
-                                if(basePath){
-                                    writeFile = writeFile.substr(basePath.length);
-                                    if(writeFile.charAt(0) === "/" || writeFile.charAt(0) === "\\"){
-                                        writeFile = writeFile.substr(1);
-                                    }
-                                }
-                                if(destPath){
-                                    writeFile = path.join(destPath, writeFile);
-                                }
+                            if (!outputOne) {
+                                var g = _path.join(currentPath, basePath || "");
+                                writeFile = writeFile.substr(g.length);
+                                writeFile = _path.join(currentPath, destPath ? destPath.toString() : '', writeFile);
                             }
-
-                            grunt.file.write(writeFile, source);
-                            createdFiles.push(writeFile);
+                            grunt.file.write(writeFile, code);
+                            created.dest = writeFile;
+                            createdFiles.push(created);
                         }
                     }
                 },
                 findFile: function (rootPath, partialFilePath) {
-                    var file = path.join(rootPath, partialFilePath);
+                    var file = _path.join(rootPath, partialFilePath);
                     while(true) {
-                        if(fs.existsSync(file)) {
+                        if(_fs.existsSync(file)) {
                             try  {
                                 var content = grunt.file.read(file);
                                 // strip UTF BOM
@@ -78,21 +94,21 @@ module.exports = function (grunt) {
                             } catch (err) {
                             }
                         } else {
-                            var parentPath = path.resolve(rootPath, "..");
+                            var parentPath = _path.resolve(rootPath, "..");
                             if(rootPath === parentPath) {
                                 return null;
                             } else {
                                 rootPath = parentPath;
-                                file = path.resolve(rootPath, partialFilePath);
+                                file = _path.resolve(rootPath, partialFilePath);
                             }
                         }
                     }
                 },
                 directoryExists:function (path) {
-                    return fs.existsSync(path) && fs.lstatSync(path).isDirectory();
+                    return _fs.existsSync(path) && _fs.lstatSync(path).isDirectory();
                 },
                 fileExists:function (path) {
-                    return fs.existsSync(path);
+                    return _fs.existsSync(path);
                 },
                 stdout:{
                     WriteLine: function(str){
@@ -114,13 +130,13 @@ module.exports = function (grunt) {
             }
         },
         resolveTypeScriptBinPath = function (currentPath, depth) {
-            var targetPath = path.resolve(__dirname,
+            var targetPath = _path.resolve(__dirname,
                 (new Array(depth + 1)).join("../../"),
                 "../node_modules/typescript/bin");
-            if (path.resolve(currentPath, "node_modules/typescript/bin").length > targetPath.length) {
+            if (_path.resolve(currentPath, "node_modules/typescript/bin").length > targetPath.length) {
                 return;
             }
-            if (fs.existsSync(path.resolve(targetPath, "typescript.js"))) {
+            if (_fs.existsSync(_path.resolve(targetPath, "typescript.js"))) {
                 return targetPath;
             }
 
@@ -153,6 +169,35 @@ module.exports = function (grunt) {
                     io.stderr.WriteLine(pre + diagnostic.message());
                 }
             }
+        },
+        prepareSourceMapPath = function(currentPath, options, createdFiles){
+            var useFullPath = options.fullSourceMapPath;
+
+            if(!options.sourcemap){
+                return;
+            }
+
+            createdFiles.filter(function(item){
+                return item.type === "map" || (useFullPath && item.type == "js");
+            }).forEach(function(item){
+                var mapObj, lines, sourceMapLine;
+                if(item.type === "map"){
+                    mapObj = JSON.parse(grunt.file.read(item.dest));
+                    mapObj.sources.length = 0;
+                    mapObj.sources.push(_path.relative(_path.dirname(item.dest), item.source).replace(/\\/g, "/"));
+                    if(useFullPath){
+                        mapObj.file = "file:///" + (item.dest.substr(0, item.dest.length - 6) + "js").replace(/\\/g, "/");
+                    }
+                    grunt.file.write(item.dest, JSON.stringify(mapObj))
+                }else if(useFullPath && item.type === "js"){
+                    lines = grunt.file.read(item.dest).split(grunt.util.linefeed);
+                    sourceMapLine = lines[lines.length - 2];
+                    if(/^\/\/@ sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)){
+                        lines[lines.length - 2] = "//@ sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
+                        grunt.file.write(item.dest, lines.join(grunt.util.linefeed));
+                    }
+                }
+            });
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -183,12 +228,12 @@ module.exports = function (grunt) {
     });
 
     var compile = function (srces, destPath, options, extension) {
-        var currentPath = path.resolve("."),
+        var currentPath = _path.resolve("."),
             basePath = options.base_path,
             typeScriptBinPath = resolveTypeScriptBinPath(currentPath, 0),
-            typeScriptPath = path.resolve(typeScriptBinPath, "typescript.js"),
-            libDPath = path.resolve(typeScriptBinPath, "lib.d.ts"),
-            outputOne = !!destPath && path.extname(destPath) === ".js";
+            typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
+            libDPath = _path.resolve(typeScriptBinPath, "lib.d.ts"),
+            outputOne = !!destPath && _path.extname(destPath) === ".js";
 
         if (!typeScriptBinPath) {
             grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
@@ -196,7 +241,7 @@ module.exports = function (grunt) {
         }
 
         var code = grunt.file.read(typeScriptPath);
-        vm.runInThisContext(code, typeScriptPath);
+        _vm.runInThisContext(code, typeScriptPath);
 
         var setting = new TypeScript.CompilationSettings(),
             sourceUnits = [],
@@ -223,13 +268,18 @@ module.exports = function (grunt) {
             if (options.sourcemap) {
                 setting.mapSourceFiles = options.sourcemap;
             }
+            if (outputOne && options.fullSourceMapPath) {
+                setting.emitFullSourceMapPath = options.fullSourceMapPath;
+            }
             if (options.declaration) {
                 setting.generateDeclarationFiles = true;
+            }
+            if (outputOne && options.fullSourceMapPath) {
+                setting.emitFullSourceMapPath = options.fullSourceMapPath;
             }
             if (options.comments) {
                 setting.emitComments = true;
             }
-
             //0.9 disallowbool
             if(options.disallowbool){
                 setting.disallowBool = true;
@@ -237,19 +287,26 @@ module.exports = function (grunt) {
         }
 
         if (outputOne) {
-            destPath = path.resolve(currentPath, destPath);
+            destPath = _path.resolve(currentPath, destPath);
             setting.outputOption = destPath;
         }
 
         var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
+
         var sources = options.nolib ? [] : [libDPath];
         var hasError = false;
         sources.push.apply(sources, srces);
         sources.forEach(function(src){
+            var fullPath = _path.resolve(currentPath, src);
 
-            var unit = new TypeScript.SourceUnit(src, null);
+            var unit = new TypeScript.SourceUnit(fullPath, null);
+            
             unit.content = grunt.file.read(src);
-            unit.referencedFiles = TypeScript.getReferencedFiles(src, unit);
+            if(options.declaration){
+                //unit.referencedFiles = TypeScript.getReferencedFiles(src, unit);
+                unit.referencedFiles = TypeScript.preProcessFile(fullPath,  unit, undefined, false);
+            }
+
             sourceUnits.push(unit);
 
             compiler.addSourceUnit(unit.path, TypeScript.ScriptSnapshot.fromString(unit.content), 0, false, unit.referencedFiles);
@@ -281,7 +338,7 @@ module.exports = function (grunt) {
             return false;
         }
 
-        var emitterIOHost = {
+       var emitterIOHost = {
             createFile: function (fileName, useUTF8) {
                 return io.createFile(fileName, useUTF8);
             },
@@ -300,13 +357,18 @@ module.exports = function (grunt) {
         var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
         compiler.reportDiagnostics(emitDeclarationsDiagnostics, errorReporter);
 
+        if(!outputOne){
+            prepareSourceMapPath(currentPath, options, io.getCreatedFiles());
+        }
+        
         var result = {js:[], m:[], d:[], other:[]};
         io.getCreatedFiles().forEach(function (item) {
-            if (/\.js$/.test(item)) result.js.push(item);
-            else if (/\.js\.map$/.test(item)) result.m.push(item);
-            else if (/\.d\.ts$/.test(item)) result.d.push(item);
-            else result.other.push(item);
+            if (item.type === "js") result.js.push(item.dest);
+            else if (item.type === "map") result.m.push(item.dest);
+            else if (item.type === "declaration") result.d.push(item.dest);
+            else result.other.push(item.dest);
         });
+        
         var resultMessage = "js: " + pluralizeFile(result.js.length)
             + ", map: " + pluralizeFile(result.m.length)
             + ", declaration: " + pluralizeFile(result.d.length);

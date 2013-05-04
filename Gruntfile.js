@@ -5,8 +5,8 @@ module.exports = function (grunt) {
         clean:{
             test:[
                 "test/fixtures/**/*.js",
-                "test/fixtures/*.js.map",
-                "test/fixtures/*.d.ts",
+                "test/fixtures/**/*.js.map",
+                "test/fixtures/**/*.d.ts",
                 "test/temp/**/*.*",
                 "test/temp"
             ]
@@ -23,8 +23,19 @@ module.exports = function (grunt) {
             },
             sourcemap:{
                 src:"test/fixtures/sourcemap.ts",
+                dest:"test/fixtures/sourcemap/",
                 options:{
-                    sourcemap: true
+                    base_path: "test/fixtures/",
+                    sourcemap:true
+                }
+            },
+            "sourcemap-fullpath":{
+                src:"test/fixtures/sourcemap-fullpath.ts",
+                dest:"test/fixtures/sourcemap/",
+                options:{
+                    base_path: "test/fixtures/",
+                    sourcemap:true,
+                    fullSourceMapPath:true
                 }
             },
             es5:{
@@ -86,10 +97,9 @@ module.exports = function (grunt) {
 //            , errorbool: {
 //                src: "test/fixtures/error-bool.ts",
 //                options: {
-//                    disallowBool: true
+//                    disallowbool: true
 //                }
 //            }
-
         },
         nodeunit:{
             tests:["test/test.js"]

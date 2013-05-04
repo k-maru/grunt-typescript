@@ -1,5 +1,6 @@
 var grunt = require("grunt");
 var fs = require("fs");
+var path = require("path");
 
 module.exports.typescript = {
     simple:function (test) {
@@ -33,13 +34,32 @@ module.exports.typescript = {
 
         test.expect(2);
 
-        var actual = grunt.file.read("test/fixtures/sourcemap.js");
-        var expected = grunt.file.read("test/expected/sourcemap.js");
-        test.equal(expected, actual);
+        var actual = grunt.file.read("test/fixtures/sourcemap/sourcemap.js");
+        var expected = grunt.file.read("test/expected/sourcemap/sourcemap.js");
 
-        actual = grunt.file.read("test/fixtures/sourcemap.js.map");
-        expected = grunt.file.read("test/expected/sourcemap.js.map");
-        test.equal(expected, actual);
+        test.equal(expected, actual, 'incorrect output javascript');
+
+        actual = grunt.file.read("test/fixtures/sourcemap/sourcemap.js.map");
+        expected = grunt.file.read("test/expected/sourcemap/sourcemap.js.map");
+
+        test.equal(expected, actual, 'incorrect sourcemap');
+
+        test.done();
+    },
+    "sourcemap-fullpath":function(test) {
+        "use strict";
+
+        test.expect(2);
+
+        var actual = grunt.file.read("test/fixtures/sourcemap/sourcemap-fullpath.js");
+        var expected = grunt.file.read("test/expected/sourcemap/sourcemap-fullpath.js");
+
+        test.equal(expected, actual, 'incorrect output javascript');
+
+        actual = grunt.file.read("test/fixtures/sourcemap/sourcemap-fullpath.js.map");
+        expected = grunt.file.read("test/expected/sourcemap/sourcemap-fullpath.js.map");
+
+        test.equal(expected, actual, 'incorrect sourcemap');
 
         test.done();
     },
