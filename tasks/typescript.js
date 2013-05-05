@@ -1,6 +1,6 @@
 /*
  * grunt-typescript
- * Copyright 2012 Kazuhide Maruyama
+ * Copyright 2013 Kazuhide Maruyama
  * Licensed under the MIT license.
  */
 
@@ -129,19 +129,19 @@ module.exports = function (grunt) {
                 }
             }
         },
-        resolveTypeScriptBinPath = function (currentPath, depth) {
-            var targetPath = _path.resolve(__dirname,
-                (new Array(depth + 1)).join("../../"),
-                "../node_modules/typescript/bin");
-            if (_path.resolve(currentPath, "node_modules/typescript/bin").length > targetPath.length) {
-                return;
-            }
-            if (_fs.existsSync(_path.resolve(targetPath, "typescript.js"))) {
-                return targetPath;
-            }
-
-            return resolveTypeScriptBinPath(currentPath, ++depth);
-        },
+//        resolveTypeScriptBinPath = function (currentPath, depth) {
+//            var targetPath = _path.resolve(__dirname,
+//                (new Array(depth + 1)).join("../../"),
+//                "../node_modules/typescript/bin");
+//            if (_path.resolve(currentPath, "node_modules/typescript/bin").length > targetPath.length) {
+//                return;
+//            }
+//            if (_fs.existsSync(_path.resolve(targetPath, "typescript.js"))) {
+//                return targetPath;
+//            }
+//            return resolveTypeScriptBinPath(currentPath, ++depth);
+//
+//        },
         pluralizeFile = function (n) {
             if (n === 1) {
                 return "1 file";
@@ -198,6 +198,64 @@ module.exports = function (grunt) {
                     }
                 }
             });
+        },
+        loadTypeScript = function(){
+            var typeScriptBinPath = _path.dirname(require.resolve("typescript")), //resolveTypeScriptBinPath(currentPath, 0),
+                typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
+                code;
+
+            if (!typeScriptBinPath) {
+                grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
+                return false;
+            }
+
+            code = grunt.file.read(typeScriptPath);
+            _vm.runInThisContext(code, typeScriptPath);
+
+            return typeScriptBinPath;
+        },
+        createCompilationSettings = function(options, outputOne){
+            var setting = new TypeScript.CompilationSettings(),
+                temp;
+
+            if (options) {
+                if (options.target) {
+                    temp = options.target.toLowerCase();
+                    if (temp === 'es3') {
+                        setting.codeGenTarget = 0; //TypeScript.CodeGenTarget.ES3;
+                    } else if (temp == 'es5') {
+                        setting.codeGenTarget = 1; //TypeScript.CodeGenTarget.ES5;
+                    }
+                }
+                if (options.module) {
+                    temp = options.module.toLowerCase();
+                    if (temp === 'commonjs' || temp === 'node') {
+                        setting.moduleGenTarget = 0;
+                    } else if (temp === 'amd') {
+                        setting.moduleGenTarget = 1;
+                    }
+                }
+                if (options.sourcemap) {
+                    setting.mapSourceFiles = options.sourcemap;
+                }
+                if (outputOne && options.fullSourceMapPath) {
+                    setting.emitFullSourceMapPath = options.fullSourceMapPath;
+                }
+                if (options.declaration) {
+                    setting.generateDeclarationFiles = true;
+                }
+                if (outputOne && options.fullSourceMapPath) {
+                    setting.emitFullSourceMapPath = options.fullSourceMapPath;
+                }
+                if (options.comments) {
+                    setting.emitComments = true;
+                }
+                //0.9 disallowbool
+                if(options.disallowbool){
+                    setting.disallowBool = true;
+                }
+            }
+            return setting;
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -227,78 +285,30 @@ module.exports = function (grunt) {
         }
     });
 
-    var compile = function (srces, destPath, options, extension) {
+    var compile = function (sources, destPath, options, extension) {
         var currentPath = _path.resolve("."),
             basePath = options.base_path,
-            typeScriptBinPath = resolveTypeScriptBinPath(currentPath, 0),
-            typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
-            libDPath = _path.resolve(typeScriptBinPath, "lib.d.ts"),
-            outputOne = !!destPath && _path.extname(destPath) === ".js";
-
-        if (!typeScriptBinPath) {
-            grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
-            return false;
-        }
-
-        var code = grunt.file.read(typeScriptPath);
-        _vm.runInThisContext(code, typeScriptPath);
-
-        var setting = new TypeScript.CompilationSettings(),
-            sourceUnits = [],
+            typeScriptBinPath = loadTypeScript(), // _path.dirname(require.resolve("typescript")), //resolveTypeScriptBinPath(currentPath, 0),
+            outputOne = !!destPath && _path.extname(destPath) === ".js",
+            setting = createCompilationSettings(options, outputOne),
             io = gruntIO(currentPath, destPath, basePath, setting, outputOne),
-            errorReporter = getErrorReporter(io, sourceUnits);
+            sourceUnits = [],
+            errorReporter = getErrorReporter(io, sourceUnits),
+            compiler, hasError;
 
-        if (options) {
-            if (options.target) {
-                var target = options.target.toLowerCase();
-                if (target === 'es3') {
-                    setting.codeGenTarget = 0; //TypeScript.CodeGenTarget.ES3;
-                } else if (target == 'es5') {
-                    setting.codeGenTarget = 1; //TypeScript.CodeGenTarget.ES5;
-                }
-            }
-            if (options.module) {
-                var module = options.module.toLowerCase();
-                if (module === 'commonjs' || module === 'node') {
-                    setting.moduleGenTarget = 0;
-                } else if (module === 'amd') {
-                    setting.moduleGenTarget = 1;
-                }
-            }
-            if (options.sourcemap) {
-                setting.mapSourceFiles = options.sourcemap;
-            }
-            if (outputOne && options.fullSourceMapPath) {
-                setting.emitFullSourceMapPath = options.fullSourceMapPath;
-            }
-            if (options.declaration) {
-                setting.generateDeclarationFiles = true;
-            }
-            if (outputOne && options.fullSourceMapPath) {
-                setting.emitFullSourceMapPath = options.fullSourceMapPath;
-            }
-            if (options.comments) {
-                setting.emitComments = true;
-            }
-            //0.9 disallowbool
-            if(options.disallowbool){
-                setting.disallowBool = true;
-            }
+        if(!options || !options.nolib){
+            sources.unshift(_path.resolve(typeScriptBinPath, "lib.d.ts"));
         }
-
         if (outputOne) {
             destPath = _path.resolve(currentPath, destPath);
             setting.outputOption = destPath;
         }
 
-        var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
+        compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), setting, null);
+        hasError = false;
 
-        var sources = options.nolib ? [] : [libDPath];
-        var hasError = false;
-        sources.push.apply(sources, srces);
         sources.forEach(function(src){
             var fullPath = _path.resolve(currentPath, src);
-
             var unit = new TypeScript.SourceUnit(fullPath, null);
             
             unit.content = grunt.file.read(src);
@@ -308,7 +318,6 @@ module.exports = function (grunt) {
             }
 
             sourceUnits.push(unit);
-
             compiler.addSourceUnit(unit.path, TypeScript.ScriptSnapshot.fromString(unit.content), 0, false, unit.referencedFiles);
 
             var syntacticDiagnostics = compiler.getSyntacticDiagnostics(unit.path);
