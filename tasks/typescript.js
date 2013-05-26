@@ -20,12 +20,19 @@ module.exports = function (grunt) {
 
                 resolvePath:path.resolve,
                 readFile:function (file){
-                    var content = fs.readFileSync(file, 'utf8');
-                    // strip UTF BOM
-                    if(content.charCodeAt(0) === 0xFEFF){
-                        content = content.slice(1);
+                    grunt.verbose.write('Reading ' + file + '...');
+                    try{
+                        var content = fs.readFileSync(file, 'utf8');
+                        // strip UTF BOM
+                        if(content.charCodeAt(0) === 0xFEFF){
+                            content = content.slice(1);
+                        }
+                        grunt.verbose.ok();
+                        return content;
+                    }catch(e){
+                        grunt.verbose.fail("CAN'T READ");
+                        throw e;
                     }
-                    return content;
                 },
                 dirName:path.dirname,
 
