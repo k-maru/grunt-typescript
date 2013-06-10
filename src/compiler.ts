@@ -209,9 +209,10 @@ module GruntTs{
         }
 
         private prepareSourceMapPath(options: any, createdFiles: GruntTs.CreatedFile[]){
+            //TODO: 現状改行はtsc内で\r\n固定。将来的に変わる可能性があるためバージョンアップに要注意
+            var newLine: string = "\r\n";
 
             //TODO: _path と ファイル読み書きは ioHost に移動
-
             var useFullPath = options.fullSourceMapPath;
 
             if(!options.sourcemap){
@@ -231,11 +232,13 @@ module GruntTs{
                     }
                     this.grunt.file.write(item.dest, JSON.stringify(mapObj))
                 }else if(useFullPath && item.type === GruntTs.CodeType.JS){
-                    lines = this.grunt.file.read(item.dest).split(this.grunt.util.linefeed);
+                    lines = this.grunt.file.read(item.dest).split(newLine);
+                    //TODO: 現状ソースマップのパスの後ろに空行が1行入ってファイルの終端になっているため2で固定
+                    //将来的に変わる可能性があるためバージョンアップに注意
                     sourceMapLine = lines[lines.length - 2];
                     if(/^\/\/@ sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)){
                         lines[lines.length - 2] = "//@ sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
-                        this.grunt.file.write(item.dest, lines.join(this.grunt.util.linefeed));
+                        this.grunt.file.write(item.dest, lines.join(newLine));
                     }
                 }
             });

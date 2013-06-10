@@ -361,6 +361,8 @@ var GruntTs;
 
         Compiler.prototype.prepareSourceMapPath = function (options, createdFiles) {
             var _this = this;
+            var newLine = "\r\n";
+
             var useFullPath = options.fullSourceMapPath;
 
             if (!options.sourcemap) {
@@ -380,11 +382,12 @@ var GruntTs;
                     }
                     _this.grunt.file.write(item.dest, JSON.stringify(mapObj));
                 } else if (useFullPath && item.type === GruntTs.CodeType.JS) {
-                    lines = _this.grunt.file.read(item.dest).split(_this.grunt.util.linefeed);
+                    lines = _this.grunt.file.read(item.dest).split(newLine);
+
                     sourceMapLine = lines[lines.length - 2];
                     if (/^\/\/@ sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)) {
                         lines[lines.length - 2] = "//@ sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
-                        _this.grunt.file.write(item.dest, lines.join(_this.grunt.util.linefeed));
+                        _this.grunt.file.write(item.dest, lines.join(newLine));
                     }
                 }
             });
