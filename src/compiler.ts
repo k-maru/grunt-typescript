@@ -107,6 +107,8 @@ module GruntTs{
                 this.prepareSourceMapPath(options, this.ioHost.getCreatedFiles());
             }
 
+            this.writeResult(this.ioHost.getCreatedFiles(), options);
+
             return true;
         }
 
@@ -279,6 +281,31 @@ module GruntTs{
                 if(options.disallowbool){
                     setting.disallowBool = true;
                 }
+            }
+        }
+
+
+        private writeResult(createdFiles: GruntTs.CreatedFile[], options: any){
+            var result = {js:[], m:[], d:[], other:[]},
+                resultMessage: string,
+                pluralizeFile = (n) => (n + " file") + ((n === 1) ? "" : "s");
+            createdFiles.forEach(function (item) {
+                if (item.type === GruntTs.CodeType.JS) result.js.push(item.dest);
+                else if (item.type === GruntTs.CodeType.Map) result.m.push(item.dest);
+                else if (item.type === GruntTs.CodeType.Declaration) result.d.push(item.dest);
+                else result.other.push(item.dest);
+            });
+
+            resultMessage = "js: " + pluralizeFile(result.js.length)
+                + ", map: " + pluralizeFile(result.m.length)
+                + ", declaration: " + pluralizeFile(result.d.length);
+            if (options.outputOne) {
+                if(result.js.length > 0){
+                    this.grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
+                }
+                this.grunt.log.writeln(resultMessage);
+            } else {
+                this.grunt.log.writeln(pluralizeFile(createdFiles.length).cyan + " created. " + resultMessage);
             }
         }
     }
