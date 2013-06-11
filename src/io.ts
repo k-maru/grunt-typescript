@@ -134,28 +134,23 @@ module GruntTs{
             this._createdFiles.push(created);
         }
 
-        findFile(rootPath, partialFilePath) {
-            var file = _path.join(rootPath, partialFilePath),
-                fileInfo,
-                parentPath;
+        findFile(rootPath: string, partialFilePath: string){
+            var path = rootPath + "/" + partialFilePath;
 
-            while(true) {
-                if(_fs.existsSync(file)) {
-                    try  {
-                        fileInfo = this.readFile(file);
-                        return {
-                            content: fileInfo.contents(),
-                            path: file
-                        };
-                    } catch (err) {
-                    }
-                } else {
-                    parentPath = _path.resolve(rootPath, "..");
-                    if(rootPath === parentPath) {
+            while (true) {
+                if (_fs.existsSync(path)) {
+                    return { fileInformation: this.readFile(path), path: path };
+                }
+                else {
+                    var parentPath = _path.resolve(rootPath, "..");
+
+                    // Node will just continue to repeat the root path, rather than return null
+                    if (rootPath === parentPath) {
                         return null;
-                    } else {
+                    }
+                    else {
                         rootPath = parentPath;
-                        file = _path.resolve(rootPath, partialFilePath);
+                        path = _path.resolve(rootPath, partialFilePath);
                     }
                 }
             }
@@ -171,6 +166,10 @@ module GruntTs{
 
         combine(left: string, right:string): string{
             return _path.join(left, right);
+        }
+
+        deleteFile(path: string): void{
+            //dummy
         }
     }
 

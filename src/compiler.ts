@@ -5,60 +5,139 @@ module GruntTs{
     declare var require: any;
     var _path = require("path");
 
-    class SourceFile {
-        private _scriptSnapshot: TypeScript.IScriptSnapshot;
-        private _byteOrderMark: ByteOrderMark;
+    class ErrorReporter {
+        private compilationEnvironment: TypeScript.CompilationEnvironment
+        public hasErrors: boolean;
 
-        constructor(scriptSnapshot: TypeScript.IScriptSnapshot, byteOrderMark: ByteOrderMark) {
-            this._scriptSnapshot = scriptSnapshot;
-            this._byteOrderMark = byteOrderMark;
+        constructor(public ioHost: GruntTs.GruntIO, compilationEnvironment: TypeScript.CompilationEnvironment) {
+            this.hasErrors = false;
+            this.setCompilationEnvironment(compilationEnvironment);
         }
 
-        public scriptSnapshot(): TypeScript.IScriptSnapshot {
-            return this._scriptSnapshot;
+        public addDiagnostic(diagnostic: TypeScript.IDiagnostic) {
+            this.hasErrors = true;
+
+            if (diagnostic.fileName()) {
+                var soruceUnit = this.compilationEnvironment.getSourceUnit(diagnostic.fileName());
+                if (!soruceUnit) {
+                    soruceUnit = new TypeScript.SourceUnit(diagnostic.fileName(), this.ioHost.readFile(diagnostic.fileName()));
+                }
+                var lineMap = new TypeScript.LineMap(soruceUnit.getLineStartPositions(), soruceUnit.getLength());
+                var lineCol = { line: -1, character: -1 };
+                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
+
+                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character+1) + "): ");
+            }
+
+            this.ioHost.stderr.WriteLine(diagnostic.message());
         }
 
-        public byteOrderMark(): ByteOrderMark {
-            return this._byteOrderMark;
+        public setCompilationEnvironment(compilationEnvironment: TypeScript.CompilationEnvironment): void {
+            this.compilationEnvironment = compilationEnvironment;
+        }
+
+        public reset() {
+            this.hasErrors = false;
         }
     }
 
-    export class Compiler{
-        private inputFiles: string[] = [];
-        private compilationSettings: TypeScript.CompilationSettings;
-        private resolvedFiles: TypeScript.IResolvedFile[] = [];
-        private inputFileNameToOutputFileName = new TypeScript.StringHashTable();
-        private fileNameToSourceFile = new TypeScript.StringHashTable();
-        private hasErrors: boolean = false;
-        private logger = new TypeScript.NullLogger();
-        private ioHost: GruntTs.GruntIO;
+    class CommandLineHost {
 
-        constructor(private grunt: any, private libDPath: string) {
+        public pathMap: any = {};
+        public resolvedPaths: any = {};
+
+        constructor(public compilationSettings: TypeScript.CompilationSettings, public errorReporter: ErrorReporter) {
+        }
+
+        public getPathIdentifier(path: string) {
+            return this.compilationSettings.useCaseSensitiveFileResolution ? path : path.toLocaleUpperCase();
+        }
+
+        public isResolved(path: string) {
+            return this.resolvedPaths[this.getPathIdentifier(this.pathMap[path])] != undefined;
+        }
+
+        public resolveCompilationEnvironment(preEnv: TypeScript.CompilationEnvironment,
+                                             resolver: TypeScript.ICodeResolver,
+                                             traceDependencies: boolean): TypeScript.CompilationEnvironment {
+            var resolvedEnv = new TypeScript.CompilationEnvironment(preEnv.compilationSettings, preEnv.ioHost);
+
+            var nCode = preEnv.code.length;
+            var path = "";
+
+            this.errorReporter.setCompilationEnvironment(resolvedEnv);
+
+            var resolutionDispatcher: TypeScript.IResolutionDispatcher = {
+                errorReporter: this.errorReporter,
+                postResolution: (path: string, code: TypeScript.IScriptSnapshot) => {
+                    var pathId = this.getPathIdentifier(path);
+                    if (!this.resolvedPaths[pathId]) {
+                        resolvedEnv.code.push(<TypeScript.SourceUnit>code);
+                        this.resolvedPaths[pathId] = true;
+                    }
+                }
+            };
+
+            for (var i = 0; i < nCode; i++) {
+                path = TypeScript.switchToForwardSlashes(preEnv.ioHost.resolvePath(preEnv.code[i].path));
+                this.pathMap[preEnv.code[i].path] = path;
+                resolver.resolveCode(path, "", false, resolutionDispatcher);
+            }
+
+            return resolvedEnv;
+        }
+    }
+
+
+    export class Compiler{
+        private compilationSettings: TypeScript.CompilationSettings;
+        private compilationEnvironment: TypeScript.CompilationEnvironment;
+        private resolvedEnvironment: TypeScript.CompilationEnvironment = null;
+        private hasResolveErrors: boolean = false;
+        private errorReporter: ErrorReporter = null;
+
+        constructor(private grunt: any, private libDPath: string, private ioHost: GruntTs.GruntIO) {
             this.compilationSettings = new TypeScript.CompilationSettings();
+            this.compilationEnvironment = new TypeScript.CompilationEnvironment(this.compilationSettings, this.ioHost);
+            this.errorReporter = new ErrorReporter(this.ioHost, this.compilationEnvironment);
         }
 
         compile(files: string[], dest: string, options: any): boolean {
             var anySyntacticErrors = false,
                 anySemanticErrors = false,
-                compiler;
-            this.inputFiles = files;
+                compiler,
+                self = this;
 
-            this.ioHost = new GruntTs.GruntIO(this.grunt, dest, options.base_path, options.outputOne);
             this.buildSettings(options);
+
             if (options.outputOne) {
                 dest = _path.resolve(this.ioHost.currentPath(), dest);
                 this.compilationSettings.outputOption = dest;
             }
 
-            this.resolve(!options.nolib);
-            compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings, null);
+            if(!options.nolib){
+                this.compilationEnvironment.code.push(
+                    new TypeScript.SourceUnit(this.ioHost.combine(this.libDPath, "lib.d.ts"), null));
+            }
 
-            this.resolvedFiles.forEach((resolvedFile) => {
-                var sourceFile = this.getSourceFile(resolvedFile.path);
-                compiler.addSourceUnit(resolvedFile.path, sourceFile.scriptSnapshot(), sourceFile.byteOrderMark(), /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
+            files.forEach((file) => {
+                this.compilationEnvironment.code.push(new TypeScript.SourceUnit(file, null));
+            });
 
-                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(resolvedFile.path);
-                compiler.reportDiagnostics(syntacticDiagnostics, this);
+            this.resolvedEnvironment = this.resolve();
+
+            compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), this.compilationSettings, null);
+
+            this.resolvedEnvironment.code.forEach((code) => {
+                code.fileInformation = this.ioHost.readFile(code.path);
+                if(this.compilationSettings.generateDeclarationFiles){
+                    code.referencedFiles = TypeScript.getReferencedFiles(code.path, code);
+                }
+                compiler.addSourceUnit(code.path, TypeScript.ScriptSnapshot.fromString(code.fileInformation.contents()),
+                    code.fileInformation.byteOrderMark(), /*version:*/ 0, /*isOpen:*/ false, code.referencedFiles);
+
+                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(code.path);
+                compiler.reportDiagnostics(syntacticDiagnostics, this.errorReporter);
 
                 if (syntacticDiagnostics.length > 0) {
                     anySyntacticErrors = true;
@@ -70,24 +149,31 @@ module GruntTs{
             }
 
             compiler.pullTypeCheck();
-            var fileNames = compiler.fileNameToDocument.getAllKeys();
-
-            for (var i = 0, n = fileNames.length; i < n; i++) {
-                var fileName = fileNames[i];
+            compiler.fileNameToDocument.getAllKeys().forEach((fileName) => {
                 var semanticDiagnostics = compiler.getSemanticDiagnostics(fileName);
                 if (semanticDiagnostics.length > 0) {
                     anySemanticErrors = true;
-                    compiler.reportDiagnostics(semanticDiagnostics, this);
+                    compiler.reportDiagnostics(semanticDiagnostics, this.errorReporter);
                 }
-            }
+            });
+
+            var emitterIOHost = {
+                writeFile: (fileName: string, contents: string, writeByteOrderMark: boolean) => {
+                    var path = this.ioHost.resolvePath(fileName);
+                    return this.ioHost.writeFile(path, contents, writeByteOrderMark);
+                },
+                directoryExists: this.ioHost.directoryExists,
+                fileExists: this.ioHost.fileExists,
+                resolvePath: this.ioHost.resolvePath
+            };
 
             var mapInputToOutput = (inputFile: string, outputFile: string): void => {
-                this.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
+                this.resolvedEnvironment.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
             };
 
             // TODO: if there are any emit diagnostics.  Don't proceed.
-            var emitDiagnostics = compiler.emitAll(this, mapInputToOutput);
-            compiler.reportDiagnostics(emitDiagnostics, this);
+            var emitDiagnostics = compiler.emitAll(emitterIOHost, mapInputToOutput);
+            compiler.reportDiagnostics(emitDiagnostics, this.errorReporter);
             if (emitDiagnostics.length > 0) {
                 return false;
             }
@@ -98,7 +184,7 @@ module GruntTs{
             }
 
             var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
-            compiler.reportDiagnostics(emitDeclarationsDiagnostics, this);
+            compiler.reportDiagnostics(emitDeclarationsDiagnostics, this.errorReporter);
             if (emitDeclarationsDiagnostics.length > 0) {
                 return false;
             }
@@ -112,100 +198,27 @@ module GruntTs{
             return true;
         }
 
-        addDiagnostic(diagnostic: TypeScript.IDiagnostic) {
-            this.hasErrors = true;
+        private resolve(){
+            var resolver = new TypeScript.CodeResolver(this.compilationEnvironment),
+                commandLineHost = new CommandLineHost(this.compilationSettings, this.errorReporter),
+                ret = commandLineHost.resolveCompilationEnvironment(this.compilationEnvironment, resolver, true);
 
-            if (diagnostic.fileName()) {
-                var scriptSnapshot = this.getScriptSnapshot(diagnostic.fileName());
-                var lineMap = new TypeScript.LineMap(scriptSnapshot.getLineStartPositions(), scriptSnapshot.getLength());
-                var lineCol = { line: -1, character: -1 };
-                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
+            this.compilationEnvironment.code.forEach((code) => {
+                var path: string;
+                if(!commandLineHost.isResolved(code.path)){
+                   path = code.path;
+                   if (!TypeScript.isTSFile(path) && !TypeScript.isDTSFile(path)) {
+                       this.errorReporter.addDiagnostic(
+                           new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Unknown_extension_for_file___0__Only__ts_and_d_ts_extensions_are_allowed, [path]));
+                   }
+                   else {
+                       this.errorReporter.addDiagnostic(
+                           new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Could_not_find_file___0_, [path]));
+                   }
+               }
+            });
 
-                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character + 1) + "): ");
-            }
-
-            this.ioHost.stderr.WriteLine(diagnostic.message());
-        }
-
-        getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
-            return this.getSourceFile(fileName).scriptSnapshot();
-        }
-
-        getParentDirectory(path: string): string{
-            return this.ioHost.dirName(path);
-        }
-
-        resolveRelativePath(path: string, directory: string): string {
-            var unQuotedPath = TypeScript.stripQuotes(path);
-            var normalizedPath;
-
-            if (TypeScript.isRooted(unQuotedPath) || !directory) {
-                normalizedPath = unQuotedPath;
-            } else {
-                normalizedPath = this.ioHost.combine(directory, unQuotedPath);
-            }
-
-            normalizedPath = this.ioHost.resolvePath(normalizedPath);
-
-            normalizedPath = TypeScript.switchToForwardSlashes(normalizedPath);
-
-            return normalizedPath;
-        }
-
-        fileExists(path: string): boolean {
-            return this.ioHost.fileExists(path);
-        }
-
-        directoryExists(path: string): boolean {
-            return this.ioHost.directoryExists(path);
-        }
-
-        writeFile(fileName: string, contents: string, writeByteOrderMark: boolean): void {
-            this.ioHost.writeFile(fileName, contents, writeByteOrderMark);
-        }
-
-        resolvePath(path: string): string {
-            return this.ioHost.resolvePath(path);
-        }
-
-        private getSourceFile(fileName: string): SourceFile {
-            var sourceFile = this.fileNameToSourceFile.lookup(fileName);
-            if (!sourceFile) {
-                // Attempt to read the file
-                var fileInformation: FileInformation;
-
-                try {
-                    fileInformation = this.ioHost.readFile(fileName);
-                }
-                catch (e) {
-                    this.addDiagnostic(new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Cannot_read_file__0__1, [fileName, e.message]));
-                    fileInformation = new FileInformation("", ByteOrderMark.None);
-                }
-
-                var snapshot = TypeScript.ScriptSnapshot.fromString(fileInformation.contents());
-                var sourceFile = new SourceFile(snapshot, fileInformation.byteOrderMark());
-                this.fileNameToSourceFile.add(fileName, sourceFile);
-            }
-
-            return sourceFile;
-        }
-
-        private resolve(useDefaultLib: boolean){
-            var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings),
-                resolvedFiles: TypeScript.IResolvedFile[] = resolutionResults.resolvedFiles,
-                i: number = 0, l: number = resolutionResults.diagnostics.length;
-
-            for(; i < l; i++){
-                this.addDiagnostic(resolutionResults.diagnostics[i]);
-            }
-            if(useDefaultLib){
-                resolvedFiles = [{
-                    path: this.ioHost.combine(this.libDPath, "lib.d.ts"),
-                    referencedFiles: [],
-                    importedFiles: []
-                }].concat(resolvedFiles);
-            }
-            this.resolvedFiles = resolvedFiles;
+            return ret;
         }
 
         private prepareSourceMapPath(options: any, createdFiles: GruntTs.CreatedFile[]){
@@ -304,11 +317,11 @@ module GruntTs{
                 + ", declaration: " + pluralizeFile(result.d.length);
             if (options.outputOne) {
                 if(result.js.length > 0){
-                    this.grunt.log.writeln("File " + (result.js[0]).cyan + " created.");
+                    this.grunt.log.writeln("File " + (result.js[0])["cyan"] + " created.");
                 }
                 this.grunt.log.writeln(resultMessage);
             } else {
-                this.grunt.log.writeln(pluralizeFile(createdFiles.length).cyan + " created. " + resultMessage);
+                this.grunt.log.writeln(pluralizeFile(createdFiles.length)["cyan"] + " created. " + resultMessage);
             }
         }
     }
