@@ -11,9 +11,12 @@ var GruntTs;
     var _fs = require('fs');
     var _path = require('path');
 
+    function writeError(str) {
+        console.log('>> '.red + str.trim().replace(/\n/g, '\n>> '.red));
+    }
+
     var GruntIO = (function () {
         function GruntIO(grunt, destPath, basePath, outputOne) {
-            var _this = this;
             this.grunt = grunt;
             this.destPath = destPath;
             this.basePath = basePath;
@@ -22,10 +25,10 @@ var GruntTs;
             var self = this;
             this.stderr = {
                 Write: function (str) {
-                    return _this.grunt.log.error(str);
+                    return writeError(str);
                 },
                 WriteLine: function (str) {
-                    return self.grunt.log.error(str);
+                    return writeError(str);
                 },
                 Close: function () {
                 }
@@ -250,7 +253,6 @@ var GruntTs;
             this.libDPath = libDPath;
             this.ioHost = ioHost;
             this.resolvedEnvironment = null;
-            this.hasResolveErrors = false;
             this.errorReporter = null;
             this.compilationSettings = new TypeScript.CompilationSettings();
             this.compilationEnvironment = new TypeScript.CompilationEnvironment(this.compilationSettings, this.ioHost);
@@ -328,7 +330,9 @@ var GruntTs;
             }
 
             if (anySemanticErrors) {
-                return false;
+                if (!options || Object.prototype.toString.call(options.ignoreTypeCheck) !== "[object Boolean]" || !options.ignoreTypeCheck) {
+                    return false;
+                }
             }
 
             var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
@@ -483,7 +487,7 @@ module.exports = function (grunt) {
     };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var self = this, typescriptBinPath = loadTypeScript();
+        var self = this, typescriptBinPath = loadTypeScript(), hasError = false;
 
         this.files.forEach(function (file) {
             var dest = file.dest, options = self.options(), files = [];
@@ -497,9 +501,13 @@ module.exports = function (grunt) {
 
             options.outputOne = !!dest && _path.extname(dest) === ".js";
 
-            (new GruntTs.Compiler(grunt, typescriptBinPath, new GruntTs.GruntIO(grunt, dest, options.base_path, options.outputOne))).compile(files, dest, options);
+            if (!(new GruntTs.Compiler(grunt, typescriptBinPath, new GruntTs.GruntIO(grunt, dest, options.base_path, options.outputOne))).compile(files, dest, options)) {
+                hasError = true;
+            }
         });
-
+        if (hasError) {
+            return false;
+        }
         if (grunt.task.current.errorCount) {
             return false;
         }

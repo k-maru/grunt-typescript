@@ -998,7 +998,6 @@ declare module TypeScript {
         static collapseChangesAcrossMultipleVersions(changes: TextChangeRange[]): TextChangeRange;
     }
 }
-declare var JSON2: any;
 declare module TypeScript {
     class CharacterInfo {
         static isDecimalDigit(c: number): boolean;
@@ -5005,27 +5004,36 @@ declare module TypeScript {
         public isPrototypeOf;
         constructor();
     }
-    interface IHashTable {
+    interface IHashTable<T> {
         getAllKeys(): string[];
-        add(key: string, data): boolean;
-        addOrUpdate(key: string, data): boolean;
-        map(fn: (k: string, value: any, context: any) => void, context: any): void;
-        every(fn: (k: string, value: any, context: any) => void, context: any): boolean;
-        some(fn: (k: string, value: any, context: any) => void, context: any): boolean;
+        add(key: string, data: T): boolean;
+        addOrUpdate(key: string, data: T): boolean;
+        map(fn: (k: string, value: T, context: any) => void, context: any): void;
+        every(fn: (k: string, value: T, context: any) => void, context: any): boolean;
+        some(fn: (k: string, value: T, context: any) => void, context: any): boolean;
         count(): number;
-        lookup(key: string): any;
+        lookup(key: string): T;
     }
-    class StringHashTable implements IHashTable {
-        public itemCount: number;
-        public table: any;
+    class StringHashTable<T> implements IHashTable<T> {
+        private itemCount;
+        private table;
         public getAllKeys(): string[];
-        public add(key: string, data): boolean;
-        public addOrUpdate(key: string, data): boolean;
-        public map(fn: (k: string, value: any, context: any) => void, context: any): void;
-        public every(fn: (k: string, value: any, context: any) => void, context: any): boolean;
+        public add(key: string, data: T): boolean;
+        public addOrUpdate(key: string, data: T): boolean;
+        public map(fn: (k: string, value: T, context: any) => void, context: any): void;
+        public every(fn: (k: string, value: T, context: any) => void, context: any): boolean;
         public some(fn: (k: string, value: any, context: any) => void, context: any): boolean;
         public count(): number;
-        public lookup(key: string);
+        public lookup(key: string): T;
+    }
+    class IdentiferNameHashTable<T> extends StringHashTable<T> {
+        public getAllKeys(): string[];
+        public add(key: string, data: T): boolean;
+        public addOrUpdate(key: string, data: T): boolean;
+        public map(fn: (k: string, value: T, context: any) => void, context: any): void;
+        public every(fn: (k: string, value: T, context: any) => void, context: any): boolean;
+        public some(fn: (k: string, value: any, context: any) => void, context: any): boolean;
+        public lookup(key: string): T;
     }
 }
 declare module TypeScript {
@@ -5809,6 +5817,7 @@ declare module TypeScript {
         public emitInnerFunction(funcDecl: TypeScript.FunctionDeclaration, printName: boolean, includePreComments?: boolean): void;
         private emitDefaultValueAssignments(funcDecl);
         private emitRestParameterInitializer(funcDecl);
+        private getImportDecls(fileName);
         public getModuleImportAndDependencyList(moduleDecl: TypeScript.ModuleDeclaration): {
             importList: string;
             dependencyList: string;
@@ -5935,7 +5944,7 @@ declare module TypeScript {
         public ioHost: IFileSystemObject;
         constructor(compilationSettings: TypeScript.CompilationSettings, ioHost: IFileSystemObject);
         public code: SourceUnit[];
-        public inputFileNameToOutputFileName: TypeScript.StringHashTable;
+        public inputFileNameToOutputFileName: TypeScript.StringHashTable<string>;
         public getSourceUnit(path: string): SourceUnit;
     }
     interface IResolutionDispatcher {
@@ -6432,6 +6441,7 @@ declare module TypeScript {
         public mimicSignature(signature: PullSignatureSymbol, resolver: TypeScript.PullTypeResolver): void;
         public getReturnType(): PullTypeSymbol;
         public parametersAreFixed(): boolean;
+        public isFixed(): boolean;
         public invalidate(): void;
         public isStringConstantOverloadSignature(): boolean;
         static getSignatureTypeMemberName(candidateSignature: PullSignatureSymbol, signatures: PullSignatureSymbol[], scopeSymbol: PullSymbol): TypeScript.MemberNameArray;
@@ -6470,6 +6480,7 @@ declare module TypeScript {
         private associatedContainerTypeSymbol;
         private constructorMethod;
         private hasDefaultConstructor;
+        public setUnresolved(): void;
         public isType(): boolean;
         public isClass(): boolean;
         public hasMembers(): boolean;
@@ -6850,7 +6861,6 @@ declare module TypeScript {
         private _cachedFunctionInterfaceType;
         private _cachedIArgumentsInterfaceType;
         private _cachedRegExpInterfaceType;
-        private _haveResolvedGlobals;
         private cachedFunctionArgumentsSymbol;
         private assignableCache;
         private subtypeCache;
@@ -6867,7 +6877,6 @@ declare module TypeScript {
         private cachedFunctionInterfaceType();
         private cachedIArgumentsInterfaceType();
         private cachedRegExpInterfaceType();
-        public resolveGlobals(): void;
         constructor(compilationSettings: TypeScript.CompilationSettings, semanticInfoChain: TypeScript.SemanticInfoChain, unitPath: string);
         public getUnitPath(): string;
         public setUnitPath(unitPath: string): void;
@@ -6881,9 +6890,9 @@ declare module TypeScript {
         private getExportedMemberSymbol(symbol, parent);
         private getMemberSymbol(symbolName, declSearchKind, parent, searchContainedMembers?);
         private getSymbolFromDeclPath(symbolName, declPath, declSearchKind);
-        private getVisibleSymbolsFromDeclPath(declPath, declSearchKind);
-        private addSymbolsFromDecls(decls, declSearchKind, symbols);
-        public getVisibleSymbols(enclosingDecl: TypeScript.PullDecl, context: TypeScript.PullTypeResolutionContext): TypeScript.PullSymbol[];
+        private getVisibleDeclsFromDeclPath(declPath, declSearchKind);
+        private addFilteredDecls(decls, declSearchKind, result);
+        public getVisibleDecls(enclosingDecl: TypeScript.PullDecl, context: TypeScript.PullTypeResolutionContext): TypeScript.PullDecl[];
         public getVisibleContextSymbols(enclosingDecl: TypeScript.PullDecl, context: TypeScript.PullTypeResolutionContext): TypeScript.PullSymbol[];
         public getVisibleMembersFromExpression(expression: TypeScript.AST, enclosingDecl: TypeScript.PullDecl, context: TypeScript.PullTypeResolutionContext): TypeScript.PullSymbol[];
         public isAnyOrEquivalent(type: TypeScript.PullTypeSymbol): boolean;
@@ -6962,7 +6971,7 @@ declare module TypeScript {
         public typesAreIdentical(t1: TypeScript.PullTypeSymbol, t2: TypeScript.PullTypeSymbol, val?: TypeScript.AST);
         private signatureGroupsAreIdentical(sg1, sg2);
         public signaturesAreIdentical(s1: TypeScript.PullSignatureSymbol, s2: TypeScript.PullSignatureSymbol): boolean;
-        private substituteUpperBoundForType(type);
+        public substituteUpperBoundForType(type: TypeScript.PullTypeSymbol);
         private symbolsShareDeclaration(symbol1, symbol2);
         public sourceIsSubtypeOfTarget(source: TypeScript.PullTypeSymbol, target: TypeScript.PullTypeSymbol, context: TypeScript.PullTypeResolutionContext, comparisonInfo?: TypeScript.TypeComparisonInfo): boolean;
         public sourceMembersAreSubtypeOfTargetMembers(source: TypeScript.PullTypeSymbol, target: TypeScript.PullTypeSymbol, context: TypeScript.PullTypeResolutionContext, comparisonInfo?: TypeScript.TypeComparisonInfo): boolean;
@@ -7192,7 +7201,6 @@ declare module TypeScript {
         private symbolASTMap;
         private syntaxElementSymbolMap;
         private symbolSyntaxElementMap;
-        private dynamicModuleImports;
         private properties;
         private hasBeenTypeChecked;
         constructor(compilationUnitPath: string);
@@ -7219,8 +7227,6 @@ declare module TypeScript {
         public getSyntaxElementForSymbol(symbol: TypeScript.PullSymbol): TypeScript.ISyntaxElement;
         public getSymbolForSyntaxElement(syntaxElement: TypeScript.ISyntaxElement): TypeScript.PullSymbol;
         public setSymbolForSyntaxElement(syntaxElement: TypeScript.ISyntaxElement, symbol: TypeScript.PullSymbol): void;
-        public addDynamicModuleImport(importSymbol: TypeScript.PullTypeAliasSymbol): void;
-        public getDynamicModuleImports(): TypeScript.PullTypeAliasSymbol[];
         public getDiagnostics(semanticErrors: TypeScript.IDiagnostic[]): void;
         public getProperties(): SemanticInfoProperties;
     }
@@ -7641,7 +7647,7 @@ declare module TypeScript {
         public pullTypeChecker: TypeScript.PullTypeChecker;
         public semanticInfoChain: TypeScript.SemanticInfoChain;
         public emitOptions: TypeScript.EmitOptions;
-        public fileNameToDocument: TypeScript.StringHashTable;
+        public fileNameToDocument: TypeScript.StringHashTable<TypeScript.Document>;
         constructor(logger?: TypeScript.ILogger, settings?: TypeScript.CompilationSettings, diagnosticMessages?: TypeScript.IDiagnosticMessages);
         public getDocument(fileName: string): Document;
         public timeFunction(funcDescription: string, func: () => any): any;
@@ -7663,7 +7669,6 @@ declare module TypeScript {
         public emitAll(ioHost: EmitterIOHost, inputOutputMapper?: (inputFile: string, outputFile: string) => void): TypeScript.IDiagnostic[];
         public emitUnit(fileName: string, ioHost: EmitterIOHost, inputOutputMapper?: (inputFile: string, outputFile: string) => void): TypeScript.IDiagnostic[];
         private createFile(fileName, writeByteOrderMark);
-        public pullResolveFile(fileName: string): boolean;
         public getSyntacticDiagnostics(fileName: string): TypeScript.IDiagnostic[];
         private getSyntaxTree(fileName);
         private getScript(fileName);
@@ -7677,8 +7682,9 @@ declare module TypeScript {
         public pullGetDeclarationSymbolInformation(path: TypeScript.AstPath, document: Document): PullSymbolInfo;
         public pullGetCallInformationFromPath(path: TypeScript.AstPath, document: Document): PullCallSymbolInfo;
         public pullGetVisibleMemberSymbolsFromPath(path: TypeScript.AstPath, document: Document): PullVisibleSymbolsInfo;
-        public pullGetVisibleSymbolsFromPath(path: TypeScript.AstPath, document: Document): PullVisibleSymbolsInfo;
+        public pullGetVisibleDeclsFromPath(path: TypeScript.AstPath, document: Document): TypeScript.PullDecl[];
         public pullGetContextualMembersFromPath(path: TypeScript.AstPath, document: Document): PullVisibleSymbolsInfo;
+        public pullGetDeclInformation(decl: TypeScript.PullDecl, path: TypeScript.AstPath, document: Document): PullSymbolInfo;
         public pullGetTypeInfoAtPosition(pos: number, document: Document): PullTypeInfoAtPositionInfo;
         public getTopLevelDeclarations(scriptName: string): TypeScript.PullDecl[];
         public reportDiagnostics(errors: TypeScript.IDiagnostic[], errorReporter: TypeScript.IDignosticsReporter): void;

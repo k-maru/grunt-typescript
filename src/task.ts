@@ -1,3 +1,4 @@
+///<reference path="grunt.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="compiler.ts" />
 
@@ -24,7 +25,9 @@ module.exports = function(grunt: any){
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var self = this,
-            typescriptBinPath = loadTypeScript();
+            typescriptBinPath = loadTypeScript(),
+            hasError: boolean = false;
+
 
         this.files.forEach(function (file) {
             var dest: string = file.dest,
@@ -40,13 +43,17 @@ module.exports = function(grunt: any){
 
             options.outputOne = !!dest && _path.extname(dest) === ".js";
 
-            (new GruntTs.Compiler(grunt, typescriptBinPath,
+            if(!(new GruntTs.Compiler(grunt, typescriptBinPath,
                 new GruntTs.GruntIO(grunt, dest, options.base_path, options.outputOne))
-            ).compile(files, dest, options);
+            ).compile(files, dest, options)){
+                hasError = true;
+            }
 
             //compile(files, dest, grunt.util._.clone(options), extension);
         });
-
+        if(hasError){
+            return false;
+        }
         if (grunt.task.current.errorCount) {
             return false;
         }

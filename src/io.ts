@@ -1,6 +1,5 @@
 ///<reference path="./tsc.d.ts" />
-
-declare var require: any;
+///<reference path="./grunt.d.ts" />
 
 module GruntTs{
 
@@ -19,6 +18,10 @@ module GruntTs{
     var _fs = require('fs');
     var _path = require('path');
 
+    function writeError(str: string){
+        console.log('>> '.red + str.trim().replace(/\n/g, '\n>> '.red));
+    }
+
     export class GruntIO {
         private _createdFiles: CreatedFile[] = [];
         public stderr: {
@@ -33,8 +36,8 @@ module GruntTs{
                     private outputOne: boolean){
             var self = this;
             this.stderr = {
-                Write: (str) => this.grunt.log.error(str),
-                WriteLine: (str) => self.grunt.log.error(str),
+                Write: (str) => writeError(str),
+                WriteLine: (str) => writeError(str),
                 Close: () => {}
             };
         }

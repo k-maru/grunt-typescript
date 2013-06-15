@@ -88,18 +88,21 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
-//            , errortypecheck: {
-//                src: "test/fixtures/error-typecheck.ts"
-//            }
-//            , errorsyntax:{
-//                src: "test/fixtures/error-syntax.ts"
-//            }
-//            , errorbool: {
-//                src: "test/fixtures/error-bool.ts",
-//                options: {
-//                    disallowbool: true
-//                }
-//            }
+            , errortypecheck: {
+                src: "test/fixtures/error-typecheck.ts",
+                options: {
+                    ignoreTypeCheck: true
+                }
+            }
+            , errorsyntax:{
+                src: "test/fixtures/error-syntax.ts"
+            }
+            , errorbool: {
+                src: "test/fixtures/error-bool.ts",
+                options: {
+                    disallowbool: true
+                }
+            }
         },
         nodeunit:{
             tests:["test/test.js"]

@@ -1,8 +1,8 @@
+///<reference path="./grunt.d.ts" />
 ///<reference path="./tsc.d.ts" />
 ///<reference path="./io.ts" />
 
 module GruntTs{
-    declare var require: any;
     var _path = require("path");
 
     class ErrorReporter {
@@ -93,7 +93,6 @@ module GruntTs{
         private compilationSettings: TypeScript.CompilationSettings;
         private compilationEnvironment: TypeScript.CompilationEnvironment;
         private resolvedEnvironment: TypeScript.CompilationEnvironment = null;
-        private hasResolveErrors: boolean = false;
         private errorReporter: ErrorReporter = null;
 
         constructor(private grunt: any, private libDPath: string, private ioHost: GruntTs.GruntIO) {
@@ -180,7 +179,9 @@ module GruntTs{
 
             // Don't emit declarations if we have any semantic diagnostics.
             if (anySemanticErrors) {
-                return false;
+                if(!options || Object.prototype.toString.call(options.ignoreTypeCheck) !== "[object Boolean]" || !options.ignoreTypeCheck){
+                    return false;
+                }
             }
 
             var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
