@@ -182,12 +182,12 @@ module GruntTs{
                 if(!options || Object.prototype.toString.call(options.ignoreTypeCheck) !== "[object Boolean]" || !options.ignoreTypeCheck){
                     return false;
                 }
-            }
-
-            var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
-            compiler.reportDiagnostics(emitDeclarationsDiagnostics, this.errorReporter);
-            if (emitDeclarationsDiagnostics.length > 0) {
-                return false;
+            }else{
+                var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
+                compiler.reportDiagnostics(emitDeclarationsDiagnostics, this.errorReporter);
+                if (emitDeclarationsDiagnostics.length > 0) {
+                    return false;
+                }
             }
 
             if(!options.outputOne){

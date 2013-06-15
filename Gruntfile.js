@@ -94,15 +94,15 @@ module.exports = function (grunt) {
                     ignoreTypeCheck: true
                 }
             }
-            , errorsyntax:{
-                src: "test/fixtures/error-syntax.ts"
-            }
-            , errorbool: {
-                src: "test/fixtures/error-bool.ts",
-                options: {
-                    disallowbool: true
-                }
-            }
+//            , errorsyntax:{
+//                src: "test/fixtures/error-syntax.ts"
+//            }
+//            , errorbool: {
+//                src: "test/fixtures/error-bool.ts",
+//                options: {
+//                    disallowbool: true
+//                }
+//            }
         },
         nodeunit:{
             tests:["test/test.js"]
