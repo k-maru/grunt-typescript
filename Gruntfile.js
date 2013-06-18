@@ -88,17 +88,50 @@ module.exports = function (grunt) {
                     comments:true
                 }
             }
+            , errortypecheck: {
+                src: "test/fixtures/error-typecheck.ts",
+                options: {
+                    ignoreTypeCheck: true
+                }
+            }
+//            , errorsyntax:{
+//                src: "test/fixtures/error-syntax.ts"
+//            }
+//            , errorbool: {
+//                src: "test/fixtures/error-bool.ts",
+//                options: {
+//                    disallowbool: true
+//                }
+//            }
         },
         nodeunit:{
             tests:["test/test.js"]
+        },
+        shell: {
+            build: {
+                command: "node node_modules/typescript/bin/tsc.js " +
+                    "src/compiler.ts " +
+                    "src/io.ts " +
+                    "src/task.ts " +
+                    "--out tasks/typescript.js",
+                stdout: true
+            }
+        },
+        watch: {
+            build: {
+                files: ["src/*.ts"],
+                tasks: ["shell:build"]
+            }
         }
     });
 
     grunt.loadTasks("tasks");
     grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
+    grunt.loadNpmTasks("grunt-contrib-watch");
+    grunt.loadNpmTasks("grunt-shell");
+    grunt.registerTask("build", ["shell:build"]);
     grunt.registerTask("test", ["clean", "typescript", "nodeunit"]);
-
     grunt.registerTask("default", ["test"]);
 
 };
