@@ -324,6 +324,7 @@ declare module TypeScript {
         Cannot_find_the_common_subdirectory_path_for_the_input_files,
         Cannot_compile_dynamic_modules_when_emitting_into_single_file,
         Emit_Error__0,
+        Unsupported_encoding_for_file__0,
     }
 }
 declare module TypeScript {
@@ -600,6 +601,7 @@ declare module TypeScript {
         Cannot_find_the_common_subdirectory_path_for_the_input_files: TypeScript.DiagnosticInfo;
         Cannot_compile_dynamic_modules_when_emitting_into_single_file: TypeScript.DiagnosticInfo;
         Emit_Error__0: TypeScript.DiagnosticInfo;
+        Unsupported_encoding_for_file__0: TypeScript.DiagnosticInfo;
     }
     var diagnosticMessages: IDiagnosticMessages;
 }
@@ -6403,6 +6405,8 @@ declare module TypeScript {
         static getTypeParameterStringEx(typeParameters: PullTypeSymbol[], scopeSymbol?: PullSymbol, getTypeParamMarkerInfo?: boolean, useContraintInName?: boolean): TypeScript.MemberNameArray;
         static getIsExternallyVisible(symbol: PullSymbol, fromIsExternallyVisibleSymbol: PullSymbol, inIsExternallyVisibleSymbols: PullSymbol[]): boolean;
         public isExternallyVisible(inIsExternallyVisibleSymbols?: PullSymbol[]): boolean;
+        public isModule(): boolean;
+        private isOneDeclarationOfKind(kind);
     }
     class PullExpressionSymbol extends PullSymbol {
         public contributingSymbols: PullSymbol[];
@@ -7437,6 +7441,7 @@ declare module TypeScript.PullHelpers {
         setter: TypeScript.FunctionDeclaration;
     };
     function symbolIsEnum(source: TypeScript.PullSymbol);
+    function symbolIsModule(symbol: TypeScript.PullSymbol): boolean;
 }
 declare module TypeScript {
     class SyntaxPositionMap {
@@ -7647,7 +7652,7 @@ declare module TypeScript {
         public pullTypeChecker: TypeScript.PullTypeChecker;
         public semanticInfoChain: TypeScript.SemanticInfoChain;
         public emitOptions: TypeScript.EmitOptions;
-        public fileNameToDocument: TypeScript.StringHashTable<TypeScript.Document>;
+        public fileNameToDocument: TypeScript.StringHashTable<Document>;
         constructor(logger?: TypeScript.ILogger, settings?: TypeScript.CompilationSettings, diagnosticMessages?: TypeScript.IDiagnosticMessages);
         public getDocument(fileName: string): Document;
         public timeFunction(funcDescription: string, func: () => any): any;

@@ -442,6 +442,10 @@ var GruntTs;
                 if (options.disallowbool) {
                     setting.disallowBool = true;
                 }
+
+                if (options.disallowimportmodule) {
+                    setting.allowModuleKeywordInExternalModuleReference = false;
+                }
             }
         };
 

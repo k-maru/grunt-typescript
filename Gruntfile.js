@@ -9,7 +9,8 @@ module.exports = function (grunt) {
                 "test/fixtures/**/*.d.ts",
                 "test/temp/**/*.*",
                 "test/temp"
-            ]
+            ],
+            expect: "test/expected"
         },
         typescript:{
             simple:{
@@ -114,7 +115,10 @@ module.exports = function (grunt) {
                     "src/io.ts " +
                     "src/task.ts " +
                     "--out tasks/typescript.js",
-                stdout: true
+                options: {
+                    stdout: true,
+                    stderr: true
+                }
             }
         },
         watch: {
@@ -130,8 +134,9 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-contrib-clean");
     grunt.loadNpmTasks("grunt-contrib-watch");
     grunt.loadNpmTasks("grunt-shell");
+
     grunt.registerTask("build", ["shell:build"]);
-    grunt.registerTask("test", ["clean", "typescript", "nodeunit"]);
+    grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
 
 };

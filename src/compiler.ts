@@ -298,9 +298,12 @@ module GruntTs{
                 if(options.disallowbool){
                     setting.disallowBool = true;
                 }
+                //0.9 disallowimportmodule
+                if(options.disallowimportmodule){
+                    setting.allowModuleKeywordInExternalModuleReference = false;
+                }
             }
         }
-
 
         private writeResult(createdFiles: GruntTs.CreatedFile[], options: any){
             var result = {js:[], m:[], d:[], other:[]},
