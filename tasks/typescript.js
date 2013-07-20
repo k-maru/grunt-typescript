@@ -432,9 +432,6 @@ var GruntTs;
                 if (options.declaration) {
                     setting.generateDeclarationFiles = true;
                 }
-                if (options.outputOne && options.fullSourceMapPath) {
-                    setting.emitFullSourceMapPath = options.fullSourceMapPath;
-                }
                 if (options.comments) {
                     setting.emitComments = true;
                 }
