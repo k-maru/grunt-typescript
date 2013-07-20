@@ -64,7 +64,7 @@ Specify module code generation: "commonjs" (default) or "amd"
 ###sourcemap `boolean`
 Generates corresponding .map files
 
-###fullSourceMapPath 'boolean'
+###fullSourceMapPath `boolean`
 Writes the full path of map file in the generated js file
 
 ###declaration `boolean`
