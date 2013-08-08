@@ -45,9 +45,9 @@ module.exports = function (grunt) {
                     target:"ES5"
                 }
             },
-            "no-module":{
-                src:"test/fixtures/no-module.ts"
-            },
+//            "no-module":{
+//                src: "test/fixtures/no-module.ts"
+//            },
             amd:{
                 src:"test/fixtures/amd.ts",
                 options:{
