@@ -25,6 +25,8 @@ module GruntTs{
         }else{
             settings.removeComments = true;
         }
+        //default
+        settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
         if (options.target) {
             temp = options.target.toLowerCase();
             if (temp === 'es3') {
@@ -33,6 +35,8 @@ module GruntTs{
                 settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
             }
         }
+        //default
+        settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
         if (options.module) {
             temp = options.module.toLowerCase();
             if (temp === 'commonjs' || temp === 'node') {

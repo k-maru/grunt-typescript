@@ -73,14 +73,14 @@ Generates corresponding .d.ts file
 ###comments `boolean`
 Emit comments to output
 
-###disallowbool `boolean`
-Throw error for use of deprecated "bool" type
+###noImplicitAny `boolean`
+Warn on expressions and declarations with an implied 'any' type
 
-###disallowimportmodule `boolean`
-Throw error for use of deprecated "module" keyword when referencing an external module. Only allow "require" keyword
+###ignoreTypeCheck `boolean`
 
-<!--
-base_path, ignoreTypeCheck
--->
+###base_path `string`
+
+###disallowAsi `boolean`
+Do not allow auto semicolon insertion. this option is experimental.
 
 ※I'm sorry for poor English

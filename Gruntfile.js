@@ -96,6 +96,13 @@ module.exports = function (grunt) {
                 options:{
                     comments:true
                 }
+            },
+            noImplicitAny:{
+                src:"test/fixtures/noImplicitAny.ts",
+                options:{
+                    noImplicitAny: true,
+                    ignoreTypeCheck: true
+                }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",
