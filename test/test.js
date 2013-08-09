@@ -74,17 +74,17 @@ module.exports.typescript = {
 
         test.done();
     },
-    "no-module":function(test){
-        "use strict";
-
-        test.expect(1);
-
-        var actual = grunt.file.read("test/fixtures/no-module.js");
-        var expected = grunt.file.read("test/expected/no-module.js");
-        test.equal(expected, actual);
-
-        test.done();
-    },
+//    "no-module":function(test){
+//        "use strict";
+//
+//        test.expect(1);
+//
+//        var actual = grunt.file.read("test/fixtures/no-module.js");
+//        var expected = grunt.file.read("test/expected/no-module.js");
+//        test.equal(expected, actual);
+//
+//        test.done();
+//    },
     amd:function(test){
         "use strict";
 

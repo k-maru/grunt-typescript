@@ -8,7 +8,7 @@ module.exports = function(grunt: any){
     var _path = require("path"),
         _vm = require('vm'),
         loadTypeScript = function(){
-            var typeScriptBinPath = _path.dirname(require.resolve("typescript")), //resolveTypeScriptBinPath(currentPath, 0),
+            var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
                 typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
                 code;
 
@@ -35,9 +35,9 @@ module.exports = function(grunt: any){
                 files: string[] = [];
 
             grunt.file.expand(file.src).forEach(function (file: string) {
-                if (file.substr(-5) === ".d.ts") {
-                    return;
-                }
+//                if (file.substr(-5) === ".d.ts") {
+//                    return;
+//                }
                 files.push(file);
             });
 
@@ -48,8 +48,6 @@ module.exports = function(grunt: any){
             ).compile(files, dest, options)){
                 hasError = true;
             }
-
-            //compile(files, dest, grunt.util._.clone(options), extension);
         });
         if(hasError){
             return false;
@@ -58,5 +56,4 @@ module.exports = function(grunt: any){
             return false;
         }
     });
-
 };

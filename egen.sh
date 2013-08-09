@@ -2,7 +2,7 @@ mkdir test/expected/multi/dir -p
 mkdir test/expected/single
 mkdir test/expected/sourcemap
 
-CURDIR=`pwd`
+CURDIR=`pwd | cut -c 0-2`:`pwd | cut -c 3-`
 
 echo Simple
 node_modules/typescript/bin/tsc test/fixtures/simple.ts
@@ -20,12 +20,18 @@ mv test/fixtures/sourcemap/sourcemap.js.map test/expected/sourcemap/sourcemap.js
 
 echo SourceMap FullPath
 node_modules/typescript/bin/tsc test/fixtures/sourcemap-fullpath.ts --outDir test/fixtures/sourcemap --sourcemap
+
 sed "s@^//# sourceMappingURL=sourcemap-fullpath.js.map@//# sourceMappingURL=file://${CURDIR}/test/fixtures/sourcemap/sourcemap-fullpath.js.map@" test/fixtures/sourcemap/sourcemap-fullpath.js > test/fixtures/sourcemap/sourcemap-fullpath.js2
-sed "s@\"file\":\"sourcemap-fullpath.js\"@\"file\":\"file://${CURDIR}/test/fixtures/sourcemap/sourcemap-fullpath.js\"@" test/fixtures/sourcemap/sourcemap-fullpath.js.map > test/fixtures/sourcemap/sourcemap-fullpath.js.map2
-mv test/fixtures/sourcemap/sourcemap-fullpath.js2 test/expected/sourcemap/sourcemap-fullpath.js
-mv test/fixtures/sourcemap/sourcemap-fullpath.js.map2 test/expected/sourcemap/sourcemap-fullpath.js.map
+sed -e 's/$/\r/' test/fixtures/sourcemap/sourcemap-fullpath.js2 > test/fixtures/sourcemap/sourcemap-fullpath.js3
+
+sed "s@\"file\":\"sourcemap-fullpath.js\"@\"file\":\"file://${CURDIR}/test/fixtures/sourcemap/sourcemap-fullpath.js\"@" test/fixtures/sourcemap/sourcemap-fullpath.js.map > test/fixtures/sourcemap/sourcemap-fullpath.js.map3
+# sed -e 's/$/\r/' test/fixtures/sourcemap/sourcemap-fullpath.js.map2 > test/fixtures/sourcemap/sourcemap-fullpath.js.map3
+mv test/fixtures/sourcemap/sourcemap-fullpath.js3 test/expected/sourcemap/sourcemap-fullpath.js
+mv test/fixtures/sourcemap/sourcemap-fullpath.js.map3 test/expected/sourcemap/sourcemap-fullpath.js.map
 rm test/fixtures/sourcemap/sourcemap-fullpath.js
 rm test/fixtures/sourcemap/sourcemap-fullpath.js.map
+rm test/fixtures/sourcemap/sourcemap-fullpath.js2
+# rm test/fixtures/sourcemap/sourcemap-fullpath.js.map2
 
 echo Target ES5
 node_modules/typescript/bin/tsc test/fixtures/es5.ts --target ES5

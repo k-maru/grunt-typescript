@@ -1,9 +1,10 @@
+///<reference path="./tsc.d.ts" />
+///<reference path="./grunt.d.ts" />
 var GruntTs;
 (function (GruntTs) {
     (function (CodeType) {
         CodeType[CodeType["JS"] = 0] = "JS";
         CodeType[CodeType["Map"] = 1] = "Map";
-
         CodeType[CodeType["Declaration"] = 2] = "Declaration";
     })(GruntTs.CodeType || (GruntTs.CodeType = {}));
     var CodeType = GruntTs.CodeType;
@@ -14,7 +15,33 @@ var GruntTs;
     function writeError(str) {
         console.log('>> '.red + str.trim().replace(/\n/g, '\n>> '.red));
     }
+    function writeInfo(str) {
+        console.log('>> '.cyan + str.trim().replace(/\n/g, '\n>> '.cyan));
+    }
 
+    function currentPath() {
+        return _path.resolve(".");
+    }
+
+    //    readFile(path: string): FileInformation;
+    //    writeFile(path: string, contents: string, writeByteOrderMark: boolean): void;
+    //    deleteFile(path: string): void;
+    //    dir(path: string, re?: RegExp, options?: { recursive?: boolean; }): string[];
+    //    fileExists(path: string): boolean;
+    //    directoryExists(path: string): boolean;
+    //    createDirectory(path: string): void;
+    //    resolvePath(path: string): string;
+    //    dirName(path: string): string;
+    //    findFile(rootPath: string, partialFilePath: string): IResolvedFile;
+    //    print(str: string): void;
+    //    printLine(str: string): void;
+    //    arguments: string[];
+    //    stderr: ITextWriter;
+    //    stdout: ITextWriter;
+    //    watchFile(fileName: string, callback: (x:string) => void ): IFileWatcher;
+    //    run(source: string, fileName: string): void;
+    //    getExecutingFilePath(): string;
+    //    quit(exitCode?: number): void;
     var GruntIO = (function () {
         function GruntIO(grunt, destPath, basePath, outputOne) {
             this.grunt = grunt;
@@ -33,13 +60,24 @@ var GruntTs;
                 Close: function () {
                 }
             };
+            this.stdout = {
+                Write: function (str) {
+                    return writeInfo(str);
+                },
+                WriteLine: function (str) {
+                    return writeInfo(str);
+                },
+                Close: function () {
+                }
+            };
+            this.arguments = process.argv.slice(2);
         }
         GruntIO.prototype.getCreatedFiles = function () {
             return this._createdFiles;
         };
 
         GruntIO.prototype.currentPath = function () {
-            return _path.resolve(".");
+            return currentPath();
         };
 
         GruntIO.prototype.resolvePath = function (path) {
@@ -114,15 +152,17 @@ var GruntTs;
                 return;
             }
             if (!this.outputOne) {
-                var g = _path.join(this.currentPath(), this.basePath || "");
+                var g = _path.join(currentPath(), this.basePath || "");
                 path = path.substr(g.length);
-                path = _path.join(this.currentPath(), this.destPath ? this.destPath.toString() : '', path);
+                path = _path.join(currentPath(), this.destPath ? this.destPath.toString() : '', path);
             }
             if (writeByteOrderMark) {
                 contents = '\uFEFF' + contents;
             }
+
             this.grunt.file.write(path, contents);
             created.dest = path;
+
             this._createdFiles.push(created);
         };
 
@@ -157,174 +197,260 @@ var GruntTs;
             return _path.join(left, right);
         };
 
+        GruntIO.prototype.createDirectory = function (path) {
+            if (!this.directoryExists(path)) {
+                _fs.mkdirSync(path);
+            }
+        };
+
+        GruntIO.prototype.print = function (str) {
+            this.stdout.Write(str);
+        };
+
+        GruntIO.prototype.printLine = function (str) {
+            this.stdout.WriteLine(str);
+        };
+
         GruntIO.prototype.deleteFile = function (path) {
+            //dummy
+        };
+
+        GruntIO.prototype.dir = function (path, re, options) {
+            return null;
+        };
+
+        GruntIO.prototype.watchFile = function (fileName, callback) {
+            return null;
+        };
+
+        GruntIO.prototype.run = function (source, fileName) {
+            return;
+        };
+
+        GruntIO.prototype.getExecutingFilePath = function () {
+            return null;
+        };
+
+        GruntIO.prototype.quit = function (exitCode) {
+            return;
         };
         return GruntIO;
     })();
     GruntTs.GruntIO = GruntIO;
 })(GruntTs || (GruntTs = {}));
+///<reference path="./grunt.d.ts" />
+///<reference path="./tsc.d.ts" />
+///<reference path="./io.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _path = require("path");
 
-    var ErrorReporter = (function () {
-        function ErrorReporter(ioHost, compilationEnvironment) {
-            this.ioHost = ioHost;
-            this.hasErrors = false;
-            this.setCompilationEnvironment(compilationEnvironment);
+    function createCompilationSettings(options, dest, ioHost) {
+        var settings = new TypeScript.CompilationSettings(), temp;
+
+        if (options.outputOne) {
+            dest = _path.resolve(ioHost.currentPath(), dest);
+            settings.outFileOption = dest;
         }
-        ErrorReporter.prototype.addDiagnostic = function (diagnostic) {
-            this.hasErrors = true;
-
-            if (diagnostic.fileName()) {
-                var soruceUnit = this.compilationEnvironment.getSourceUnit(diagnostic.fileName());
-                if (!soruceUnit) {
-                    soruceUnit = new TypeScript.SourceUnit(diagnostic.fileName(), this.ioHost.readFile(diagnostic.fileName()));
-                }
-                var lineMap = new TypeScript.LineMap(soruceUnit.getLineStartPositions(), soruceUnit.getLength());
-                var lineCol = { line: -1, character: -1 };
-                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
-
-                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character + 1) + "): ");
+        if (options.sourcemap || options.fullSourceMapPath) {
+            settings.mapSourceFiles = true;
+        }
+        if (options.declaration) {
+            settings.generateDeclarationFiles = true;
+        }
+        if (options.comments) {
+            settings.removeComments = false;
+        } else {
+            settings.removeComments = true;
+        }
+        if (options.target) {
+            temp = options.target.toLowerCase();
+            if (temp === 'es3') {
+                settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
+            } else if (temp == 'es5') {
+                settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
             }
+        }
+        if (options.module) {
+            temp = options.module.toLowerCase();
+            if (temp === 'commonjs' || temp === 'node') {
+                settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+            } else if (temp === 'amd') {
+                settings.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
+            }
+        }
+        if (options.noImplicitAny) {
+            settings.noImplicitAny = true;
+        }
 
-            this.ioHost.stderr.WriteLine(diagnostic.message());
-        };
+        if (options.disallowAsi) {
+            settings.allowAutomaticSemicolonInsertion = false;
+        }
 
-        ErrorReporter.prototype.setCompilationEnvironment = function (compilationEnvironment) {
-            this.compilationEnvironment = compilationEnvironment;
-        };
-
-        ErrorReporter.prototype.reset = function () {
-            this.hasErrors = false;
-        };
-        return ErrorReporter;
+        return settings;
+    }
+    GruntTs.createCompilationSettings = createCompilationSettings;
+})(GruntTs || (GruntTs = {}));
+///<reference path="./grunt.d.ts" />
+///<reference path="./tsc.d.ts" />
+///<reference path="./io.ts" />
+///<reference path="./setting.ts" />
+var GruntTs;
+(function (GruntTs) {
+    var _path = require("path");
+    var SourceFile = (function () {
+        function SourceFile(scriptSnapshot, byteOrderMark) {
+            this.scriptSnapshot = scriptSnapshot;
+            this.byteOrderMark = byteOrderMark;
+        }
+        return SourceFile;
     })();
 
-    var CommandLineHost = (function () {
-        function CommandLineHost(compilationSettings, errorReporter) {
-            this.compilationSettings = compilationSettings;
-            this.errorReporter = errorReporter;
-            this.pathMap = {};
-            this.resolvedPaths = {};
-        }
-        CommandLineHost.prototype.getPathIdentifier = function (path) {
-            return this.compilationSettings.useCaseSensitiveFileResolution ? path : path.toLocaleUpperCase();
-        };
-
-        CommandLineHost.prototype.isResolved = function (path) {
-            return this.resolvedPaths[this.getPathIdentifier(this.pathMap[path])] != undefined;
-        };
-
-        CommandLineHost.prototype.resolveCompilationEnvironment = function (preEnv, resolver, traceDependencies) {
-            var _this = this;
-            var resolvedEnv = new TypeScript.CompilationEnvironment(preEnv.compilationSettings, preEnv.ioHost);
-
-            var nCode = preEnv.code.length;
-            var path = "";
-
-            this.errorReporter.setCompilationEnvironment(resolvedEnv);
-
-            var resolutionDispatcher = {
-                errorReporter: this.errorReporter,
-                postResolution: function (path, code) {
-                    var pathId = _this.getPathIdentifier(path);
-                    if (!_this.resolvedPaths[pathId]) {
-                        resolvedEnv.code.push(code);
-                        _this.resolvedPaths[pathId] = true;
-                    }
-                }
-            };
-
-            for (var i = 0; i < nCode; i++) {
-                path = TypeScript.switchToForwardSlashes(preEnv.ioHost.resolvePath(preEnv.code[i].path));
-                this.pathMap[preEnv.code[i].path] = path;
-                resolver.resolveCode(path, "", false, resolutionDispatcher);
-            }
-
-            return resolvedEnv;
-        };
-        return CommandLineHost;
-    })();
-
+    //    class ErrorReporter {
+    //        private compilationEnvironment: TypeScript.CompilationEnvironment
+    //        public hasErrors: boolean;
+    //
+    //        constructor(public ioHost: GruntTs.GruntIO, compilationEnvironment: TypeScript.CompilationEnvironment) {
+    //            this.hasErrors = false;
+    //            this.setCompilationEnvironment(compilationEnvironment);
+    //        }
+    //
+    //        public addDiagnostic(diagnostic: TypeScript.IDiagnostic) {
+    //            this.hasErrors = true;
+    //
+    //            if (diagnostic.fileName()) {
+    //                var soruceUnit = this.compilationEnvironment.getSourceUnit(diagnostic.fileName());
+    //                if (!soruceUnit) {
+    //                    soruceUnit = new TypeScript.SourceUnit(diagnostic.fileName(), this.ioHost.readFile(diagnostic.fileName()));
+    //                }
+    //                var lineMap = new TypeScript.LineMap(soruceUnit.getLineStartPositions(), soruceUnit.getLength());
+    //                var lineCol = { line: -1, character: -1 };
+    //                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
+    //
+    //                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character+1) + "): ");
+    //            }
+    //
+    //            this.ioHost.stderr.WriteLine(diagnostic.message());
+    //        }
+    //
+    //        public setCompilationEnvironment(compilationEnvironment: TypeScript.CompilationEnvironment): void {
+    //            this.compilationEnvironment = compilationEnvironment;
+    //        }
+    //
+    //        public reset() {
+    //            this.hasErrors = false;
+    //        }
+    //    }
+    //    class CommandLineHost {
+    //
+    //        public pathMap: any = {};
+    //        public resolvedPaths: any = {};
+    //
+    //        constructor(public compilationSettings: TypeScript.CompilationSettings, public errorReporter: ErrorReporter) {
+    //        }
+    //
+    //        public getPathIdentifier(path: string) {
+    //            return this.compilationSettings.useCaseSensitiveFileResolution ? path : path.toLocaleUpperCase();
+    //        }
+    //
+    //        public isResolved(path: string) {
+    //            return this.resolvedPaths[this.getPathIdentifier(this.pathMap[path])] != undefined;
+    //        }
+    //
+    //        public resolveCompilationEnvironment(preEnv: TypeScript.CompilationEnvironment,
+    //                                             resolver: TypeScript.ICodeResolver,
+    //                                             traceDependencies: boolean): TypeScript.CompilationEnvironment {
+    //            var resolvedEnv = new TypeScript.CompilationEnvironment(preEnv.compilationSettings, preEnv.ioHost);
+    //
+    //            var nCode = preEnv.code.length;
+    //            var path = "";
+    //
+    //            this.errorReporter.setCompilationEnvironment(resolvedEnv);
+    //
+    //            var resolutionDispatcher: TypeScript.IResolutionDispatcher = {
+    //                errorReporter: this.errorReporter,
+    //                postResolution: (path: string, code: TypeScript.IScriptSnapshot) => {
+    //                    var pathId = this.getPathIdentifier(path);
+    //                    if (!this.resolvedPaths[pathId]) {
+    //                        resolvedEnv.code.push(<TypeScript.SourceUnit>code);
+    //                        this.resolvedPaths[pathId] = true;
+    //                    }
+    //                }
+    //            };
+    //
+    //            for (var i = 0; i < nCode; i++) {
+    //                path = TypeScript.switchToForwardSlashes(preEnv.ioHost.resolvePath(preEnv.code[i].path));
+    //                this.pathMap[preEnv.code[i].path] = path;
+    //                resolver.resolveCode(path, "", false, resolutionDispatcher);
+    //            }
+    //
+    //            return resolvedEnv;
+    //        }
+    //    }
     var Compiler = (function () {
-        function Compiler(grunt, libDPath, ioHost) {
+        //private compilationEnvironment: TypeScript.CompilationEnvironment;
+        //private resolvedEnvironment: TypeScript.CompilationEnvironment = null;
+        //private errorReporter: ErrorReporter = null;
+        function Compiler(grunt, tscBinPath, ioHost) {
             this.grunt = grunt;
-            this.libDPath = libDPath;
+            this.tscBinPath = tscBinPath;
             this.ioHost = ioHost;
-            this.resolvedEnvironment = null;
-            this.errorReporter = null;
-            this.compilationSettings = new TypeScript.CompilationSettings();
-            this.compilationEnvironment = new TypeScript.CompilationEnvironment(this.compilationSettings, this.ioHost);
-            this.errorReporter = new ErrorReporter(this.ioHost, this.compilationEnvironment);
+            this.fileNameToSourceFile = new TypeScript.StringHashTable();
+            this.hasErrors = false;
+            this.resolvedFiles = [];
+            this.inputFileNameToOutputFileName = new TypeScript.StringHashTable();
+            //this.compilationEnvironment = new TypeScript.CompilationEnvironment(this.compilationSettings, this.ioHost);
+            //this.errorReporter = new ErrorReporter(this.ioHost, this.compilationEnvironment);
         }
         Compiler.prototype.compile = function (files, dest, options) {
             var _this = this;
-            var anySyntacticErrors = false, anySemanticErrors = false, compiler, self = this;
+            this.compilationSettings = GruntTs.createCompilationSettings(options, dest, this.ioHost);
+            this.inputFiles = files;
 
-            this.buildSettings(options);
+            this.resolve(options);
 
-            if (options.outputOne) {
-                dest = _path.resolve(this.ioHost.currentPath(), dest);
-                this.compilationSettings.outputOption = dest;
-            }
+            //compile
+            var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), this.compilationSettings);
 
-            if (!options.nolib) {
-                this.compilationEnvironment.code.push(new TypeScript.SourceUnit(this.ioHost.combine(this.libDPath, "lib.d.ts"), null));
-            }
+            var anySyntacticErrors = false;
+            var anySemanticErrors = false;
 
-            files.forEach(function (file) {
-                _this.compilationEnvironment.code.push(new TypeScript.SourceUnit(file, null));
-            });
+            for (var i = 0, n = this.resolvedFiles.length; i < n; i++) {
+                var resolvedFile = this.resolvedFiles[i];
+                var sourceFile = this.getSourceFile(resolvedFile.path);
+                compiler.addSourceUnit(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
 
-            this.resolvedEnvironment = this.resolve();
-
-            compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), this.compilationSettings, null);
-
-            this.resolvedEnvironment.code.forEach(function (code) {
-                code.fileInformation = _this.ioHost.readFile(code.path);
-                if (_this.compilationSettings.generateDeclarationFiles) {
-                    code.referencedFiles = TypeScript.getReferencedFiles(code.path, code);
-                }
-                compiler.addSourceUnit(code.path, TypeScript.ScriptSnapshot.fromString(code.fileInformation.contents()), code.fileInformation.byteOrderMark(), 0, false, code.referencedFiles);
-
-                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(code.path);
-                compiler.reportDiagnostics(syntacticDiagnostics, _this.errorReporter);
+                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(resolvedFile.path);
+                compiler.reportDiagnostics(syntacticDiagnostics, this);
 
                 if (syntacticDiagnostics.length > 0) {
                     anySyntacticErrors = true;
                 }
-            });
+            }
 
             if (anySyntacticErrors) {
-                return false;
+                return true;
             }
 
             compiler.pullTypeCheck();
-            compiler.fileNameToDocument.getAllKeys().forEach(function (fileName) {
+
+            var fileNames = compiler.fileNameToDocument.getAllKeys();
+            var n = fileNames.length;
+            for (var i = 0; i < n; i++) {
+                var fileName = fileNames[i];
                 var semanticDiagnostics = compiler.getSemanticDiagnostics(fileName);
                 if (semanticDiagnostics.length > 0) {
                     anySemanticErrors = true;
-                    compiler.reportDiagnostics(semanticDiagnostics, _this.errorReporter);
+                    compiler.reportDiagnostics(semanticDiagnostics, this);
                 }
-            });
-
-            var emitterIOHost = {
-                writeFile: function (fileName, contents, writeByteOrderMark) {
-                    var path = _this.ioHost.resolvePath(fileName);
-                    return _this.ioHost.writeFile(path, contents, writeByteOrderMark);
-                },
-                directoryExists: this.ioHost.directoryExists,
-                fileExists: this.ioHost.fileExists,
-                resolvePath: this.ioHost.resolvePath
-            };
-
+            }
             var mapInputToOutput = function (inputFile, outputFile) {
-                _this.resolvedEnvironment.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
+                _this.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
             };
 
-            var emitDiagnostics = compiler.emitAll(emitterIOHost, mapInputToOutput);
-            compiler.reportDiagnostics(emitDiagnostics, this.errorReporter);
+            // TODO: if there are any emit diagnostics.  Don't proceed.
+            var emitDiagnostics = compiler.emitAll(this, mapInputToOutput);
+            compiler.reportDiagnostics(emitDiagnostics, this);
             if (emitDiagnostics.length > 0) {
                 return false;
             }
@@ -335,44 +461,164 @@ var GruntTs;
                 }
             } else {
                 var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
-                compiler.reportDiagnostics(emitDeclarationsDiagnostics, this.errorReporter);
+                compiler.reportDiagnostics(emitDeclarationsDiagnostics, this);
                 if (emitDeclarationsDiagnostics.length > 0) {
                     return false;
                 }
             }
 
-            if (!options.outputOne) {
-                this.prepareSourceMapPath(options, this.ioHost.getCreatedFiles());
-            }
+            //if(!options.outputOne){
+            this.prepareSourceMapPath(options, this.ioHost.getCreatedFiles());
 
+            //}
             this.writeResult(this.ioHost.getCreatedFiles(), options);
+            return true;
 
+            //            var anySyntacticErrors = false,
+            //                anySemanticErrors = false,
+            //                compiler,
+            //                self = this;
+            //
+            //            this.buildSettings(options);
+            //
+            //            if (options.outputOne) {
+            //                dest = _path.resolve(this.ioHost.currentPath(), dest);
+            //                this.compilationSettings.outputOption = dest;
+            //            }
+            //
+            //            if(!options.nolib){
+            //                this.compilationEnvironment.code.push(
+            //                    new TypeScript.SourceUnit(this.ioHost.combine(this.tscBinPath, "lib.d.ts"), null));
+            //            }
+            //
+            //            files.forEach((file) => {
+            //                this.compilationEnvironment.code.push(new TypeScript.SourceUnit(file, null));
+            //            });
+            //
+            //            this.resolvedEnvironment = this.resolve();
+            //
+            //            compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), this.compilationSettings, null);
+            //
+            //            this.resolvedEnvironment.code.forEach((code) => {
+            //                code.fileInformation = this.ioHost.readFile(code.path);
+            //                if(this.compilationSettings.generateDeclarationFiles){
+            //                    code.referencedFiles = TypeScript.getReferencedFiles(code.path, code);
+            //                }
+            //                compiler.addSourceUnit(code.path, TypeScript.ScriptSnapshot.fromString(code.fileInformation.contents()),
+            //                    code.fileInformation.byteOrderMark(), /*version:*/ 0, /*isOpen:*/ false, code.referencedFiles);
+            //
+            //                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(code.path);
+            //                compiler.reportDiagnostics(syntacticDiagnostics, this.errorReporter);
+            //
+            //                if (syntacticDiagnostics.length > 0) {
+            //                    anySyntacticErrors = true;
+            //                }
+            //            });
+            //
+            //            if(anySyntacticErrors){
+            //                return false;
+            //            }
+            //
+            //            compiler.pullTypeCheck();
+            //            compiler.fileNameToDocument.getAllKeys().forEach((fileName) => {
+            //                var semanticDiagnostics = compiler.getSemanticDiagnostics(fileName);
+            //                if (semanticDiagnostics.length > 0) {
+            //                    anySemanticErrors = true;
+            //                    compiler.reportDiagnostics(semanticDiagnostics, this.errorReporter);
+            //                }
+            //            });
+            //
+            //            var emitterIOHost = {
+            //                writeFile: (fileName: string, contents: string, writeByteOrderMark: boolean) => {
+            //                    var path = this.ioHost.resolvePath(fileName);
+            //                    return this.ioHost.writeFile(path, contents, writeByteOrderMark);
+            //                },
+            //                directoryExists: this.ioHost.directoryExists,
+            //                fileExists: this.ioHost.fileExists,
+            //                resolvePath: this.ioHost.resolvePath
+            //            };
+            //
+            //            var mapInputToOutput = (inputFile: string, outputFile: string): void => {
+            //                this.resolvedEnvironment.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
+            //            };
+            //
+            //            // TODO: if there are any emit diagnostics.  Don't proceed.
+            //            var emitDiagnostics = compiler.emitAll(emitterIOHost, mapInputToOutput);
+            //            compiler.reportDiagnostics(emitDiagnostics, this.errorReporter);
+            //            if (emitDiagnostics.length > 0) {
+            //                return false;
+            //            }
+            //
+            //            // Don't emit declarations if we have any semantic diagnostics.
+            //            if (anySemanticErrors) {
+            //                if(!options || Object.prototype.toString.call(options.ignoreTypeCheck) !== "[object Boolean]" || !options.ignoreTypeCheck){
+            //                    return false;
+            //                }
+            //            }else{
+            //                var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
+            //                compiler.reportDiagnostics(emitDeclarationsDiagnostics, this.errorReporter);
+            //                if (emitDeclarationsDiagnostics.length > 0) {
+            //                    return false;
+            //                }
+            //            }
+            //
+            //            if(!options.outputOne){
+            //                this.prepareSourceMapPath(options, this.ioHost.getCreatedFiles());
+            //            }
+            //
+            //            this.writeResult(this.ioHost.getCreatedFiles(), options);
             return true;
         };
 
-        Compiler.prototype.resolve = function () {
-            var _this = this;
-            var resolver = new TypeScript.CodeResolver(this.compilationEnvironment), commandLineHost = new CommandLineHost(this.compilationSettings, this.errorReporter), ret = commandLineHost.resolveCompilationEnvironment(this.compilationEnvironment, resolver, true);
+        Compiler.prototype.resolve = function (options) {
+            var resolvedFiles = [];
+            var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings);
+            resolvedFiles = resolutionResults.resolvedFiles;
 
-            this.compilationEnvironment.code.forEach(function (code) {
-                var path;
-                if (!commandLineHost.isResolved(code.path)) {
-                    path = code.path;
-                    if (!TypeScript.isTSFile(path) && !TypeScript.isDTSFile(path)) {
-                        _this.errorReporter.addDiagnostic(new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Unknown_extension_for_file___0__Only__ts_and_d_ts_extensions_are_allowed, [path]));
-                    } else {
-                        _this.errorReporter.addDiagnostic(new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Could_not_find_file___0_, [path]));
-                    }
-                }
-            });
+            for (var i = 0, n = resolutionResults.diagnostics.length; i < n; i++) {
+                this.addDiagnostic(resolutionResults.diagnostics[i]);
+            }
 
-            return ret;
+            if (!options.nolib) {
+                var libraryResolvedFile = {
+                    path: this.ioHost.combine(this.tscBinPath, "lib.d.ts"),
+                    referencedFiles: [],
+                    importedFiles: []
+                };
+                resolvedFiles = [libraryResolvedFile].concat(resolvedFiles);
+            }
+
+            this.resolvedFiles = resolvedFiles;
         };
 
+        //            var resolver = new TypeScript.CodeResolver(this.compilationEnvironment),
+        //                commandLineHost = new CommandLineHost(this.compilationSettings, this.errorReporter),
+        //                ret = commandLineHost.resolveCompilationEnvironment(this.compilationEnvironment, resolver, true);
+        //
+        //            this.compilationEnvironment.code.forEach((code) => {
+        //                var path: string;
+        //                if(!commandLineHost.isResolved(code.path)){
+        //                   path = code.path;
+        //                   if (!TypeScript.isTSFile(path) && !TypeScript.isDTSFile(path)) {
+        //                       this.errorReporter.addDiagnostic(
+        //                           new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Unknown_extension_for_file___0__Only__ts_and_d_ts_extensions_are_allowed, [path]));
+        //                   }
+        //                   else {
+        //                       this.errorReporter.addDiagnostic(
+        //                           new TypeScript.Diagnostic(null, 0, 0, TypeScript.DiagnosticCode.Could_not_find_file___0_, [path]));
+        //                   }
+        //               }
+        //            });
+        //
+        //            return ret;
+        //        }
+        //
         Compiler.prototype.prepareSourceMapPath = function (options, createdFiles) {
             var _this = this;
+            //TODO: 現状改行はtsc内で\r\n固定。将来的に変わる可能性があるためバージョンアップに要注意
             var newLine = "\r\n";
 
+            //TODO: _path と ファイル読み書きは ioHost に移動
             var useFullPath = options.fullSourceMapPath;
 
             if (!options.sourcemap) {
@@ -394,67 +640,74 @@ var GruntTs;
                 } else if (useFullPath && item.type === GruntTs.CodeType.JS) {
                     lines = _this.grunt.file.read(item.dest).split(newLine);
 
+                    //TODO: 現状ソースマップのパスの後ろに空行が1行入ってファイルの終端になっているため2で固定
+                    //将来的に変わる可能性があるためバージョンアップに注意
                     sourceMapLine = lines[lines.length - 2];
-                    if (/^\/\/@ sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)) {
-                        lines[lines.length - 2] = "//@ sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
+                    if (/^\/\/# sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)) {
+                        lines[lines.length - 2] = "//# sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
                         _this.grunt.file.write(item.dest, lines.join(newLine));
                     }
                 }
             });
         };
 
-        Compiler.prototype.buildSettings = function (options) {
-            var temp, setting = this.compilationSettings;
-
-            if (options) {
-                if (options.target) {
-                    temp = options.target.toLowerCase();
-                    if (temp === 'es3') {
-                        setting.codeGenTarget = 0;
-                    } else if (temp == 'es5') {
-                        setting.codeGenTarget = 1;
-                    }
-                }
-                if (options.module) {
-                    temp = options.module.toLowerCase();
-                    if (temp === 'commonjs' || temp === 'node') {
-                        setting.moduleGenTarget = 0;
-                    } else if (temp === 'amd') {
-                        setting.moduleGenTarget = 1;
-                    }
-                }
-                if (options.sourcemap) {
-                    setting.mapSourceFiles = options.sourcemap;
-                }
-                if (options.outputOne && options.fullSourceMapPath) {
-                    setting.emitFullSourceMapPath = options.fullSourceMapPath;
-                }
-                if (options.declaration) {
-                    setting.generateDeclarationFiles = true;
-                }
-                if (options.comments) {
-                    setting.emitComments = true;
-                }
-
-                if (options.disallowbool) {
-                    setting.disallowBool = true;
-                }
-
-                if (options.disallowimportmodule) {
-                    setting.allowModuleKeywordInExternalModuleReference = false;
-                }
-            }
-        };
-
+        //
+        //        private buildSettings(options: any){
+        //            var temp: string,
+        //                setting = this.compilationSettings;
+        //
+        //            if (options) {
+        //                if (options.target) {
+        //                    temp = options.target.toLowerCase();
+        //                    if (temp === 'es3') {
+        //                        setting.codeGenTarget = 0; //TypeScript.CodeGenTarget.ES3;
+        //                    } else if (temp == 'es5') {
+        //                        setting.codeGenTarget = 1; //TypeScript.CodeGenTarget.ES5;
+        //                    }
+        //                }
+        //                if (options.module) {
+        //                    temp = options.module.toLowerCase();
+        //                    if (temp === 'commonjs' || temp === 'node') {
+        //                        setting.moduleGenTarget = 0;
+        //                    } else if (temp === 'amd') {
+        //                        setting.moduleGenTarget = 1;
+        //                    }
+        //                }
+        //                if (options.sourcemap) {
+        //                    setting.mapSourceFiles = options.sourcemap;
+        //                }
+        //                if (options.outputOne && options.fullSourceMapPath) {
+        //                    setting.emitFullSourceMapPath = options.fullSourceMapPath;
+        //                }
+        //                if (options.declaration) {
+        //                    setting.generateDeclarationFiles = true;
+        //                }
+        //                if (options.comments) {
+        //                    setting.emitComments = true;
+        //                }
+        //                //0.9 disallowbool
+        //                if(options.disallowbool){
+        //                    setting.disallowBool = true;
+        //                }
+        //                //0.9 disallowimportmodule
+        //                if(options.disallowimportmodule){
+        //                    setting.allowModuleKeywordInExternalModuleReference = false;
+        //                }
+        //            }
+        //        }
+        //
         Compiler.prototype.writeResult = function (createdFiles, options) {
             var result = { js: [], m: [], d: [], other: [] }, resultMessage, pluralizeFile = function (n) {
                 return (n + " file") + ((n === 1) ? "" : "s");
             };
             createdFiles.forEach(function (item) {
                 if (item.type === GruntTs.CodeType.JS)
-                    result.js.push(item.dest); else if (item.type === GruntTs.CodeType.Map)
-                    result.m.push(item.dest); else if (item.type === GruntTs.CodeType.Declaration)
-                    result.d.push(item.dest); else
+                    result.js.push(item.dest);
+else if (item.type === GruntTs.CodeType.Map)
+                    result.m.push(item.dest);
+else if (item.type === GruntTs.CodeType.Declaration)
+                    result.d.push(item.dest);
+else
                     result.other.push(item.dest);
             });
 
@@ -467,6 +720,105 @@ var GruntTs;
             } else {
                 this.grunt.log.writeln(pluralizeFile(createdFiles.length)["cyan"] + " created. " + resultMessage);
             }
+        };
+
+        /// IReferenceResolverHost methods
+        Compiler.prototype.getScriptSnapshot = function (fileName) {
+            return this.getSourceFile(fileName).scriptSnapshot;
+        };
+
+        Compiler.prototype.getSourceFile = function (fileName) {
+            var sourceFile = this.fileNameToSourceFile.lookup(fileName);
+            if (!sourceFile) {
+                // Attempt to read the file
+                var fileInformation;
+
+                try  {
+                    fileInformation = this.ioHost.readFile(fileName);
+                } catch (e) {
+                    //this.addDiagnostic(new Diagnostic(null, 0, 0, DiagnosticCode.Cannot_read_file_0_1, [fileName, e.message]));
+                    fileInformation = new FileInformation("", ByteOrderMark.None);
+                }
+
+                var snapshot = TypeScript.ScriptSnapshot.fromString(fileInformation.contents);
+                sourceFile = new SourceFile(snapshot, fileInformation.byteOrderMark);
+                this.fileNameToSourceFile.add(fileName, sourceFile);
+            }
+
+            return sourceFile;
+        };
+
+        Compiler.prototype.resolveRelativePath = function (path, directory) {
+            var unQuotedPath = TypeScript.stripQuotes(path);
+            var normalizedPath;
+
+            if (TypeScript.isRooted(unQuotedPath) || !directory) {
+                normalizedPath = unQuotedPath;
+            } else {
+                normalizedPath = this.ioHost.combine(directory, unQuotedPath);
+            }
+
+            // get the absolute path
+            normalizedPath = this.resolvePath(normalizedPath);
+
+            // Switch to forward slashes
+            normalizedPath = TypeScript.switchToForwardSlashes(normalizedPath);
+
+            return normalizedPath;
+        };
+
+        Compiler.prototype.fileExists = function (path) {
+            return this.ioHost.fileExists(path);
+        };
+
+        Compiler.prototype.getParentDirectory = function (path) {
+            return this.ioHost.dirName(path);
+        };
+
+        /// IDiagnosticsReporter methods
+        Compiler.prototype.addDiagnostic = function (diagnostic) {
+            this.hasErrors = true;
+
+            if (diagnostic.fileName()) {
+                var scriptSnapshot = this.getScriptSnapshot(diagnostic.fileName());
+                var lineMap = new TypeScript.LineMap(scriptSnapshot.getLineStartPositions(), scriptSnapshot.getLength());
+                var lineCol = { line: -1, character: -1 };
+                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
+
+                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character + 1) + "): ");
+            }
+
+            this.ioHost.stderr.WriteLine(diagnostic.message());
+        };
+
+        /// EmitterIOHost methods
+        Compiler.prototype.writeFile = function (fileName, contents, writeByteOrderMark) {
+            var path = this.ioHost.resolvePath(fileName);
+            var dirName = this.ioHost.dirName(path);
+            this.createDirectoryStructure(dirName);
+            this.ioHost.writeFile(path, contents, writeByteOrderMark);
+            //IOUtils.writeFileAndFolderStructure(this.ioHost, fileName, contents, writeByteOrderMark);
+        };
+
+        Compiler.prototype.createDirectoryStructure = function (dirName) {
+            if (this.ioHost.directoryExists(dirName)) {
+                return;
+            }
+
+            var parentDirectory = this.ioHost.dirName(dirName);
+            if (parentDirectory != "") {
+                this.createDirectoryStructure(parentDirectory);
+            }
+            this.ioHost.createDirectory(dirName);
+        };
+
+        Compiler.prototype.directoryExists = function (path) {
+            return this.ioHost.directoryExists(path);
+            ;
+        };
+
+        Compiler.prototype.resolvePath = function (path) {
+            return this.ioHost.resolvePath(path);
         };
         return Compiler;
     })();
@@ -494,9 +846,9 @@ module.exports = function (grunt) {
             var dest = file.dest, options = self.options(), files = [];
 
             grunt.file.expand(file.src).forEach(function (file) {
-                if (file.substr(-5) === ".d.ts") {
-                    return;
-                }
+                //                if (file.substr(-5) === ".d.ts") {
+                //                    return;
+                //                }
                 files.push(file);
             });
 

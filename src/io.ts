@@ -3,6 +3,8 @@
 
 module GruntTs{
 
+    declare var process: any;
+
     export enum CodeType{
         JS,
         Map,
@@ -15,31 +17,62 @@ module GruntTs{
         type: CodeType;
     }
 
-    var _fs = require('fs');
-    var _path = require('path');
+    var _fs: any = require('fs');
+    var _path: any = require('path');
 
-    function writeError(str: string){
+    function writeError(str: string): void{
         console.log('>> '.red + str.trim().replace(/\n/g, '\n>> '.red));
     }
+    function writeInfo(str: string): void{
+        console.log('>> '.cyan + str.trim().replace(/\n/g, '\n>> '.cyan));
+    }
 
-    export class GruntIO {
+    function currentPath(): string{
+        return _path.resolve(".");
+    }
+//    readFile(path: string): FileInformation;
+//    writeFile(path: string, contents: string, writeByteOrderMark: boolean): void;
+//    deleteFile(path: string): void;
+//    dir(path: string, re?: RegExp, options?: { recursive?: boolean; }): string[];
+//    fileExists(path: string): boolean;
+//    directoryExists(path: string): boolean;
+//    createDirectory(path: string): void;
+//    resolvePath(path: string): string;
+//    dirName(path: string): string;
+//    findFile(rootPath: string, partialFilePath: string): IResolvedFile;
+//    print(str: string): void;
+//    printLine(str: string): void;
+//    arguments: string[];
+//    stderr: ITextWriter;
+//    stdout: ITextWriter;
+//    watchFile(fileName: string, callback: (x:string) => void ): IFileWatcher;
+//    run(source: string, fileName: string): void;
+//    getExecutingFilePath(): string;
+//    quit(exitCode?: number): void;
+
+    export class GruntIO implements IIO {
         private _createdFiles: CreatedFile[] = [];
-        public stderr: {
-            Write(str);
-            WriteLine(str);
-            Close()
-        };
+
+        public stderr: ITextWriter;
+        public stdout: ITextWriter;
+        public arguments: string[];
 
         constructor(private grunt: any,
                     private destPath: string,
                     private basePath: string,
                     private outputOne: boolean){
-            var self = this;
+            var self: GruntIO = this;
             this.stderr = {
-                Write: (str) => writeError(str),
-                WriteLine: (str) => writeError(str),
-                Close: () => {}
+                Write: (str: string): void => writeError(str),
+                WriteLine: (str: string): void => writeError(str),
+                Close: (): void => {}
             };
+            this.stdout = {
+                Write: (str: string): void => writeInfo(str),
+                WriteLine: (str: string): void => writeInfo(str),
+                Close: (): void => {}
+            };
+            this.arguments = <string[]>process.argv.slice(2);
         }
 
         getCreatedFiles(): CreatedFile[] {
@@ -47,7 +80,7 @@ module GruntTs{
         }
 
         currentPath(): string{
-            return _path.resolve(".");
+            return currentPath();
         }
 
         resolvePath(path: string): string{
@@ -89,18 +122,17 @@ module GruntTs{
             }
         }
 
-        dirName(path): string {
-            var dirPath = _path.dirname(path);
+        dirName(path: string): string {
+            var dirPath: string = _path.dirname(path);
             if (dirPath === path) {
                 dirPath = null;
             }
             return dirPath;
         }
 
-        writeFile(path, contents, writeByteOrderMark) {
-
+        writeFile(path: string, contents: string, writeByteOrderMark: boolean): void {
             var created = (function(): CreatedFile{
-                var source, type;
+                var source: string, type: CodeType;
                 if (/\.js$/.test(path)) {
                     source = path.substr(0, path.length - 3) + ".ts";
                     type = CodeType.JS;
@@ -125,20 +157,22 @@ module GruntTs{
                 return;
             }
             if (!this.outputOne) {
-                var g = _path.join(this.currentPath(), this.basePath || "");
+                var g = _path.join(currentPath(), this.basePath || "");
                 path = path.substr(g.length);
-                path = _path.join(this.currentPath(), this.destPath ? this.destPath.toString() : '', path);
+                path = _path.join(currentPath(), this.destPath ? this.destPath.toString() : '', path);
             }
             if (writeByteOrderMark) {
                 contents = '\uFEFF' + contents;
             }
+
             this.grunt.file.write(path, contents);
             created.dest = path;
+
             this._createdFiles.push(created);
         }
 
-        findFile(rootPath: string, partialFilePath: string){
-            var path = rootPath + "/" + partialFilePath;
+        findFile(rootPath: string, partialFilePath: string): {fileInformation: FileInformation; path: string;}{
+            var path: string = rootPath + "/" + partialFilePath;
 
             while (true) {
                 if (_fs.existsSync(path)) {
@@ -159,11 +193,11 @@ module GruntTs{
             }
         }
 
-        directoryExists(path) {
+        directoryExists(path: string): boolean {
             return _fs.existsSync(path) && _fs.lstatSync(path).isDirectory();
         }
 
-        fileExists(path) {
+        fileExists(path: string): boolean {
             return _fs.existsSync(path);
         }
 
@@ -171,9 +205,42 @@ module GruntTs{
             return _path.join(left, right);
         }
 
+        createDirectory(path: string): void{
+            if (!this.directoryExists(path)) {
+                _fs.mkdirSync(path);
+            }
+        }
+
+        print(str: string): void{
+            this.stdout.Write(str);
+        }
+
+        printLine(str: string): void{
+            this.stdout.WriteLine(str);
+        }
+
         deleteFile(path: string): void{
             //dummy
         }
-    }
 
+        dir(path: string, re?: RegExp, options?: { recursive?: boolean; }): string[]{
+            return null;
+        }
+
+        watchFile(fileName: string, callback: (x:string) => void ): IFileWatcher{
+            return null;
+        }
+
+        run(source: string, fileName: string): void{
+            return;
+        }
+
+        getExecutingFilePath(): string{
+            return null;
+        }
+
+        quit(exitCode?: number): void{
+            return;
+        }
+    }
 }
