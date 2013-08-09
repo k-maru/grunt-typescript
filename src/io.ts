@@ -30,25 +30,6 @@ module GruntTs{
     function currentPath(): string{
         return _path.resolve(".");
     }
-//    readFile(path: string): FileInformation;
-//    writeFile(path: string, contents: string, writeByteOrderMark: boolean): void;
-//    deleteFile(path: string): void;
-//    dir(path: string, re?: RegExp, options?: { recursive?: boolean; }): string[];
-//    fileExists(path: string): boolean;
-//    directoryExists(path: string): boolean;
-//    createDirectory(path: string): void;
-//    resolvePath(path: string): string;
-//    dirName(path: string): string;
-//    findFile(rootPath: string, partialFilePath: string): IResolvedFile;
-//    print(str: string): void;
-//    printLine(str: string): void;
-//    arguments: string[];
-//    stderr: ITextWriter;
-//    stdout: ITextWriter;
-//    watchFile(fileName: string, callback: (x:string) => void ): IFileWatcher;
-//    run(source: string, fileName: string): void;
-//    getExecutingFilePath(): string;
-//    quit(exitCode?: number): void;
 
     export class GruntIO implements IIO {
         private _createdFiles: CreatedFile[] = [];

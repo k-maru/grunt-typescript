@@ -118,6 +118,22 @@ module.exports.typescript = {
 
         test.done();
     },
+    "single-sourcemap":function(test){
+        "use strict";
+
+        test.expect(2);
+        var actual = grunt.file.read("test/temp/single-sourcemap.js");
+        var expected = grunt.file.read("test/expected/single/single-sourcemap.js");
+
+        test.equal(expected, actual);
+
+        actual = grunt.file.read("test/temp/single-sourcemap.js.map");
+        expected = grunt.file.read("test/expected/single/single-sourcemap.js.map");
+
+        test.equal(expected, actual, 'incorrect sourcemap');
+
+        test.done();
+    },
     multi:function(test){
         "use strict";
 

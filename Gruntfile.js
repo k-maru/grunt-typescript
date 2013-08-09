@@ -64,6 +64,14 @@ module.exports = function (grunt) {
                 src:"test/fixtures/single/**/*.ts",
                 dest: "test/temp/single.js"
             },
+            "single-sourcemap":{
+                src:"test/fixtures/single/**/*.ts",
+                dest: "test/temp/single-sourcemap.js",
+                options:{
+                    sourcemap: true,
+                    fullSourceMapPath:true
+                }
+            },
             multi:{
                 src:"test/fixtures/multi/**/*.ts",
                 dest:"test/temp/multi"
@@ -98,42 +106,15 @@ module.exports = function (grunt) {
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts"
 //            }
-//            , errorbool: {
-//                src: "test/fixtures/error-bool.ts",
-//                options: {
-//                    disallowbool: true
-//                }
-//            }
         },
         nodeunit:{
             tests:["test/test.js"]
-        },
-        shell: {
-            build: {
-                command: "node node_modules/typescript/bin/tsc.js " +
-                    "src/compiler.ts " +
-                    "src/io.ts " +
-                    "src/task.ts " +
-                    "--out tasks/typescript.js",
-                options: {
-                    stdout: true,
-                    stderr: true
-                }
-            }
-        },
-        watch: {
-            build: {
-                files: ["src/*.ts"],
-                tasks: ["shell:build"]
-            }
         }
     });
 
     grunt.loadTasks("tasks");
     grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
-    grunt.loadNpmTasks("grunt-contrib-watch");
-    grunt.loadNpmTasks("grunt-shell");
 
     grunt.registerTask("build", ["shell:build"]);
     grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
