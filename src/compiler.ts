@@ -117,10 +117,7 @@ module GruntTs{
         }
 
         private prepareSourceMapPath(options: any, createdFiles: GruntTs.CreatedFile[]): void{
-            //TODO: 現状改行はtsc内で\r\n固定。将来的に変わる可能性があるためバージョンアップに要注意
             var newLine: string = TypeScript.newLine();
-
-            //TODO: _path と ファイル読み書きは ioHost に移動
             var useFullPath = options.fullSourceMapPath;
 
             if(!options.sourcemap){

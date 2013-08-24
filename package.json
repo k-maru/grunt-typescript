@@ -2,7 +2,7 @@
     "author": "kazuhide maruyama",
     "name": "grunt-typescript",
     "description": "compile typescript to javascript",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "homepage": "https://github.com/k-maru/grunt-typescript",
     "repository": {
         "type": "git",
@@ -22,14 +22,14 @@
         "node": ">= 0.8.0"
     },
     "dependencies": {
-        "typescript": "0.9.1"
+        "typescript": "0.9.1-1"
     },
     "peerDependencies": {
         "grunt": "~0.4.1"
     },
     "devDependencies": {
         "grunt": "~0.4.1",
-        "typescript": "0.9.1",
+        "typescript": "0.9.1-1",
         "grunt-contrib-clean": "~0.4.0",
         "grunt-contrib-nodeunit": "~0.1.2"
     },

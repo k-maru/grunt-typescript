@@ -244,6 +244,9 @@ var GruntTs;
         } else {
             settings.removeComments = true;
         }
+
+        //default
+        settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
         if (options.target) {
             temp = options.target.toLowerCase();
             if (temp === 'es3') {
@@ -252,6 +255,9 @@ var GruntTs;
                 settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
             }
         }
+
+        //default
+        settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
         if (options.module) {
             temp = options.module.toLowerCase();
             if (temp === 'commonjs' || temp === 'node') {
@@ -262,6 +268,12 @@ var GruntTs;
         }
         if (options.noImplicitAny) {
             settings.noImplicitAny = true;
+        }
+        if (options.allowbool) {
+            settings.allowBool = true;
+        }
+        if (options.allowimportmodule) {
+            settings.allowModuleKeywordInExternalModuleReference = true;
         }
 
         if (options.disallowAsi) {
@@ -392,10 +404,7 @@ var GruntTs;
 
         Compiler.prototype.prepareSourceMapPath = function (options, createdFiles) {
             var _this = this;
-            //TODO: 現状改行はtsc内で\r\n固定。将来的に変わる可能性があるためバージョンアップに要注意
             var newLine = TypeScript.newLine();
-
-            //TODO: _path と ファイル読み書きは ioHost に移動
             var useFullPath = options.fullSourceMapPath;
 
             if (!options.sourcemap) {

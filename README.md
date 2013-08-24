@@ -74,7 +74,13 @@ Generates corresponding .d.ts file
 Emit comments to output
 
 ###noImplicitAny `boolean`
-Warn on expressions and declarations with an implied 'any' type
+Warn on expressions and declarations with an implied 'any' type.
+
+###allowbool `boolean`
+Allow 'bool' as a synonym for 'boolean'.
+
+###allowimportmodule `boolean`
+Allow 'module(...)' as a synonym for 'require(...)'.
 
 ###ignoreTypeCheck `boolean`
 

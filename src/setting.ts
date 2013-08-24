@@ -48,6 +48,12 @@ module GruntTs{
         if(options.noImplicitAny){
             settings.noImplicitAny = true;
         }
+        if(options.allowbool){
+            settings.allowBool = true;
+        }
+        if(options.allowimportmodule){
+            settings.allowModuleKeywordInExternalModuleReference = true;
+        }
 
         //test
         if(options.disallowAsi){
