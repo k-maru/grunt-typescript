@@ -18,36 +18,6 @@ node_modules/typescript/bin/tsc test/fixtures/sourcemap.ts --outDir test/fixture
 mv test/fixtures/sourcemap/sourcemap.js test/expected/sourcemap/sourcemap.js
 mv test/fixtures/sourcemap/sourcemap.js.map test/expected/sourcemap/sourcemap.js.map
 
-echo SourceMap FullPath
-node_modules/typescript/bin/tsc test/fixtures/sourcemap-fullpath.ts --outDir test/fixtures/sourcemap --sourcemap
-
-sed "s@^//# sourceMappingURL=sourcemap-fullpath.js.map@//# sourceMappingURL=file://${CURDIR}/test/fixtures/sourcemap/sourcemap-fullpath.js.map@" test/fixtures/sourcemap/sourcemap-fullpath.js > test/fixtures/sourcemap/sourcemap-fullpath.js2
-sed -e 's/$/\r/' test/fixtures/sourcemap/sourcemap-fullpath.js2 > test/fixtures/sourcemap/sourcemap-fullpath.js3
-
-sed "s@\"file\":\"sourcemap-fullpath.js\"@\"file\":\"file://${CURDIR}/test/fixtures/sourcemap/sourcemap-fullpath.js\"@" test/fixtures/sourcemap/sourcemap-fullpath.js.map > test/fixtures/sourcemap/sourcemap-fullpath.js.map3
-# sed -e 's/$/\r/' test/fixtures/sourcemap/sourcemap-fullpath.js.map2 > test/fixtures/sourcemap/sourcemap-fullpath.js.map3
-
-mv test/fixtures/sourcemap/sourcemap-fullpath.js3 test/expected/sourcemap/sourcemap-fullpath.js
-mv test/fixtures/sourcemap/sourcemap-fullpath.js.map3 test/expected/sourcemap/sourcemap-fullpath.js.map
-rm test/fixtures/sourcemap/sourcemap-fullpath.js
-rm test/fixtures/sourcemap/sourcemap-fullpath.js.map
-rm test/fixtures/sourcemap/sourcemap-fullpath.js2
-# rm test/fixtures/sourcemap/sourcemap-fullpath.js.map2
-
-echo SourceMap FullPath Single File
-node_modules/typescript/bin/tsc test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single-sourcemap.js --sourcemap
-
-sed "s@^//# sourceMappingURL=single-sourcemap.js.map@//# sourceMappingURL=file://${CURDIR}/test/temp/single-sourcemap.js.map@" test/temp/single-sourcemap.js > test/temp/single-sourcemap.js2
-sed -e 's/$/\r/' test/temp/single-sourcemap.js2 > test/temp/single-sourcemap.js3
-
-sed "s@\"file\":\"single-sourcemap.js\"@\"file\":\"file://${CURDIR}/test/temp/single-sourcemap.js\"@" test/temp/single-sourcemap.js.map > test/temp/single-sourcemap.js.map3
-
-mv test/temp/single-sourcemap.js3 test/expected/single/single-sourcemap.js
-mv test/temp/single-sourcemap.js.map3 test/expected/single/single-sourcemap.js.map
-rm test/temp/single-sourcemap.js
-rm test/temp/single-sourcemap.js.map
-rm test/temp/single-sourcemap.js2
-
 echo Target ES5
 node_modules/typescript/bin/tsc test/fixtures/es5.ts --target ES5
 mv test/fixtures/es5.js test/expected/es5.js
@@ -67,6 +37,11 @@ mv test/fixtures/commonjs.js test/expected/commonjs.js
 echo Single
 node_modules/typescript/bin/tsc test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js
 mv test/temp/single.js test/expected/single/single.js
+
+echo Single-SourceMap
+node_modules/typescript/bin/tsc test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single-sourcemap.js --sourcemap
+mv test/temp/single-sourcemap.js test/expected/single/single-sourcemap.js
+mv test/temp/single-sourcemap.js.map test/expected/single/single-sourcemap.js.map
 
 echo Multi
 node_modules/typescript/bin/tsc test/fixtures/multi/multi1.ts --outDir test/temp/multi

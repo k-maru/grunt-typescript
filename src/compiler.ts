@@ -4,178 +4,137 @@
 ///<reference path="./setting.ts" />
 
 module GruntTs{
-    var _path: any = require("path");
+
     class SourceFile {
-        constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: ByteOrderMark) {
+        constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: TypeScript.ByteOrderMark) {
         }
     }
 
-    export class Compiler implements TypeScript.IReferenceResolverHost, TypeScript.IDiagnosticReporter, TypeScript.EmitterIOHost{
-        private compilationSettings: TypeScript.CompilationSettings;
+    enum CompilerPhase {
+        Syntax,
+        Semantics,
+        EmitOptionsValidation,
+        Emit,
+        DeclarationEmit,
+    }
+
+    export class Compiler implements TypeScript.IReferenceResolverHost{
+        private compilationSettings: TypeScript.ImmutableCompilationSettings;
         private inputFiles: string[];
-        private fileNameToSourceFile = new TypeScript.StringHashTable();
+        private fileNameToSourceFile = new TypeScript.StringHashTable<SourceFile>();
         private hasErrors: boolean = false;
         private resolvedFiles: TypeScript.IResolvedFile[] = [];
-        private inputFileNameToOutputFileName = new TypeScript.StringHashTable();
+        private logger: TypeScript.ILogger = null;
+        private destinationPath: string;
+        private options: any;
+        private outputFiles: string[] = [];
 
         constructor(private grunt: any, private tscBinPath: string, private ioHost: GruntTs.GruntIO) {
 
         }
 
-        compile(files: string[], dest: string, options: any): boolean {
+        exec(files: string[], dest: string, options: any): boolean {
 
+            this.destinationPath = dest;
+            this.options = options;
             this.compilationSettings = GruntTs.createCompilationSettings(options, dest, this.ioHost);
             this.inputFiles = files;
+            this.logger = new TypeScript.NullLogger();
 
-            this.resolve(options);
-
-            //compile
-            var compiler = new TypeScript.TypeScriptCompiler(new TypeScript.NullLogger(), this.compilationSettings);
-
-            var anySyntacticErrors = false;
-            var anySemanticErrors = false;
-
-            for (var i = 0, n = this.resolvedFiles.length; i < n; i++) {
-                var resolvedFile = this.resolvedFiles[i];
-                var sourceFile = this.getSourceFile(resolvedFile.path);
-                compiler.addSourceUnit(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
-
-                var syntacticDiagnostics = compiler.getSyntacticDiagnostics(resolvedFile.path);
-                compiler.reportDiagnostics(syntacticDiagnostics, this);
-
-                if (syntacticDiagnostics.length > 0) {
-                    anySyntacticErrors = true;
-                }
-            }
-
-            if (anySyntacticErrors) {
-                return true;
-            }
-
-            compiler.pullTypeCheck();
-
-            var fileNames = compiler.fileNameToDocument.getAllKeys();
-            var n = fileNames.length;
-            for (var i = 0; i < n; i++) {
-                var fileName = fileNames[i];
-                var semanticDiagnostics = compiler.getSemanticDiagnostics(fileName);
-                if (semanticDiagnostics.length > 0) {
-                    anySemanticErrors = true;
-                    compiler.reportDiagnostics(semanticDiagnostics, this);
-                }
-            }
-            if (anySemanticErrors) {
-                if(!options || Object.prototype.toString.call(options.ignoreTypeCheck) !== "[object Boolean]" || !options.ignoreTypeCheck){
-                    return false;
-                }
-            }
-
-            var mapInputToOutput = (inputFile: string, outputFile: string): void => {
-                this.inputFileNameToOutputFileName.addOrUpdate(inputFile, outputFile);
-            };
-
-            // TODO: if there are any emit diagnostics.  Don't proceed.
-            var emitDiagnostics = compiler.emitAll(this, mapInputToOutput);
-            compiler.reportDiagnostics(emitDiagnostics, this);
-            if (emitDiagnostics.length > 0) {
+            try{
+                this.resolve();
+                this.compile();
+            }catch(e){
                 return false;
             }
 
-            // Don't emit declarations if we have any semantic diagnostics.
-            if (!anySemanticErrors) {
-                var emitDeclarationsDiagnostics = compiler.emitAllDeclarations();
-                compiler.reportDiagnostics(emitDeclarationsDiagnostics, this);
-                if (emitDeclarationsDiagnostics.length > 0) {
-                    return false;
-                }
-            }
+            this.writeResult();
 
-            this.prepareSourceMapPath(options, this.ioHost.getCreatedFiles());
-            this.writeResult(this.ioHost.getCreatedFiles(), options);
             return true;
         }
 
-        private resolve(options: any): void{
+        private resolve(): void{
             var resolvedFiles: TypeScript.IResolvedFile[] = [];
-            var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings);
+            var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings.useCaseSensitiveFileResolution());
+            var includeDefaultLibrary = !this.compilationSettings.noLib() && !resolutionResults.seenNoDefaultLibTag;
+
             resolvedFiles = resolutionResults.resolvedFiles;
 
-            for (var i = 0, n = resolutionResults.diagnostics.length; i < n; i++) {
-                this.addDiagnostic(resolutionResults.diagnostics[i]);
-            }
+            resolutionResults.diagnostics.forEach(d => this.addDiagnostic(d));
 
-            if(!options.nolib){
+            if (includeDefaultLibrary) {
                 var libraryResolvedFile: TypeScript.IResolvedFile = {
                     path: this.ioHost.combine(this.tscBinPath, "lib.d.ts"),
                     referencedFiles: [],
                     importedFiles: []
                 };
+
+                // Prepend the library to the resolved list
                 resolvedFiles = [libraryResolvedFile].concat(resolvedFiles);
             }
 
             this.resolvedFiles = resolvedFiles;
         }
 
-        private prepareSourceMapPath(options: any, createdFiles: GruntTs.CreatedFile[]): void{
-            var newLine: string = TypeScript.newLine();
-            var useFullPath = options.fullSourceMapPath;
+        private compile(): void{
+            var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
 
-            if(!options.sourcemap){
-                return;
-            }
-
-            createdFiles.filter((item) => {
-                return item.type === GruntTs.CodeType.Map || (useFullPath && item.type === GruntTs.CodeType.JS);
-            }).forEach((item) => {
-                var mapObj, lines, sourceMapLine;
-                if(item.type === GruntTs.CodeType.Map){
-                    mapObj = JSON.parse(this.grunt.file.read(item.dest));
-                    if(!options.outputOne){
-                        mapObj.sources.length = 0;
-                        mapObj.sources.push(_path.relative(_path.dirname(item.dest), item.source).replace(/\\/g, "/"));
-                    }
-                    if(useFullPath){
-                        mapObj.file = "file:///" + (item.dest.substr(0, item.dest.length - 6) + "js").replace(/\\/g, "/");
-                    }
-                    this.grunt.file.write(item.dest, JSON.stringify(mapObj))
-                }else if(useFullPath && item.type === GruntTs.CodeType.JS){
-                    lines = this.grunt.file.read(item.dest).split(newLine);
-                    //TODO: 現状ソースマップのパスの後ろに空行が1行入ってファイルの終端になっているため2で固定
-                    //将来的に変わる可能性があるためバージョンアップに注意
-                    sourceMapLine = lines[lines.length - 2];
-                    if(/^\/\/# sourceMappingURL\=.+\.js\.map$/.test(sourceMapLine)){
-                        lines[lines.length - 2] = "//# sourceMappingURL=file:///" + item.dest.replace(/\\/g, "/") + ".map";
-                        this.grunt.file.write(item.dest, lines.join(newLine));
-                    }
-                }
+            this.resolvedFiles.forEach(resolvedFile => {
+                var sourceFile = this.getSourceFile(resolvedFile.path);
+                compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
             });
+
+            for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
+                var result = it.current(),
+                    hasError = false,
+                    //not public property
+                    phase = (<any>it).compilerPhase;
+
+                result.diagnostics.forEach(d => {
+                    var info = d.info();
+                    if (info.category === TypeScript.DiagnosticCategory.Error) {
+                        hasError = true;
+                    }
+                    this.addDiagnostic(d)
+                });
+                if(hasError && phase === CompilerPhase.Syntax){
+                    throw new Error();
+                }
+                if(hasError && !this.options.ignoreTypeCheck){
+                    throw new Error();
+                }
+
+
+                if (!this.tryWriteOutputFiles(result.outputFiles)) {
+                    throw new Error();
+                }
+            }
         }
 
-        private writeResult(createdFiles: GruntTs.CreatedFile[], options: any){
+        private writeResult(){
             var result = {js:[], m:[], d:[], other:[]},
                 resultMessage: string,
                 pluralizeFile = (n) => (n + " file") + ((n === 1) ? "" : "s");
-            createdFiles.forEach(function (item) {
-                if (item.type === GruntTs.CodeType.JS) result.js.push(item.dest);
-                else if (item.type === GruntTs.CodeType.Map) result.m.push(item.dest);
-                else if (item.type === GruntTs.CodeType.Declaration) result.d.push(item.dest);
-                else result.other.push(item.dest);
+            this.outputFiles.forEach(function (item) {
+                if (/\.js$/.test(item)) result.js.push(item);
+                else if (/\.js\.map$/.test(item)) result.m.push(item);
+                else if (/\.d\.ts$/.test(item)) result.d.push(item);
+                else result.other.push(item);
             });
 
             resultMessage = "js: " + pluralizeFile(result.js.length)
                 + ", map: " + pluralizeFile(result.m.length)
                 + ", declaration: " + pluralizeFile(result.d.length);
-            if (options.outputOne) {
+            if (this.options.outputOne) {
                 if(result.js.length > 0){
                     this.grunt.log.writeln("File " + (result.js[0])["cyan"] + " created.");
                 }
                 this.grunt.log.writeln(resultMessage);
             } else {
-                this.grunt.log.writeln(pluralizeFile(createdFiles.length)["cyan"] + " created. " + resultMessage);
+                this.grunt.log.writeln(pluralizeFile(this.outputFiles.length)["cyan"] + " created. " + resultMessage);
             }
         }
 
-        /// IReferenceResolverHost methods
         getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
             return this.getSourceFile(fileName).scriptSnapshot;
         }
@@ -184,14 +143,13 @@ module GruntTs{
             var sourceFile: SourceFile = this.fileNameToSourceFile.lookup(fileName);
             if (!sourceFile) {
                 // Attempt to read the file
-                var fileInformation: FileInformation;
+                var fileInformation: TypeScript.FileInformation;
 
                 try {
-                    fileInformation = this.ioHost.readFile(fileName);
+                    fileInformation = this.ioHost.readFile(fileName, this.compilationSettings.codepage());
                 }
                 catch (e) {
-                    //this.addDiagnostic(new Diagnostic(null, 0, 0, DiagnosticCode.Cannot_read_file_0_1, [fileName, e.message]));
-                    fileInformation = new FileInformation("", ByteOrderMark.None);
+                    fileInformation = new TypeScript.FileInformation("", TypeScript.ByteOrderMark.None);
                 }
 
                 var snapshot = TypeScript.ScriptSnapshot.fromString(fileInformation.contents);
@@ -203,7 +161,7 @@ module GruntTs{
         }
 
         resolveRelativePath(path: string, directory: string): string {
-            var unQuotedPath = TypeScript.stripQuotes(path);
+            var unQuotedPath = TypeScript.stripStartAndEndQuotes(path);
             var normalizedPath: string;
 
             if (TypeScript.isRooted(unQuotedPath) || !directory) {
@@ -216,35 +174,109 @@ module GruntTs{
             return normalizedPath;
         }
 
+        private fileExistsCache = TypeScript.createIntrinsicsObject<boolean>();
+
         fileExists(path: string): boolean {
-            return this.ioHost.fileExists(path);
+            var exists = this.fileExistsCache[path];
+            if (exists === undefined) {
+                exists = this.ioHost.fileExists(path);
+                this.fileExistsCache[path] = exists;
+            }
+            return exists;
         }
 
         getParentDirectory(path: string): string {
             return this.ioHost.dirName(path);
         }
 
-        addDiagnostic(diagnostic: TypeScript.Diagnostic) {
-            this.hasErrors = true;
+        private addDiagnostic(diagnostic: TypeScript.Diagnostic) {
+            var diagnosticInfo = diagnostic.info();
+            if (diagnosticInfo.category === TypeScript.DiagnosticCategory.Error) {
+                this.hasErrors = true;
+            }
 
             if (diagnostic.fileName()) {
-                var scriptSnapshot = this.getScriptSnapshot(diagnostic.fileName());
-                var lineMap = new TypeScript.LineMap(scriptSnapshot.getLineStartPositions(), scriptSnapshot.getLength());
-                var lineCol = { line: -1, character: -1 };
-                lineMap.fillLineAndCharacterFromPosition(diagnostic.start(), lineCol);
-
-                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (lineCol.line + 1) + "," + (lineCol.character + 1) + "): ");
+                this.ioHost.stderr.Write(diagnostic.fileName() + "(" + (diagnostic.line() + 1) + "," + (diagnostic.character() + 1) + "): ");
             }
 
             this.ioHost.stderr.WriteLine(diagnostic.message());
         }
 
-        /// EmitterIOHost methods
+        private tryWriteOutputFiles(outputFiles: TypeScript.OutputFile[]): boolean {
+            for (var i = 0, n = outputFiles.length; i < n; i++) {
+                var outputFile = outputFiles[i];
+
+                try {
+                    this.writeFile(outputFile.name, outputFile.text, outputFile.writeByteOrderMark);
+                }
+                catch (e) {
+                    this.addDiagnostic(
+                        new TypeScript.Diagnostic(outputFile.name, null, 0, 0, TypeScript.DiagnosticCode.Emit_Error_0, [e.message]));
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         writeFile(fileName: string, contents: string, writeByteOrderMark: boolean): void {
-            var path = this.ioHost.resolvePath(fileName);
+
+            var preparedFileName = this.prepareFileName(fileName);
+            var path = this.ioHost.resolvePath(preparedFileName);
             var dirName = this.ioHost.dirName(path);
             this.createDirectoryStructure(dirName);
+
+            contents = this.prepareSourcePath(fileName, preparedFileName, contents);
+
             this.ioHost.writeFile(path, contents, writeByteOrderMark);
+
+            this.outputFiles.push(path);
+        }
+
+        private prepareFileName(fileName: string): string{
+            var newFileName = fileName,
+                basePath = this.options.base_path;
+
+            if(this.options.outputOne){
+                return newFileName;
+            }
+            if(!this.destinationPath){
+                return newFileName;
+            }
+
+            var currentPath = this.ioHost.currentPath(),
+                relativePath = this.ioHost.relativePath(currentPath, fileName);
+
+            if(basePath){
+                if(relativePath.substr(0, basePath.length) !== basePath){
+                    throw new Error(fileName + " is not started base_path");
+                }
+                relativePath = relativePath.substr(basePath.length);
+            }
+
+            return this.ioHost.resolveMulti(currentPath, this.destinationPath, relativePath);
+        }
+
+        private prepareSourcePath(sourceFileName: string, preparedFileName: string, contents: string): string{
+            var io = this.ioHost;
+            if(this.options.outputOne){
+                return contents;
+            }
+            if(sourceFileName === preparedFileName){
+                return contents;
+            }
+            if(!this.destinationPath){
+                return contents;
+            }
+            if(!(/\.js\.map$/.test(sourceFileName))){
+                return contents;
+            }
+            var mapData: any = JSON.parse(contents),
+                source = mapData.sources[0];
+            mapData.sources.length = 0;
+            var relative = io.relativePath(io.dirName(preparedFileName), sourceFileName);
+            mapData.sources.push(io.combine(io.dirName(relative), source));
+            return JSON.stringify(mapData);
         }
 
         private createDirectoryStructure(dirName: string): void {
@@ -263,8 +295,15 @@ module GruntTs{
             return this.ioHost.directoryExists(path);;
         }
 
+        private resolvePathCache = TypeScript.createIntrinsicsObject<string>();
+
         resolvePath(path: string): string {
-            return this.ioHost.resolvePath(path);
+            var cachedValue = this.resolvePathCache[path];
+            if (!cachedValue) {
+                cachedValue = this.ioHost.resolvePath(path);
+                this.resolvePathCache[path] = cachedValue;
+            }
+            return cachedValue;
         }
     }
 }

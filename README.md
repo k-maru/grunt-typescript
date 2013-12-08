@@ -25,8 +25,7 @@ Then add some configuration for the plugin like so:
               target: 'es5', //or es3
               base_path: 'path/to/typescript/files',
               sourcemap: true,
-              fullSourceMapPath: true,
-              declaration: true,
+              declaration: true
             }
           }
         },
@@ -64,9 +63,6 @@ Specify module code generation: "commonjs" (default) or "amd"
 ###sourcemap `boolean`
 Generates corresponding .map files
 
-###fullSourceMapPath `boolean`
-Writes the full path of map file in the generated js file
-
 ###declaration `boolean`
 Generates corresponding .d.ts file
 
@@ -76,13 +72,8 @@ Emit comments to output
 ###noImplicitAny `boolean`
 Warn on expressions and declarations with an implied 'any' type.
 
-###allowbool `boolean`
-Allow 'bool' as a synonym for 'boolean'.
-
-###allowimportmodule `boolean`
-Allow 'module(...)' as a synonym for 'require(...)'.
-
 ###ignoreTypeCheck `boolean`
+Default value is true
 
 ###base_path `string`
 

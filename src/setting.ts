@@ -5,16 +5,26 @@
 module GruntTs{
     var _path: any = require("path");
 
-    export function createCompilationSettings(options: any, dest: string, ioHost: GruntIO): TypeScript.CompilationSettings{
+    export function createCompilationSettings(options: any, dest: string, ioHost: GruntIO): TypeScript.ImmutableCompilationSettings{
 
         var settings = new TypeScript.CompilationSettings(),
             temp: string;
+
+        if(options.fullSourceMapPath){
+            ioHost.printLine("fullSourceMapPath not supported.");
+        }
+        if(options.allowbool){
+            ioHost.printLine("allowbool is obsolete.");
+        }
+        if(options.allowimportmodule){
+            ioHost.printLine("allowimportmodule is obsolete.");
+        }
 
         if(options.outputOne){
             dest = _path.resolve(ioHost.currentPath(), dest);
             settings.outFileOption = dest;
         }
-        if(options.sourcemap || options.fullSourceMapPath){
+        if(options.sourcemap){
             settings.mapSourceFiles = true;
         }
         if(options.declaration){
@@ -48,11 +58,9 @@ module GruntTs{
         if(options.noImplicitAny){
             settings.noImplicitAny = true;
         }
-        if(options.allowbool){
-            settings.allowBool = true;
-        }
-        if(options.allowimportmodule){
-            settings.allowModuleKeywordInExternalModuleReference = true;
+
+        if(options.nolib){
+            settings.noLib = true;
         }
 
         //test
@@ -60,6 +68,6 @@ module GruntTs{
             settings.allowAutomaticSemicolonInsertion = false;
         }
 
-        return settings;
+        return TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings);
     }
 }

@@ -46,23 +46,6 @@ module.exports.typescript = {
 
         test.done();
     },
-    "sourcemap-fullpath":function(test) {
-        "use strict";
-
-        test.expect(2);
-
-        var actual = grunt.file.read("test/fixtures/sourcemap/sourcemap-fullpath.js");
-        var expected = grunt.file.read("test/expected/sourcemap/sourcemap-fullpath.js");
-
-        test.equal(expected, actual, 'incorrect output javascript');
-
-        actual = grunt.file.read("test/fixtures/sourcemap/sourcemap-fullpath.js.map");
-        expected = grunt.file.read("test/expected/sourcemap/sourcemap-fullpath.js.map");
-
-        test.equal(expected, actual, 'incorrect sourcemap');
-
-        test.done();
-    },
     es5:function(test){
         "use strict";
 

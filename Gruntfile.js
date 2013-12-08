@@ -1,6 +1,9 @@
 module.exports = function (grunt) {
     "use strict";
 
+    var fs = require("fs"),
+        path = require("path");
+
     grunt.initConfig({
         clean:{
             test:[
@@ -14,7 +17,9 @@ module.exports = function (grunt) {
         },
         typescript:{
             simple:{
-                src:["test/fixtures/simple.ts"]
+                src: ["test/fixtures/simple.ts"],
+                options:{
+                }
             },
             declaration:{
                 src:"test/fixtures/declaration.ts",
@@ -30,14 +35,18 @@ module.exports = function (grunt) {
                     sourcemap:true
                 }
             },
-            "sourcemap-fullpath":{
-                src:"test/fixtures/sourcemap-fullpath.ts",
-                dest:"test/fixtures/sourcemap/",
+            dest:{
+                src:"test/fixtures/dest.ts",
+                dest: "test/temp/dest",
                 options:{
-                    base_path: "test/fixtures/",
-                    sourcemap:true,
-                    fullSourceMapPath:true
+                    sourcemap: true,
+                    declaration: true,
+                    base_path: "test/fixtures"
                 }
+            },
+            single:{
+                src:"test/fixtures/single/**/*.ts",
+                dest: "test/temp/single.js"
             },
             es5:{
                 src:"test/fixtures/es5.ts",
@@ -45,9 +54,6 @@ module.exports = function (grunt) {
                     target:"ES5"
                 }
             },
-//            "no-module":{
-//                src: "test/fixtures/no-module.ts"
-//            },
             amd:{
                 src:"test/fixtures/amd.ts",
                 options:{
@@ -60,16 +66,11 @@ module.exports = function (grunt) {
                     module:"commonjs"
                 }
             },
-            single:{
-                src:"test/fixtures/single/**/*.ts",
-                dest: "test/temp/single.js"
-            },
             "single-sourcemap":{
                 src:"test/fixtures/single/**/*.ts",
                 dest: "test/temp/single-sourcemap.js",
                 options:{
-                    sourcemap: true,
-                    fullSourceMapPath:true
+                    sourcemap: true
                 }
             },
             multi:{
@@ -100,14 +101,15 @@ module.exports = function (grunt) {
             noImplicitAny:{
                 src:"test/fixtures/noImplicitAny.ts",
                 options:{
-                    noImplicitAny: true,
-                    ignoreTypeCheck: true
+                    //ignoreTypeCheck: false,
+                    noImplicitAny: true
+
                 }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",
                 options: {
-                    ignoreTypeCheck: true
+                    //ignoreTypeCheck: false
                 }
             }
 //            , errorsyntax:{
@@ -116,14 +118,28 @@ module.exports = function (grunt) {
         },
         nodeunit:{
             tests:["test/test.js"]
+        },
+        exec:{
+            build:{
+                command: function(){
+                    var files = fs.readdirSync("src").filter(function(file){
+                        file = "src/" + file;
+                        return fs.statSync(file).isFile() && /.*\.ts$/.test(file); //絞り込み
+                    }).map(function(file){
+                        return "src" + path.sep + file;
+                    }).join(" ");
+                    return ["node_modules", ".bin", "tsc " + files + " --out tasks", "typescript.js"].join(path.sep);
+                }
+            }
         }
     });
 
     grunt.loadTasks("tasks");
+    grunt.loadNpmTasks('grunt-exec');
     grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
 
-    grunt.registerTask("build", ["shell:build"]);
+    grunt.registerTask("build", ["exec:build"]);
     grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
 

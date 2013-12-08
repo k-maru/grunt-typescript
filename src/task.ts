@@ -7,7 +7,7 @@ module.exports = function(grunt: any){
 
     var _path = require("path"),
         _vm = require('vm'),
-        loadTypeScript = function(){
+        getTsBinPathWithLoad = function(){
             var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
                 typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
                 code;
@@ -21,31 +21,47 @@ module.exports = function(grunt: any){
             _vm.runInThisContext(code, typeScriptPath);
 
             return typeScriptBinPath;
+        },
+        prepareBasePath = function(io: GruntTs.GruntIO, path: string): string{
+            if(!path){
+                return path;
+            }
+            path = io.normalizePath(path);
+            if(path.lastIndexOf("/") !== path.length - 1){
+                path = path + "/";
+            }
+            return path;
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var self = this,
-            typescriptBinPath = loadTypeScript(),
+            typescriptBinPath = getTsBinPathWithLoad(),
             hasError: boolean = false;
 
 
         this.files.forEach(function (file) {
             var dest: string = file.dest,
                 options: any = self.options(),
-                files: string[] = [];
+                files: string[] = [],
+                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt);
 
             grunt.file.expand(file.src).forEach(function (file: string) {
-//                if (file.substr(-5) === ".d.ts") {
-//                    return;
-//                }
                 files.push(file);
             });
 
+            dest = io.normalizePath(dest);
+
             options.outputOne = !!dest && _path.extname(dest) === ".js";
 
-            if(!(new GruntTs.Compiler(grunt, typescriptBinPath,
-                new GruntTs.GruntIO(grunt, dest, options.base_path, options.outputOne))
-            ).compile(files, dest, options)){
+            options.base_path = prepareBasePath(io, <string>options.base_path);
+            if(options.base_path){
+                options.base_path = io.normalizePath(options.base_path);
+            }
+            if(typeof options.ignoreTypeCheck === "undefined"){
+                options.ignoreTypeCheck = true;
+            }
+
+            if(!(new GruntTs.Compiler(grunt, typescriptBinPath,io)).exec(files, dest, options)){
                 hasError = true;
             }
         });
