@@ -5,18 +5,6 @@ module GruntTs{
 
     declare var process: any;
 
-    export enum CodeType{
-        JS,
-        Map,
-        Declaration
-    }
-
-    export interface CreatedFile{
-        source: string;
-        dest?: string;
-        type: CodeType;
-    }
-
     var _fs: any = require('fs');
     var _path: any = require('path');
     var _os = require('os');

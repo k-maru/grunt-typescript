@@ -7,6 +7,7 @@ module.exports = function(grunt: any){
 
     var _path = require("path"),
         _vm = require('vm'),
+        _os = require('os'),
         getTsBinPathWithLoad = function(){
             var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
                 typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
@@ -38,12 +39,18 @@ module.exports = function(grunt: any){
             typescriptBinPath = getTsBinPathWithLoad(),
             hasError: boolean = false;
 
-
         this.files.forEach(function (file) {
             var dest: string = file.dest,
                 options: any = self.options(),
                 files: string[] = [],
                 io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt);
+
+            TypeScript.newLine = function(){
+                return _os.EOL;
+            };
+            if(options.newline){
+
+            }
 
             grunt.file.expand(file.src).forEach(function (file: string) {
                 files.push(file);
@@ -61,7 +68,7 @@ module.exports = function(grunt: any){
                 options.ignoreTypeCheck = true;
             }
 
-            if(!(new GruntTs.Compiler(grunt, typescriptBinPath,io)).exec(files, dest, options)){
+            if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, options)){
                 hasError = true;
             }
         });
