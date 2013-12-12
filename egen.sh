@@ -56,3 +56,9 @@ mv test/fixtures/utf8-with-bom.js test/expected/utf8-with-bom.js
 echo Comment
 node_modules/typescript/bin/tsc test/fixtures/comments.ts
 mv test/fixtures/comments.js test/expected/comments.js
+
+echo NewLine
+node_modules/typescript/bin/tsc test/fixtures/newline.ts
+perl -pe 's/\r\n/\n/' test/fixtures/newline.js > test/expected/newline_lf.js
+perl -pe 's/\n/\r\n/' test/expected/newline_lf.js > test/expected/newline_crlf.js
+mv test/fixtures/newline.js test/expected/newline_auto.js

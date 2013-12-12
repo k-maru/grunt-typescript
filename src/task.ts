@@ -43,13 +43,23 @@ module.exports = function(grunt: any){
             var dest: string = file.dest,
                 options: any = self.options(),
                 files: string[] = [],
-                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt);
+                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
+                newlineOpt;
 
             TypeScript.newLine = function(){
                 return _os.EOL;
             };
-            if(options.newline){
-
+            if(options.newLine){
+                newlineOpt = options.newLine.toString().toLowerCase();
+                if(newlineOpt === "crlf"){
+                    TypeScript.newLine = function(){
+                        return "\r\n";
+                    }
+                }else if(newlineOpt === "lf"){
+                    TypeScript.newLine = function(){
+                        return "\n";
+                    }
+                }
             }
 
             grunt.file.expand(file.src).forEach(function (file: string) {

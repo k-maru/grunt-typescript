@@ -105,6 +105,30 @@ module.exports = function (grunt) {
                     noImplicitAny: true
 
                 }
+            },
+            newline_lf: {
+                src:"test/fixtures/newline.ts",
+                dest: "test/fixtures/newline_lf.js",
+                options:{
+                    //ignoreTypeCheck: false,
+                    newLine: "lf"
+                }
+            },
+            newline_crlf: {
+                src:"test/fixtures/newline.ts",
+                dest: "test/fixtures/newline_crlf.js",
+                options:{
+                    //ignoreTypeCheck: false,
+                    newLine: "crlf"
+                }
+            },
+            newline_auto: {
+                src:"test/fixtures/newline.ts",
+                dest: "test/fixtures/newline_auto.js",
+                options:{
+                    //ignoreTypeCheck: false,
+                    newLine: "auto"
+                }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",

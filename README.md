@@ -72,12 +72,18 @@ Emit comments to output
 ###noImplicitAny `boolean`
 Warn on expressions and declarations with an implied 'any' type.
 
+##Original Options
+
+###newLine `string`
+Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.
+
 ###ignoreTypeCheck `boolean`
-Default value is true
+Default value is true. This options is experimental.
 
 ###base_path `string`
 
 ###disallowAsi `boolean`
-Do not allow auto semicolon insertion. this option is experimental.
+Do not allow auto semicolon insertion. This options is experimental.
+
 
 ※I'm sorry for poor English

@@ -168,5 +168,38 @@ module.exports.typescript = {
         test.equal(expected, actual);
 
         test.done();
+    },
+    newline_lf:function (test) {
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/newline_lf.js");
+        var expected = grunt.file.read("test/expected/newline_lf.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    newline_crlf:function (test) {
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/newline_crlf.js");
+        var expected = grunt.file.read("test/expected/newline_crlf.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    auto:function (test) {
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/newline_auto.js");
+        var expected = grunt.file.read("test/expected/newline_auto.js");
+        test.equal(expected, actual);
+
+        test.done();
     }
 };

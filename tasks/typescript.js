@@ -2,13 +2,6 @@
 ///<reference path="./grunt.d.ts" />
 var GruntTs;
 (function (GruntTs) {
-    (function (CodeType) {
-        CodeType[CodeType["JS"] = 0] = "JS";
-        CodeType[CodeType["Map"] = 1] = "Map";
-        CodeType[CodeType["Declaration"] = 2] = "Declaration";
-    })(GruntTs.CodeType || (GruntTs.CodeType = {}));
-    var CodeType = GruntTs.CodeType;
-
     var _fs = require('fs');
     var _path = require('path');
     var _os = require('os');
@@ -679,7 +672,7 @@ var GruntTs;
 ///<reference path="io.ts" />
 ///<reference path="compiler.ts" />
 module.exports = function (grunt) {
-    var _path = require("path"), _vm = require('vm'), getTsBinPathWithLoad = function () {
+    var _path = require("path"), _vm = require('vm'), _os = require('os'), getTsBinPathWithLoad = function () {
         var typeScriptBinPath = _path.dirname(require.resolve("typescript")), typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"), code;
 
         if (!typeScriptBinPath) {
@@ -706,7 +699,23 @@ module.exports = function (grunt) {
         var self = this, typescriptBinPath = getTsBinPathWithLoad(), hasError = false;
 
         this.files.forEach(function (file) {
-            var dest = file.dest, options = self.options(), files = [], io = new GruntTs.GruntIO(grunt);
+            var dest = file.dest, options = self.options(), files = [], io = new GruntTs.GruntIO(grunt), newlineOpt;
+
+            TypeScript.newLine = function () {
+                return _os.EOL;
+            };
+            if (options.newLine) {
+                newlineOpt = options.newLine.toString().toLowerCase();
+                if (newlineOpt === "crlf") {
+                    TypeScript.newLine = function () {
+                        return "\r\n";
+                    };
+                } else if (newlineOpt === "lf") {
+                    TypeScript.newLine = function () {
+                        return "\n";
+                    };
+                }
+            }
 
             grunt.file.expand(file.src).forEach(function (file) {
                 files.push(file);
