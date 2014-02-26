@@ -62,3 +62,7 @@ node_modules/typescript/bin/tsc test/fixtures/newline.ts
 perl -pe 's/\r\n/\n/' test/fixtures/newline.js > test/expected/newline_lf.js
 perl -pe 's/\n/\r\n/' test/expected/newline_lf.js > test/expected/newline_crlf.js
 mv test/fixtures/newline.js test/expected/newline_auto.js
+
+echo UseTabIndent
+node_modules/typescript/bin/tsc test/fixtures/useTabIndent.ts
+perl -pe 's/    /\t/g' test/fixtures/useTabIndent.js > test/expected/useTabIndent.js
