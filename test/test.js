@@ -191,6 +191,17 @@ module.exports.typescript = {
 
         test.done();
     },
+    useTabIndent:function (test) {
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/useTabIndent.js");
+        var expected = grunt.file.read("test/expected/useTabIndent.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
     auto:function (test) {
         "use strict";
 

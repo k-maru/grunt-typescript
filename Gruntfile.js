@@ -137,6 +137,13 @@ module.exports = function (grunt) {
                     //ignoreTypeCheck: false,
                     newLine: "auto"
                 }
+            },
+            useTabIndent: {
+                src:"test/fixtures/useTabIndent.ts",
+                dest: "test/fixtures/useTabIndent.js",
+                options:{
+                    useTabIndent: true
+                }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",

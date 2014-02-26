@@ -77,6 +77,9 @@ Warn on expressions and declarations with an implied 'any' type.
 ###newLine `string`
 Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.
 
+###useTabIndent `boolean`
+Specify tab indent for code generation: false (default) or true. This options is experimental.
+
 ###ignoreTypeCheck `boolean`
 Default value is true. This options is experimental.
 

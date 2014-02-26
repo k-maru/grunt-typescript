@@ -716,6 +716,10 @@ module.exports = function (grunt) {
                     };
                 }
             }
+            if (options.useTabIndent) {
+                TypeScript.Indenter.indentStep = 1;
+                TypeScript.Indenter.indentStepString = "\t";
+            }
 
             grunt.file.expand(file.src).forEach(function (file) {
                 files.push(file);
