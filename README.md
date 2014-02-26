@@ -1,4 +1,4 @@
-grunt-typescript
+grunt-typescript [![Build Status](https://travis-ci.org/k-maru/grunt-typescript.png?branch=master)](https://travis-ci.org/k-maru/grunt-typescript)
 ================
 
 Compile TypeScript
