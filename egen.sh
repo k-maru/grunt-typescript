@@ -1,12 +1,12 @@
-mkdir test/expected/multi/dir -p
+mkdir -p test/expected/multi/dir
 mkdir test/expected/single
 mkdir test/expected/sourcemap
 
-CURDIR=`pwd | cut -c 0-2`:`pwd | cut -c 3-`
+CURDIR=`pwd | cut -c 1-2`:`pwd | cut -c 3-`
 
 echo Simple
 node_modules/typescript/bin/tsc test/fixtures/simple.ts
-mv test/fixtures/simple.js test/expected/simple.js -f
+mv -f test/fixtures/simple.js test/expected/simple.js
 
 echo Declaration
 node_modules/typescript/bin/tsc test/fixtures/declaration.ts --declaration
