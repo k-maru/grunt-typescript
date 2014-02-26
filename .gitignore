@@ -1,8 +1,8 @@
 node_modules
 npm-debug.log
-test/tmp
+test/temp
 test/expected
-test/fixtures/*.js
-test/fixtures/*.js.map
-test/fixtures/*.d.ts
+test/fixtures/**/*.js
+test/fixtures/**/*.js.map
+test/fixtures/**/*.d.ts
 /.idea
