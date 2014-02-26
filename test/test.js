@@ -202,6 +202,39 @@ module.exports.typescript = {
 
         test.done();
     },
+    useTabIndentPriority: function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/useTabIndent_priority.js");
+        var expected = grunt.file.read("test/expected/useTabIndent_priority.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    indentStep0: function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/indentStep_0.js");
+        var expected = grunt.file.read("test/expected/indentStep_0.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    indentStep2: function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/indentStep_2.js");
+        var expected = grunt.file.read("test/expected/indentStep_2.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
     auto:function (test) {
         "use strict";
 

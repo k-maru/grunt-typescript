@@ -66,3 +66,11 @@ mv test/fixtures/newline.js test/expected/newline_auto.js
 echo UseTabIndent
 node_modules/typescript/bin/tsc test/fixtures/useTabIndent.ts
 perl -pe 's/    /\t/g' test/fixtures/useTabIndent.js > test/expected/useTabIndent.js
+perl -pe 's/    /\t/g' test/fixtures/useTabIndent.js > test/expected/useTabIndent_priority.js
+
+echo IndentStep
+node_modules/typescript/bin/tsc test/fixtures/indentStep.ts
+perl -pe 's/    //g' test/fixtures/indentStep.js > test/expected/indentStep_0.js
+perl -pe 's/    /  /g' test/fixtures/indentStep.js > test/expected/indentStep_2.js
+
+

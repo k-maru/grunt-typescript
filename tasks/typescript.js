@@ -693,6 +693,35 @@ module.exports = function (grunt) {
             path = path + "/";
         }
         return path;
+    }, setGlobalOption = function (options) {
+        var newlineOpt;
+
+        if (!TypeScript || !options) {
+            return;
+        }
+
+        if (options.newLine) {
+            newlineOpt = options.newLine.toString().toLowerCase();
+            if (newlineOpt === "crlf") {
+                TypeScript.newLine = function () {
+                    return "\r\n";
+                };
+            } else if (newlineOpt === "lf") {
+                TypeScript.newLine = function () {
+                    return "\n";
+                };
+            }
+        }
+
+        if (Object.prototype.toString.call(options.indentStep) === "[object Number]" && options.indentStep > -1) {
+            TypeScript.Indenter.indentStep = options.indentStep;
+            TypeScript.Indenter.indentStepString = Array(options.indentStep + 1).join(" ");
+        }
+
+        if (options.useTabIndent) {
+            TypeScript.Indenter.indentStep = 1;
+            TypeScript.Indenter.indentStepString = "\t";
+        }
     };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -704,22 +733,8 @@ module.exports = function (grunt) {
             TypeScript.newLine = function () {
                 return _os.EOL;
             };
-            if (options.newLine) {
-                newlineOpt = options.newLine.toString().toLowerCase();
-                if (newlineOpt === "crlf") {
-                    TypeScript.newLine = function () {
-                        return "\r\n";
-                    };
-                } else if (newlineOpt === "lf") {
-                    TypeScript.newLine = function () {
-                        return "\n";
-                    };
-                }
-            }
-            if (options.useTabIndent) {
-                TypeScript.Indenter.indentStep = 1;
-                TypeScript.Indenter.indentStepString = "\t";
-            }
+
+            setGlobalOption(options);
 
             grunt.file.expand(file.src).forEach(function (file) {
                 files.push(file);

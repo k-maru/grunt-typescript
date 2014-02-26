@@ -144,6 +144,28 @@ module.exports = function (grunt) {
                 options:{
                     useTabIndent: true
                 }
+            },
+            indentStep0: {
+                src:"test/fixtures/indentStep.ts",
+                dest: "test/fixtures/indentStep_0.js",
+                options:{
+                    indentStep: 0
+                }
+            },
+            priorityUseTabIndent: {
+                src:"test/fixtures/indentStep.ts",
+                dest: "test/fixtures/indentStep_2.js",
+                options:{
+                    indentStep: 2
+                }
+            },
+            indentStep2: {
+                src:"test/fixtures/useTabIndent.ts",
+                dest: "test/fixtures/useTabIndent_priority.js",
+                options:{
+                    useTabIndent: true,
+                    indentStep: 2
+                }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",
