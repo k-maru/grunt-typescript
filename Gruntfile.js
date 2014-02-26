@@ -2,7 +2,9 @@ module.exports = function (grunt) {
     "use strict";
 
     var fs = require("fs"),
-        path = require("path");
+        path = require("path"),
+        cp = require('child_process'),
+        Q = require('q');
 
     grunt.initConfig({
         clean:{
@@ -204,4 +206,117 @@ module.exports = function (grunt) {
     grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
 
+    grunt.registerTask('egen', 'Genereate test expected files.', function() {
+        var done = this.async(),
+            command = "node " + path.resolve(path.dirname(require.resolve("typescript")), "tsc "),
+            tsc = function(option){
+                var defer = Q.defer(),
+                    childProcess = cp.exec(command + option, {});
+                childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
+                childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
+
+                childProcess.on('exit', function(code) {
+                    if (code !== 0) {
+                        defer.reject();;
+                    }
+                    defer.resolve();
+                });
+                return defer.promise;
+            };
+
+        grunt.file.mkdir("test/expected/multi/dir");
+        grunt.file.mkdir("test/expected/single");
+        grunt.file.mkdir("test/expected/sourcemap");
+
+        grunt.log.writeln("Simple");
+        tsc("test/fixtures/simple.ts").then(function(){
+            grunt.file.copy("test/fixtures/simple.js", "test/expected/simple.js");
+
+            grunt.log.writeln("Declaration");
+            return tsc("test/fixtures/declaration.ts --declaration");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/declaration.js", "test/expected/declaration.js");
+            grunt.file.copy("test/fixtures/declaration.d.ts", "test/expected/declaration.d.ts");
+
+            grunt.log.writeln("Sourcemap");
+            return tsc("test/fixtures/sourcemap.ts --outDir test/fixtures/sourcemap --sourcemap");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/sourcemap/sourcemap.js","test/expected/sourcemap/sourcemap.js");
+            grunt.file.copy("test/fixtures/sourcemap/sourcemap.js.map", "test/expected/sourcemap/sourcemap.js.map");
+
+            grunt.log.writeln("Target ES5");
+            return tsc("test/fixtures/es5.ts --target ES5");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/es5.js", "test/expected/es5.js");
+
+            grunt.log.writeln("AMD");
+            return tsc("test/fixtures/amd.ts --module amd");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/amd.js", "test/expected/amd.js");
+
+            grunt.log.writeln("CommonJS");
+            return tsc("test/fixtures/commonjs.ts --module commonjs");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/commonjs.js", "test/expected/commonjs.js");
+
+            grunt.log.writeln("Single");
+            return tsc("test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js");
+        }).then(function(){
+            grunt.file.copy("test/temp/single.js", "test/expected/single/single.js");
+
+            grunt.log.writeln("Single-SourceMap");
+            return tsc("test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single-sourcemap.js --sourcemap");
+        }).then(function(){
+            grunt.file.copy("test/temp/single-sourcemap.js", "test/expected/single/single-sourcemap.js");
+            grunt.file.copy("test/temp/single-sourcemap.js.map", "test/expected/single/single-sourcemap.js.map");
+
+            grunt.log.writeln("Multi");
+            return tsc("test/fixtures/multi/multi1.ts --outDir test/temp/multi").then(function(){
+                return tsc("test/fixtures/multi/dir/multi2.ts --outDir test/temp/multi/dir");
+            });
+        }).then(function(){
+            grunt.file.copy("test/temp/multi/multi1.js", "test/expected/multi/multi1.js");
+            grunt.file.copy("test/temp/multi/dir/multi2.js", "test/expected/multi/dir/multi2.js");
+
+            grunt.log.writeln("BOM");
+            return tsc("test/fixtures/utf8-with-bom.ts");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/utf8-with-bom.js", "test/expected/utf8-with-bom.js");
+
+            grunt.log.writeln("Comment");
+            return tsc("test/fixtures/comments.ts");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/comments.js", "test/expected/comments.js");
+
+            grunt.log.writeln("NewLine");
+            return tsc("test/fixtures/newline.ts");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/newline.js", "test/expected/newline_auto.js");
+            var val = grunt.file.read("test/fixtures/newline.js").toString();
+            val = val.replace(/\r\n/g, "\n");
+            grunt.file.write("test/expected/newline_lf.js", val);
+            val = val.replace(/\n/g, "\r\n");
+            grunt.file.write("test/expected/newline_crlf.js", val);
+
+            grunt.log.writeln("UseTabIndent");
+            return tsc("test/fixtures/useTabIndent.ts");
+        }).then(function(){
+            var val = grunt.file.read("test/fixtures/useTabIndent.js").toString();
+            val = val.replace(/    /g, "\t");
+            grunt.file.write("test/expected/useTabIndent.js", val);
+            grunt.file.write("test/expected/useTabIndent_priority.js", val);
+
+            grunt.log.writeln("IndentStep");
+            return tsc("test/fixtures/indentStep.ts");
+        }).then(function(){
+            var val = grunt.file.read("test/fixtures/indentStep.js").toString();
+            grunt.file.write("test/expected/indentStep_0.js", val.replace(/    /g, ""));
+            grunt.file.write("test/expected/indentStep_2.js", val.replace(/    /g, "  "));
+
+        }).then(function(){
+            done(true);
+        }).fail(function(){
+            done(false);
+        });
+    });
 };

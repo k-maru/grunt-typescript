@@ -78,7 +78,7 @@ Warn on expressions and declarations with an implied 'any' type.
 Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.
 
 ###indentStep `number`
-Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified.
+Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.
 
 ###useTabIndent `boolean`
 Specify tab indent for code generation: false (default) or true. This options is experimental.
