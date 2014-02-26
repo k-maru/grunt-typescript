@@ -106,6 +106,14 @@ module.exports = function (grunt) {
 
                 }
             },
+            noImplicitAny2:{
+                src:"test/fixtures/noImplicitAny2.ts",
+                options:{
+                    //ignoreTypeCheck: false,
+                    noImplicitAny: true
+
+                }
+            },
             newline_lf: {
                 src:"test/fixtures/newline.ts",
                 dest: "test/fixtures/newline_lf.js",
