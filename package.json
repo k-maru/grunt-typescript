@@ -18,6 +18,10 @@
     }
   ],
   "main": "Gruntfile.js",
+  "scripts": {
+    "start": "grunt build",
+    "test": "grunt test"
+  },
   "engines": {
     "node": ">= 0.8.0"
   },
