@@ -1,12 +1,16 @@
 grunt-typescript [![Build Status](https://travis-ci.org/k-maru/grunt-typescript.png?branch=master)](https://travis-ci.org/k-maru/grunt-typescript)
 ================
 
-Compile TypeScript
+Compile TypeScript in Grunt
 
 ## Documentation
 You'll need to install `grunt-typescript` first:
 
     npm install grunt-typescript --save-dev
+
+or add the following line to devDependencies in your package.json
+
+    "grunt-typescript": "",
 
 Then modify your `Gruntfile.js` file by adding the following line:
 
@@ -90,5 +94,6 @@ Default value is true. This options is experimental.
 Do not allow auto semicolon insertion. This options is experimental.
 
 ###base_path `string`
+Path component to cut off when mapping the source files to dest files.
 
 ※I'm sorry for poor English
