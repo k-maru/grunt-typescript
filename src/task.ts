@@ -1,21 +1,22 @@
-///<reference path="grunt.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="compiler.ts" />
 
 declare var module: any;
-module.exports = function(grunt: any){
+module.exports = function(grunt: IGrunt){
 
     var _path = require("path"),
         _vm = require('vm'),
         _os = require('os'),
-        getTsBinPathWithLoad = function(){
+        getTsBinPathWithLoad = (): string => {
             var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
                 typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
-                code;
+                code: string;
 
             if (!typeScriptBinPath) {
                 grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
-                return false;
+                return "";
             }
 
             code = grunt.file.read(typeScriptPath);
@@ -23,7 +24,7 @@ module.exports = function(grunt: any){
 
             return typeScriptBinPath;
         },
-        prepareBasePath = function(io: GruntTs.GruntIO, path: string): string{
+        prepareBasePath = (io: GruntTs.GruntIO, path: string): string => {
             if(!path){
                 return path;
             }
@@ -33,12 +34,16 @@ module.exports = function(grunt: any){
             }
             return path;
         },
-        setGlobalOption = function(options){
-            var newlineOpt;
+        setGlobalOption = (options: any): string => {
+            var newlineOpt: string;
 
             if(!TypeScript || !options){
-                return;
+                return void 0;
             }
+
+            TypeScript.newLine = function(){
+                return _os.EOL;
+            };
 
             if(options.newLine){
                 newlineOpt = options.newLine.toString().toLowerCase();
@@ -66,20 +71,15 @@ module.exports = function(grunt: any){
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var self = this,
+        var self: grunt.task.IMultiTask<{}> = this,
             typescriptBinPath = getTsBinPathWithLoad(),
             hasError: boolean = false;
 
-        this.files.forEach(function (file) {
+        self.files.forEach(function (file) {
             var dest: string = file.dest,
-                options: any = self.options(),
+                options: any = self.options({}),
                 files: string[] = [],
-                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
-                newlineOpt;
-
-            TypeScript.newLine = function(){
-                return _os.EOL;
-            };
+                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt);
 
             setGlobalOption(options);
 
@@ -106,7 +106,7 @@ module.exports = function(grunt: any){
         if(hasError){
             return false;
         }
-        if (grunt.task.current.errorCount) {
+        if ((<any>grunt.task).current.errorCount) {
             return false;
         }
     });

@@ -191,7 +191,7 @@ module.exports = function (grunt) {
                     }).map(function(file){
                         return "src" + path.sep + file;
                     }).join(" ");
-                    return ["node_modules", ".bin", "tsc " + files + " --out tasks", "typescript.js"].join(path.sep);
+                    return ["node_modules", ".bin", "tsc " + files + " --noImplicitAny --out tasks", "typescript.js"].join(path.sep);
                 }
             }
         }

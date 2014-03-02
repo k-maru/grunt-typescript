@@ -1,5 +1,6 @@
-///<reference path="./tsc.d.ts" />
-///<reference path="./grunt.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _fs = require('fs');
@@ -164,8 +165,8 @@ var GruntTs;
             return _fs.existsSync(path);
         };
 
-        GruntIO.prototype.dir = function (path, spec, options) {
-            options = options || {};
+        GruntIO.prototype.dir = function (path, re, options) {
+            var opts = options || {};
 
             function filesInFolder(folder) {
                 var paths = [];
@@ -174,9 +175,9 @@ var GruntTs;
                     var files = _fs.readdirSync(folder);
                     for (var i = 0; i < files.length; i++) {
                         var stat = _fs.statSync(folder + "/" + files[i]);
-                        if (options.recursive && stat.isDirectory()) {
+                        if (opts.recursive && stat.isDirectory()) {
                             paths = paths.concat(filesInFolder(folder + "/" + files[i]));
-                        } else if (stat.isFile() && (!spec || files[i].match(spec))) {
+                        } else if (stat.isFile() && (!re || files[i].match(re))) {
                             paths.push(folder + "/" + files[i]);
                         }
                     }
@@ -289,8 +290,9 @@ var GruntTs;
     })();
     GruntTs.GruntIO = GruntIO;
 })(GruntTs || (GruntTs = {}));
-///<reference path="./grunt.d.ts" />
-///<reference path="./tsc.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 var GruntTs;
 (function (GruntTs) {
@@ -363,8 +365,9 @@ var GruntTs;
     }
     GruntTs.createCompilationSettings = createCompilationSettings;
 })(GruntTs || (GruntTs = {}));
-///<reference path="./grunt.d.ts" />
-///<reference path="./tsc.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./setting.ts" />
 var GruntTs;
@@ -668,7 +671,8 @@ var GruntTs;
     })();
     GruntTs.Compiler = Compiler;
 })(GruntTs || (GruntTs = {}));
-///<reference path="grunt.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="compiler.ts" />
 module.exports = function (grunt) {
@@ -677,7 +681,7 @@ module.exports = function (grunt) {
 
         if (!typeScriptBinPath) {
             grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
-            return false;
+            return "";
         }
 
         code = grunt.file.read(typeScriptPath);
@@ -697,8 +701,12 @@ module.exports = function (grunt) {
         var newlineOpt;
 
         if (!TypeScript || !options) {
-            return;
+            return void 0;
         }
+
+        TypeScript.newLine = function () {
+            return _os.EOL;
+        };
 
         if (options.newLine) {
             newlineOpt = options.newLine.toString().toLowerCase();
@@ -727,12 +735,8 @@ module.exports = function (grunt) {
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var self = this, typescriptBinPath = getTsBinPathWithLoad(), hasError = false;
 
-        this.files.forEach(function (file) {
-            var dest = file.dest, options = self.options(), files = [], io = new GruntTs.GruntIO(grunt), newlineOpt;
-
-            TypeScript.newLine = function () {
-                return _os.EOL;
-            };
+        self.files.forEach(function (file) {
+            var dest = file.dest, options = self.options({}), files = [], io = new GruntTs.GruntIO(grunt);
 
             setGlobalOption(options);
 

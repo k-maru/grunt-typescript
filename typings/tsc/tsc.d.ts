@@ -483,7 +483,7 @@ declare module TypeScript {
         VeryAggressive = 3,
     }
     class Debug {
-        private static currentAssertionLevel;
+        private static currentAssertionLevel: any;
         static shouldAssert(level: AssertionLevel): boolean;
         static assert(expression: any, message?: string, verboseDebugInfo?: () => string): void;
         static fail(message?: string): void;
@@ -536,13 +536,13 @@ declare module TypeScript {
 }
 declare module TypeScript {
     class Hash {
-        private static FNV_BASE;
-        private static FNV_PRIME;
+        private static FNV_BASE: any;
+        private static FNV_PRIME: any;
         private static computeFnv1aCharArrayHashCode(text, start, len);
         static computeSimple31BitCharArrayHashCode(key: number[], start: number, len: number): number;
         static computeSimple31BitStringHashCode(key: string): number;
         static computeMurmur2StringHashCode(key: string, seed: number): number;
-        private static primes;
+        private static primes: any;
         static getPrime(min: number): number;
         static expandPrime(oldSize: number): number;
         static combine(value: number, currentHash: number): number;
@@ -3018,7 +3018,7 @@ declare module TypeScript {
         public setAbsoluteIndex(index: number): void;
         public scan(diagnostics: TypeScript.Diagnostic[], allowRegularExpression: boolean): TypeScript.ISyntaxToken;
         private createToken(fullStart, leadingTriviaInfo, start, kind, end, trailingTriviaInfo, isVariableWidthKeyword);
-        private static triviaWindow;
+        private static triviaWindow: any;
         static scanTrivia(text: TypeScript.ISimpleText, start: number, length: number, isTrailing: boolean): TypeScript.ISyntaxTriviaList;
         private scanTrivia(underlyingText, underlyingTextStart, isTrailing);
         private scanTriviaInfo(diagnostics, isTrailing);
@@ -7178,7 +7178,7 @@ declare module TypeScript {
         public codepage: number;
     }
     class ImmutableCompilationSettings {
-        private static _defaultSettings;
+        private static _defaultSettings: any;
         private _propagateEnumConstants;
         private _removeComments;
         private _watch;

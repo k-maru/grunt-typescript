@@ -1,5 +1,6 @@
-///<reference path="./grunt.d.ts" />
-///<reference path="./tsc.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./setting.ts" />
 
@@ -112,10 +113,10 @@ module GruntTs{
         }
 
         private writeResult(){
-            var result = {js:[], m:[], d:[], other:[]},
+            var result:  {js: string[]; m: string[]; d: string[]; other: string[];} = {js: [], m: [], d: [], other: []},
                 resultMessage: string,
-                pluralizeFile = (n) => (n + " file") + ((n === 1) ? "" : "s");
-            this.outputFiles.forEach(function (item) {
+                pluralizeFile = (n: number) => (n + " file") + ((n === 1) ? "" : "s");
+            this.outputFiles.forEach(function (item: string) {
                 if (/\.js$/.test(item)) result.js.push(item);
                 else if (/\.js\.map$/.test(item)) result.m.push(item);
                 else if (/\.d\.ts$/.test(item)) result.d.push(item);

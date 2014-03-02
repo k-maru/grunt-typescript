@@ -1,5 +1,6 @@
-///<reference path="./grunt.d.ts" />
-///<reference path="./tsc.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 
 module GruntTs{

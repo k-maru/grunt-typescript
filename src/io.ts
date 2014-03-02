@@ -1,5 +1,7 @@
-///<reference path="./tsc.d.ts" />
-///<reference path="./grunt.d.ts" />
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
+
 
 module GruntTs{
 
@@ -99,7 +101,6 @@ module GruntTs{
         }
     }
 
-
     export class GruntIO implements TypeScript.IIO {
 
         constructor(private grunt: any){
@@ -164,8 +165,8 @@ module GruntTs{
             return _fs.existsSync(path);
         }
 
-        dir(path, spec?, options?): string[] {
-            options = options || <{ recursive?: boolean; }>{};
+        dir(path: string, re?: RegExp, options?: {recursive?: boolean;}): string[] {
+            var opts = options || {};
 
             function filesInFolder(folder: string): string[]{
                 var paths: string[] = [];
@@ -174,9 +175,9 @@ module GruntTs{
                     var files = _fs.readdirSync(folder);
                     for (var i = 0; i < files.length; i++) {
                         var stat = _fs.statSync(folder + "/" + files[i]);
-                        if (options.recursive && stat.isDirectory()) {
+                        if (opts.recursive && stat.isDirectory()) {
                             paths = paths.concat(filesInFolder(folder + "/" + files[i]));
-                        } else if (stat.isFile() && (!spec || files[i].match(spec))) {
+                        } else if (stat.isFile() && (!re || files[i].match(re))) {
                             paths.push(folder + "/" + files[i]);
                         }
                     }
