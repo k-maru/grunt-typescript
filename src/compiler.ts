@@ -3,7 +3,6 @@
 ///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
-///<reference path="./setting.ts" />
 
 module GruntTs{
 

@@ -352,6 +352,18 @@ var GruntTs;
         return optVal;
     }
 
+    function prepareNoLib(opt, grunt) {
+        var optVal = false;
+        if (opt.nolib) {
+            grunt.log.writeln("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)".yellow);
+            optVal = !!opt.nolib;
+        }
+        if (opt.noLib) {
+            optVal = !!opt.noLib;
+        }
+        return optVal;
+    }
+
     (function (NewLine) {
         NewLine[NewLine["crLf"] = 0] = "crLf";
         NewLine[NewLine["lf"] = 1] = "lf";
@@ -375,6 +387,9 @@ var GruntTs;
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
             this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
             this.sourceMap = prepareSourceMap(this._source, this._grunt);
+            this.noLib = prepareNoLib(this._source, this._grunt);
+            this.declaration = !!this._source.declaration;
+            this.removeComments = !this._source.comments;
         }
         Opts.prototype.createCompilationSettings = function () {
             var settings = new TypeScript.CompilationSettings(), temp;
@@ -399,14 +414,8 @@ var GruntTs;
 
             settings.mapSourceFiles = this.sourceMap;
 
-            if (options.declaration) {
-                settings.generateDeclarationFiles = true;
-            }
-            if (options.comments) {
-                settings.removeComments = false;
-            } else {
-                settings.removeComments = true;
-            }
+            settings.generateDeclarationFiles = this.declaration;
+            settings.removeComments = this.removeComments;
 
             //default
             settings.codeGenTarget = 0 /* EcmaScript3 */;
@@ -433,9 +442,7 @@ var GruntTs;
                 settings.noImplicitAny = true;
             }
 
-            if (options.nolib) {
-                settings.noLib = true;
-            }
+            settings.noLib = this.noLib;
 
             //test
             if (options.disallowAsi) {
@@ -448,86 +455,11 @@ var GruntTs;
     })();
     GruntTs.Opts = Opts;
 })(GruntTs || (GruntTs = {}));
-/////<reference path="../typings/gruntjs/gruntjs.d.ts" />
-/////<reference path="../typings/node/node.d.ts" />
-/////<reference path="../typings/tsc/tsc.d.ts" />
-/////<reference path="./io.ts" />
-//
-//module GruntTs{
-//    var _path: any = require("path");
-//
-//    export function createCompilationSettings(options: any, dest: string, ioHost: GruntIO): TypeScript.ImmutableCompilationSettings{
-//
-//        var settings = new TypeScript.CompilationSettings(),
-//            temp: string;
-//
-//        if(options.fullSourceMapPath){
-//            ioHost.printLine("fullSourceMapPath not supported.");
-//        }
-//        if(options.allowbool){
-//            ioHost.printLine("allowbool is obsolete.");
-//        }
-//        if(options.allowimportmodule){
-//            ioHost.printLine("allowimportmodule is obsolete.");
-//        }
-//
-//        if(options.outputOne){
-//            dest = _path.resolve(ioHost.currentPath(), dest);
-//            settings.outFileOption = dest;
-//        }
-//        if(options.sourcemap){
-//            settings.mapSourceFiles = true;
-//        }
-//        if(options.declaration){
-//            settings.generateDeclarationFiles = true;
-//        }
-//        if(options.comments){
-//            settings.removeComments = false;
-//        }else{
-//            settings.removeComments = true;
-//        }
-//        //default
-//        settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
-//        if (options.target) {
-//            temp = options.target.toLowerCase();
-//            if (temp === 'es3') {
-//                settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
-//            } else if (temp == 'es5') {
-//                settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
-//            }
-//        }
-//        //default
-//        settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
-//        if (options.module) {
-//            temp = options.module.toLowerCase();
-//            if (temp === 'commonjs' || temp === 'node') {
-//                settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
-//            } else if (temp === 'amd') {
-//                settings.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
-//            }
-//        }
-//        if(options.noImplicitAny){
-//            settings.noImplicitAny = true;
-//        }
-//
-//        if(options.nolib){
-//            settings.noLib = true;
-//        }
-//
-//        //test
-//        if(options.disallowAsi){
-//            settings.allowAutomaticSemicolonInsertion = false;
-//        }
-//
-//        return TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings);
-//    }
-//}
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
-///<reference path="./setting.ts" />
 var GruntTs;
 (function (GruntTs) {
     var SourceFile = (function () {

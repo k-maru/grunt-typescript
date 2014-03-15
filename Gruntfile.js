@@ -33,17 +33,17 @@ module.exports = function (grunt) {
                 src:"test/fixtures/sourcemap.ts",
                 dest:"test/fixtures/sourcemap/",
                 options:{
-                    base_path: "test/fixtures/",
-                    sourcemap:true
+                    basePath: "test/fixtures/",
+                    sourceMap:true
                 }
             },
             dest:{
                 src:"test/fixtures/dest.ts",
                 dest: "test/temp/dest",
                 options:{
-                    sourcemap: true,
+                    sourceMap: true,
                     declaration: true,
-                    base_path: "test/fixtures"
+                    basePath: "test/fixtures"
                 }
             },
             single:{
@@ -72,7 +72,7 @@ module.exports = function (grunt) {
                 src:"test/fixtures/single/**/*.ts",
                 dest: "test/temp/single-sourcemap.js",
                 options:{
-                    sourcemap: true
+                    sourceMap: true
                 }
             },
             multi:{
@@ -83,7 +83,7 @@ module.exports = function (grunt) {
                 src:"test/fixtures/multi/**/*.ts",
                 dest:"test/temp/basePath",
                 options: {
-                    base_path: "test/fixtures/multi"
+                    basePath: "test/fixtures/multi"
                 }
             },
             "utf8-with-bom":{

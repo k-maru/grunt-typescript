@@ -61,6 +61,18 @@ module GruntTs{
         return optVal;
     }
 
+    function prepareNoLib(opt: any, grunt: IGrunt): boolean{
+        var optVal: boolean = false;
+        if(opt.nolib){
+            grunt.log.writeln("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)".yellow);
+            optVal = !!opt.nolib;
+        }
+        if(opt.noLib){
+            optVal = !!opt.noLib;
+        }
+        return optVal;
+    }
+
     export enum NewLine{
         crLf,
         lf,
@@ -75,6 +87,9 @@ module GruntTs{
         public outputOne: boolean;
         public ignoreTypeCheck: boolean;
         public sourceMap: boolean;
+        public noLib: boolean;
+        public declaration: boolean;
+        public removeComments: boolean;
 
         constructor(private _grunt: IGrunt, private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
             this._source = _source || {};
@@ -86,6 +101,9 @@ module GruntTs{
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
             this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
             this.sourceMap = prepareSourceMap(this._source, this._grunt);
+            this.noLib = prepareNoLib(this._source, this._grunt);
+            this.declaration = !!this._source.declaration;
+            this.removeComments = !this._source.comments;
         }
 
         public createCompilationSettings(): TypeScript.ImmutableCompilationSettings{
@@ -113,14 +131,9 @@ module GruntTs{
 
             settings.mapSourceFiles = this.sourceMap;
 
-            if(options.declaration){
-                settings.generateDeclarationFiles = true;
-            }
-            if(options.comments){
-                settings.removeComments = false;
-            }else{
-                settings.removeComments = true;
-            }
+            settings.generateDeclarationFiles = this.declaration;
+            settings.removeComments = this.removeComments;
+
             //default
             settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
             if (options.target) {
@@ -145,9 +158,7 @@ module GruntTs{
                 settings.noImplicitAny = true;
             }
 
-            if(options.nolib){
-                settings.noLib = true;
-            }
+            settings.noLib = this.noLib;
 
             //test
             if(options.disallowAsi){

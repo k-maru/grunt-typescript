@@ -23,8 +23,8 @@ Then add some configuration for the plugin like so:
             options: {
               module: 'amd', //or commonjs
               target: 'es5', //or es3
-              base_path: 'path/to/typescript/files',
-              sourcemap: true,
+              basePath: 'path/to/typescript/files',
+              sourceMap: true,
               declaration: true
             }
           }
@@ -51,7 +51,7 @@ you should specify the name of the file with the '.js' extension to dest option.
 
 ##Options
 
-###nolib `boolean`
+###noLib `boolean`
 Do not include a default lib.d.ts with global declarations
 
 ###target `string`
@@ -60,7 +60,7 @@ Specify ECMAScript target version: "ES3" (default) or "ES5"
 ###module `string`
 Specify module code generation: "commonjs" (default) or "amd"
 
-###sourcemap `boolean`
+###sourceMap `boolean`
 Generates corresponding .map files
 
 ###declaration `boolean`
@@ -89,6 +89,6 @@ Default value is true. This options is experimental.
 ###disallowAsi `boolean`
 Do not allow auto semicolon insertion. This options is experimental.
 
-###base_path `string`
+###basePath `string`
 
 ※I'm sorry for poor English
