@@ -1,6 +1,7 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="io.ts" />
+///<reference path="opts.ts" />
 ///<reference path="compiler.ts" />
 
 declare var module: any;
@@ -24,50 +25,26 @@ module.exports = function(grunt: IGrunt){
 
             return typeScriptBinPath;
         },
-        prepareBasePath = (io: GruntTs.GruntIO, path: string): string => {
-            if(!path){
-                return path;
-            }
-            path = io.normalizePath(path);
-            if(path.lastIndexOf("/") !== path.length - 1){
-                path = path + "/";
-            }
-            return path;
-        },
-        setGlobalOption = (options: any): string => {
-            var newlineOpt: string;
-
+        setGlobalOption = (options: GruntTs.Opts) => {
             if(!TypeScript || !options){
-                return void 0;
+                return;
             }
-
             TypeScript.newLine = function(){
                 return _os.EOL;
             };
-
-            if(options.newLine){
-                newlineOpt = options.newLine.toString().toLowerCase();
-                if(newlineOpt === "crlf"){
-                    TypeScript.newLine = function(){
-                        return "\r\n";
-                    }
-                }else if(newlineOpt === "lf"){
-                    TypeScript.newLine = function(){
-                        return "\n";
-                    }
-                }
+            if(options.newLine !== GruntTs.NewLine.auto){
+                TypeScript.newLine = ((v: string) => {
+                    return () => v;
+                })(options.newLine === GruntTs.NewLine.crLf ? "\r\n" : "\n");
             }
-
-            if(Object.prototype.toString.call(options.indentStep) === "[object Number]" && options.indentStep > -1 ){
+            if(options.indentStep > -1){
                 TypeScript.Indenter.indentStep = options.indentStep;
                 TypeScript.Indenter.indentStepString = Array(options.indentStep + 1).join(" ");
             }
-
             if(options.useTabIndent) {
                 TypeScript.Indenter.indentStep = 1;
                 TypeScript.Indenter.indentStepString = "\t";
             }
-
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
@@ -79,9 +56,10 @@ module.exports = function(grunt: IGrunt){
             var dest: string = file.dest,
                 options: any = self.options({}),
                 files: string[] = [],
-                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt);
+                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
+                opts = new GruntTs.Opts(grunt, options, io, dest);
 
-            setGlobalOption(options);
+            setGlobalOption(opts);
 
             grunt.file.expand(file.src).forEach(function (file: string) {
                 files.push(file);
@@ -89,15 +67,9 @@ module.exports = function(grunt: IGrunt){
 
             dest = io.normalizePath(dest);
 
-            options.outputOne = !!dest && _path.extname(dest) === ".js";
-
-            options.base_path = prepareBasePath(io, <string>options.base_path);
-            if(options.base_path){
-                options.base_path = io.normalizePath(options.base_path);
-            }
-            if(typeof options.ignoreTypeCheck === "undefined"){
-                options.ignoreTypeCheck = true;
-            }
+            options.outputOne =  opts.outputOne;
+            options.base_path = opts.basePath;
+            options.ignoreTypeCheck = opts.ignoreTypeCheck;
 
             if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, options)){
                 hasError = true;

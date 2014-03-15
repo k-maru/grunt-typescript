@@ -673,7 +673,84 @@ var GruntTs;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="io.ts" />
+var GruntTs;
+(function (GruntTs) {
+    function prepareNewLine(optVal) {
+        var val;
+        if (optVal) {
+            val = optVal.toString().toUpperCase();
+            return val === "CRLF" ? 0 /* crLf */ : val === "LF" ? 1 /* lf */ : 2 /* auto */;
+        }
+        return 2 /* auto */;
+    }
+
+    function prepareIndentStep(optVal) {
+        if (Object.prototype.toString.call(optVal) === "[object Number]" && optVal > -1) {
+            return optVal;
+        }
+        return -1;
+    }
+
+    function isStr(val) {
+        return Object.prototype.toString.call(val) === "[object String]";
+    }
+
+    function prepareBasePath(opt, grunt, io) {
+        var optVal = "";
+        if (isStr(opt.base_path)) {
+            grunt.log.writeln("'base_path' option is now obsolate. please use 'basePath'".yellow);
+            optVal = opt.base_path;
+        }
+        if (isStr(opt.basePath)) {
+            optVal = opt.basePath;
+        }
+
+        if (!optVal) {
+            return undefined;
+        }
+        optVal = io.normalizePath(optVal);
+        if (optVal.lastIndexOf("/") !== optVal.length - 1) {
+            optVal = optVal + "/";
+        }
+
+        //TODO: ほんまにいるかチェック
+        return io.normalizePath(optVal);
+    }
+
+    (function (NewLine) {
+        NewLine[NewLine["crLf"] = 0] = "crLf";
+        NewLine[NewLine["lf"] = 1] = "lf";
+        NewLine[NewLine["auto"] = 2] = "auto";
+    })(GruntTs.NewLine || (GruntTs.NewLine = {}));
+    var NewLine = GruntTs.NewLine;
+
+    var Opts = (function () {
+        function Opts(_grunt, _source, _io, _dest) {
+            this._grunt = _grunt;
+            this._source = _source;
+            this._io = _io;
+            this._dest = _dest;
+            var _path = require("path");
+            this._source = _source || {};
+
+            //this._dest = _io.normalizePath(_dest);
+            this.newLine = prepareNewLine(this._source.newLine);
+            this.indentStep = prepareIndentStep(this._source.indentStep);
+            this.useTabIndent = !!this._source.useTabIndent;
+            this.basePath = prepareBasePath(this._source, this._grunt, this._io);
+            this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
+            this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
+        }
+        return Opts;
+    })();
+    GruntTs.Opts = Opts;
+})(GruntTs || (GruntTs = {}));
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="io.ts" />
+///<reference path="opts.ts" />
 ///<reference path="compiler.ts" />
 module.exports = function (grunt) {
     var _path = require("path"), _vm = require('vm'), _os = require('os'), getTsBinPathWithLoad = function () {
@@ -688,44 +765,24 @@ module.exports = function (grunt) {
         _vm.runInThisContext(code, typeScriptPath);
 
         return typeScriptBinPath;
-    }, prepareBasePath = function (io, path) {
-        if (!path) {
-            return path;
-        }
-        path = io.normalizePath(path);
-        if (path.lastIndexOf("/") !== path.length - 1) {
-            path = path + "/";
-        }
-        return path;
     }, setGlobalOption = function (options) {
-        var newlineOpt;
-
         if (!TypeScript || !options) {
-            return void 0;
+            return;
         }
-
         TypeScript.newLine = function () {
             return _os.EOL;
         };
-
-        if (options.newLine) {
-            newlineOpt = options.newLine.toString().toLowerCase();
-            if (newlineOpt === "crlf") {
-                TypeScript.newLine = function () {
-                    return "\r\n";
+        if (options.newLine !== 2 /* auto */) {
+            TypeScript.newLine = (function (v) {
+                return function () {
+                    return v;
                 };
-            } else if (newlineOpt === "lf") {
-                TypeScript.newLine = function () {
-                    return "\n";
-                };
-            }
+            })(options.newLine === 0 /* crLf */ ? "\r\n" : "\n");
         }
-
-        if (Object.prototype.toString.call(options.indentStep) === "[object Number]" && options.indentStep > -1) {
+        if (options.indentStep > -1) {
             TypeScript.Indenter.indentStep = options.indentStep;
             TypeScript.Indenter.indentStepString = Array(options.indentStep + 1).join(" ");
         }
-
         if (options.useTabIndent) {
             TypeScript.Indenter.indentStep = 1;
             TypeScript.Indenter.indentStepString = "\t";
@@ -736,9 +793,9 @@ module.exports = function (grunt) {
         var self = this, typescriptBinPath = getTsBinPathWithLoad(), hasError = false;
 
         self.files.forEach(function (file) {
-            var dest = file.dest, options = self.options({}), files = [], io = new GruntTs.GruntIO(grunt);
+            var dest = file.dest, options = self.options({}), files = [], io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(grunt, options, io, dest);
 
-            setGlobalOption(options);
+            setGlobalOption(opts);
 
             grunt.file.expand(file.src).forEach(function (file) {
                 files.push(file);
@@ -746,15 +803,9 @@ module.exports = function (grunt) {
 
             dest = io.normalizePath(dest);
 
-            options.outputOne = !!dest && _path.extname(dest) === ".js";
-
-            options.base_path = prepareBasePath(io, options.base_path);
-            if (options.base_path) {
-                options.base_path = io.normalizePath(options.base_path);
-            }
-            if (typeof options.ignoreTypeCheck === "undefined") {
-                options.ignoreTypeCheck = true;
-            }
+            options.outputOne = opts.outputOne;
+            options.base_path = opts.basePath;
+            options.ignoreTypeCheck = opts.ignoreTypeCheck;
 
             if (!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, options)) {
                 hasError = true;
