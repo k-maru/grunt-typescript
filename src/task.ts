@@ -69,9 +69,10 @@ module.exports = function(grunt: IGrunt){
 
             options.outputOne =  opts.outputOne;
             options.base_path = opts.basePath;
+            options.basePath = opts.basePath;
             options.ignoreTypeCheck = opts.ignoreTypeCheck;
 
-            if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, options)){
+            if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts)){
                 hasError = true;
             }
         });

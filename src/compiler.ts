@@ -2,6 +2,7 @@
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/tsc/tsc.d.ts" />
 ///<reference path="./io.ts" />
+///<reference path="./opts.ts" />
 ///<reference path="./setting.ts" />
 
 module GruntTs{
@@ -27,18 +28,18 @@ module GruntTs{
         private resolvedFiles: TypeScript.IResolvedFile[] = [];
         private logger: TypeScript.ILogger = null;
         private destinationPath: string;
-        private options: any;
+        private options: GruntTs.Opts;
         private outputFiles: string[] = [];
 
         constructor(private grunt: any, private tscBinPath: string, private ioHost: GruntTs.GruntIO) {
 
         }
 
-        exec(files: string[], dest: string, options: any): boolean {
+        exec(files: string[], dest: string, options: GruntTs.Opts): boolean {
 
             this.destinationPath = dest;
             this.options = options;
-            this.compilationSettings = GruntTs.createCompilationSettings(options, dest, this.ioHost);
+            this.compilationSettings = options.createCompilationSettings();
             this.inputFiles = files;
             this.logger = new TypeScript.NullLogger();
 
@@ -236,7 +237,7 @@ module GruntTs{
 
         private prepareFileName(fileName: string): string{
             var newFileName = fileName,
-                basePath = this.options.base_path;
+                basePath = this.options.basePath;
 
             if(this.options.outputOne){
                 return newFileName;

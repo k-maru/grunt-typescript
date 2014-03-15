@@ -33,7 +33,7 @@ module.exports = function (grunt) {
                 src:"test/fixtures/sourcemap.ts",
                 dest:"test/fixtures/sourcemap/",
                 options:{
-                    basePath: "test/fixtures/",
+                    base_path: "test/fixtures/",
                     sourcemap:true
                 }
             },
@@ -43,7 +43,7 @@ module.exports = function (grunt) {
                 options:{
                     sourcemap: true,
                     declaration: true,
-                    basePath: "test/fixtures"
+                    base_path: "test/fixtures"
                 }
             },
             single:{
@@ -83,7 +83,7 @@ module.exports = function (grunt) {
                 src:"test/fixtures/multi/**/*.ts",
                 dest:"test/temp/basePath",
                 options: {
-                    basePath: "test/fixtures/multi"
+                    base_path: "test/fixtures/multi"
                 }
             },
             "utf8-with-bom":{
@@ -176,7 +176,10 @@ module.exports = function (grunt) {
                 }
             }
 //            , errorsyntax:{
-//                src: "test/fixtures/error-syntax.ts"
+//                src: "test/fixtures/error-syntax.ts",
+//                options: {
+//                    ignoreTypeCheck: false
+//                }
 //            }
         },
         nodeunit:{

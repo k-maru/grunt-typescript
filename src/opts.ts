@@ -5,6 +5,8 @@
 
 module GruntTs{
 
+    var _path = require("path");
+
     function prepareNewLine(optVal: any): NewLine{
         var val: string;
         if(optVal){
@@ -29,7 +31,7 @@ module GruntTs{
     function prepareBasePath(opt: any, grunt: IGrunt, io: GruntTs.GruntIO): string{
         var optVal: string = "";
         if(isStr(opt.base_path)){
-            grunt.log.writeln("'base_path' option is now obsolate. please use 'basePath'".yellow);
+            grunt.log.writeln("The 'base_path' option will be obsoleted. Please use the 'basePath'.".yellow);
             optVal = opt.base_path;
         }
         if(isStr(opt.basePath)){
@@ -47,6 +49,18 @@ module GruntTs{
         return io.normalizePath(optVal);
     }
 
+    function prepareSourceMap(opt: any, grunt: IGrunt): boolean{
+        var optVal: boolean = false;
+        if(opt.sourcemap){
+            grunt.log.writeln("The 'sourcemap' option will be obsoleted. Please use the 'sourceMap'. (different casing)".yellow);
+            optVal = !!opt.sourcemap;
+        }
+        if(opt.sourceMap){
+            optVal = !!opt.sourceMap;
+        }
+        return optVal;
+    }
+
     export enum NewLine{
         crLf,
         lf,
@@ -60,9 +74,9 @@ module GruntTs{
         public basePath: string;
         public outputOne: boolean;
         public ignoreTypeCheck: boolean;
+        public sourceMap: boolean;
 
         constructor(private _grunt: IGrunt, private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
-            var _path = require("path");
             this._source = _source || {};
             //this._dest = _io.normalizePath(_dest);
             this.newLine = prepareNewLine(this._source.newLine);
@@ -71,6 +85,76 @@ module GruntTs{
             this.basePath = prepareBasePath(this._source, this._grunt, this._io);
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
             this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
+            this.sourceMap = prepareSourceMap(this._source, this._grunt);
+        }
+
+        public createCompilationSettings(): TypeScript.ImmutableCompilationSettings{
+
+            var settings = new TypeScript.CompilationSettings(),
+                temp: string;
+
+            var options = this._source;
+            var dest = this._dest;
+            var ioHost = this._io;
+
+            if(options.fullSourceMapPath){
+                ioHost.printLine("fullSourceMapPath not supported.");
+            }
+            if(options.allowbool){
+                ioHost.printLine("allowbool is obsolete.");
+            }
+            if(options.allowimportmodule){
+                ioHost.printLine("allowimportmodule is obsolete.");
+            }
+
+            if(options.outputOne){
+                settings.outFileOption = _path.resolve(ioHost.currentPath(), dest);
+            }
+
+            settings.mapSourceFiles = this.sourceMap;
+
+            if(options.declaration){
+                settings.generateDeclarationFiles = true;
+            }
+            if(options.comments){
+                settings.removeComments = false;
+            }else{
+                settings.removeComments = true;
+            }
+            //default
+            settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
+            if (options.target) {
+                temp = options.target.toLowerCase();
+                if (temp === 'es3') {
+                    settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
+                } else if (temp == 'es5') {
+                    settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
+                }
+            }
+            //default
+            settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+            if (options.module) {
+                temp = options.module.toLowerCase();
+                if (temp === 'commonjs' || temp === 'node') {
+                    settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+                } else if (temp === 'amd') {
+                    settings.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
+                }
+            }
+            if(options.noImplicitAny){
+                settings.noImplicitAny = true;
+            }
+
+            if(options.nolib){
+                settings.noLib = true;
+            }
+
+            //test
+            if(options.disallowAsi){
+                settings.allowAutomaticSemicolonInsertion = false;
+            }
+
+            return TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings);
         }
     }
 }
