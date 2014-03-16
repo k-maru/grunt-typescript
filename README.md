@@ -1,5 +1,8 @@
-grunt-typescript [![Build Status](https://travis-ci.org/k-maru/grunt-typescript.png?branch=master)](https://travis-ci.org/k-maru/grunt-typescript)
+grunt-typescript
 ================
+[![Build Status](https://travis-ci.org/k-maru/grunt-typescript.png?branch=master)](https://travis-ci.org/k-maru/grunt-typescript) [![NPM version](https://badge.fury.io/js/grunt-typescript.png)](http://badge.fury.io/js/grunt-typescript)
+
+[![NPM](https://nodei.co/npm/grunt-typescript.png?downloads=true)](https://nodei.co/npm/grunt-typescript/)
 
 Compile TypeScript in Grunt
 
