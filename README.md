@@ -98,7 +98,7 @@ Default value is true. This options is obsolete.
 
 ###ignoreError `boolean`
 If the compiler can create a file, the task ignores the error.
-Default value is false. But, a default value is changed into true after deleting the ignoreTypeCheck option. (maybe next release..)
+Default value is true. But, a default value is changed into false after deleting the ignoreTypeCheck option. (maybe next release..)
 
 ###disallowAsi `boolean`
 Do not allow auto semicolon insertion. This options is experimental.
