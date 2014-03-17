@@ -79,6 +79,9 @@ Emit comments to output
 ###noImplicitAny `boolean`
 Warn on expressions and declarations with an implied 'any' type.
 
+###noResolve `boolean`
+Skip resolution and preprocessing.
+
 ##Original Options
 
 ###newLine `string`
@@ -91,7 +94,11 @@ Specify space indent count for code generation: This value will be disregarded i
 Specify tab indent for code generation: false (default) or true. This options is experimental.
 
 ###ignoreTypeCheck `boolean`
-Default value is true. This options is experimental.
+Default value is true. This options is obsolete.
+
+###ignoreError `boolean`
+If the compiler can create a file, the task ignores the error.
+Default value is false. But, a default value is changed into true after deleting the ignoreTypeCheck option. (maybe next release..)
 
 ###disallowAsi `boolean`
 Do not allow auto semicolon insertion. This options is experimental.

@@ -364,6 +364,32 @@ var GruntTs;
         return optVal;
     }
 
+    function prepareIgnoreTypeCheck(opt, grunt) {
+        if (typeof opt.ignoreTypeCheck !== "undefined") {
+            grunt.log.writeln("The 'ignoreTypeCheck' option will be obsoleted. Please use the 'ignoreError'.".yellow);
+        }
+        if (typeof opt.ignoreTypeCheck === "undefined")
+            return true;
+        return !!opt.ignoreTypeCheck;
+        //return typeof opt.ignoreTypeCheck === "undefined" || !!opt.ignoreTypeCheck;
+    }
+
+    function prepareIgnoreError(optVal) {
+        var val = false;
+        if (typeof optVal !== "undefined") {
+            val = !!optVal;
+        }
+        return val;
+    }
+
+    function prepareNoResolve(optVal) {
+        var val = false;
+        if (typeof optVal !== "undefined") {
+            val = !!optVal;
+        }
+        return val;
+    }
+
     (function (NewLine) {
         NewLine[NewLine["crLf"] = 0] = "crLf";
         NewLine[NewLine["lf"] = 1] = "lf";
@@ -385,11 +411,23 @@ var GruntTs;
             this.useTabIndent = !!this._source.useTabIndent;
             this.basePath = prepareBasePath(this._source, this._grunt, this._io);
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
-            this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
+
+            this.ignoreTypeCheck = prepareIgnoreTypeCheck(this._source, this._grunt);
+
+            //ignoreTypeCheckを消すまでの一時処置
+            this.hasIgnoreTypeCheck = typeof this._source.ignoreTypeCheck !== "undefined";
+
+            this.noResolve = prepareNoResolve(this._source.noResolve);
+
             this.sourceMap = prepareSourceMap(this._source, this._grunt);
             this.noLib = prepareNoLib(this._source, this._grunt);
             this.declaration = !!this._source.declaration;
             this.removeComments = !this._source.comments;
+
+            this.ignoreError = prepareIgnoreError(this._source.ignoreError);
+
+            //ignoreTypeCheckを消すまでの一時処置
+            this.hasIgnoreError = typeof this._source.ignoreError !== "undefined";
         }
         Opts.prototype.createCompilationSettings = function () {
             var settings = new TypeScript.CompilationSettings(), temp;
@@ -443,6 +481,7 @@ var GruntTs;
             }
 
             settings.noLib = this.noLib;
+            settings.noResolve = this.noResolve;
 
             //test
             if (options.disallowAsi) {
@@ -514,14 +553,38 @@ var GruntTs;
         Compiler.prototype.resolve = function () {
             var _this = this;
             var resolvedFiles = [];
-            var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings.useCaseSensitiveFileResolution());
-            var includeDefaultLibrary = !this.compilationSettings.noLib() && !resolutionResults.seenNoDefaultLibTag;
+            var includeDefaultLibrary = !this.compilationSettings.noLib();
 
-            resolvedFiles = resolutionResults.resolvedFiles;
+            if (this.options.noResolve) {
+                for (var i = 0, n = this.inputFiles.length; i < n; i++) {
+                    var inputFile = this.inputFiles[i];
+                    var referencedFiles = [];
+                    var importedFiles = [];
 
-            resolutionResults.diagnostics.forEach(function (d) {
-                return _this.addDiagnostic(d);
-            });
+                    // If declaration files are going to be emitted, preprocess the file contents and add in referenced files as well
+                    if (this.compilationSettings.generateDeclarationFiles()) {
+                        var references = TypeScript.getReferencedFiles(inputFile, this.getScriptSnapshot(inputFile));
+                        for (var j = 0; j < references.length; j++) {
+                            referencedFiles.push(references[j].path);
+                        }
+
+                        inputFile = this.resolvePath(inputFile);
+                    }
+
+                    resolvedFiles.push({
+                        path: inputFile,
+                        referencedFiles: referencedFiles,
+                        importedFiles: importedFiles
+                    });
+                }
+            } else {
+                var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings.useCaseSensitiveFileResolution());
+                includeDefaultLibrary = !this.compilationSettings.noLib() && !resolutionResults.seenNoDefaultLibTag;
+                resolvedFiles = resolutionResults.resolvedFiles;
+                resolutionResults.diagnostics.forEach(function (d) {
+                    return _this.addDiagnostic(d);
+                });
+            }
 
             if (includeDefaultLibrary) {
                 var libraryResolvedFile = {
@@ -546,10 +609,43 @@ var GruntTs;
                 compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
             });
 
+            //ignoreTypeCheckを消すまでの一次処理
+            if (this.options.hasIgnoreError) {
+                return this.compileWithIgnoreError(compiler);
+            } else {
+                for (var it = compiler.compile(function (path) {
+                    return _this.resolvePath(path);
+                }); it.moveNext();) {
+                    var result = it.current(), hasError = false, phase = it.compilerPhase;
+
+                    result.diagnostics.forEach(function (d) {
+                        var info = d.info();
+                        if (info.category === 1 /* Error */) {
+                            hasError = true;
+                        }
+                        _this.addDiagnostic(d);
+                    });
+                    if (hasError && phase === 0 /* Syntax */) {
+                        throw new Error();
+                    }
+                    if (hasError && !this.options.ignoreTypeCheck) {
+                        throw new Error();
+                    }
+
+                    if (!this.tryWriteOutputFiles(result.outputFiles)) {
+                        throw new Error();
+                    }
+                }
+            }
+        };
+
+        Compiler.prototype.compileWithIgnoreError = function (compiler) {
+            var _this = this;
+            var hasError = false, fileCreated = false;
             for (var it = compiler.compile(function (path) {
                 return _this.resolvePath(path);
             }); it.moveNext();) {
-                var result = it.current(), hasError = false, phase = it.compilerPhase;
+                var result = it.current();
 
                 result.diagnostics.forEach(function (d) {
                     var info = d.info();
@@ -558,16 +654,18 @@ var GruntTs;
                     }
                     _this.addDiagnostic(d);
                 });
-                if (hasError && phase === 0 /* Syntax */) {
-                    throw new Error();
-                }
-                if (hasError && !this.options.ignoreTypeCheck) {
+
+                if (hasError && !this.options.ignoreError) {
                     throw new Error();
                 }
 
+                fileCreated = fileCreated || !!result.outputFiles.length;
                 if (!this.tryWriteOutputFiles(result.outputFiles)) {
                     throw new Error();
                 }
+            }
+            if (hasError && !fileCreated) {
+                throw new Error();
             }
         };
 

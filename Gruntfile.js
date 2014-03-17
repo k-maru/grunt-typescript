@@ -168,17 +168,25 @@ module.exports = function (grunt) {
                     useTabIndent: true,
                     indentStep: 2
                 }
+            },
+            resolve: {
+                src:"test/fixtures/resolve/resolve1.ts",
+                options:{
+                    noResolve: true,
+                    ignoreError: true
+                }
             }
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",
                 options: {
-                    //ignoreTypeCheck: false
+                    ignoreTypeCheck: true
                 }
             }
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
 //                options: {
 //                    ignoreTypeCheck: false
+//                    //noResolve: true
 //                }
 //            }
         },

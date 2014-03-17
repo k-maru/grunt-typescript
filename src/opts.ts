@@ -73,6 +73,32 @@ module GruntTs{
         return optVal;
     }
 
+    function prepareIgnoreTypeCheck(opt: any, grunt: IGrunt): boolean{
+        if(typeof opt.ignoreTypeCheck !== "undefined"){
+            grunt.log.writeln("The 'ignoreTypeCheck' option will be obsoleted. Please use the 'ignoreError'.".yellow);
+        }
+        if(typeof opt.ignoreTypeCheck === "undefined") return true;
+        return !!opt.ignoreTypeCheck;
+
+        //return typeof opt.ignoreTypeCheck === "undefined" || !!opt.ignoreTypeCheck;
+    }
+
+    function prepareIgnoreError(optVal: any): boolean{
+        var val = false;
+        if(typeof optVal !== "undefined"){
+            val = !!optVal;
+        }
+        return val;
+    }
+
+    function prepareNoResolve(optVal: any): boolean{
+        var val = false;
+        if(typeof optVal !== "undefined"){
+            val = !!optVal;
+        }
+        return val;
+    }
+
     export enum NewLine{
         crLf,
         lf,
@@ -85,11 +111,18 @@ module GruntTs{
         public useTabIndent: boolean;
         public basePath: string;
         public outputOne: boolean;
-        public ignoreTypeCheck: boolean;
         public sourceMap: boolean;
         public noLib: boolean;
         public declaration: boolean;
         public removeComments: boolean;
+
+        public noResolve: boolean;
+
+        public ignoreError: boolean;
+        public ignoreTypeCheck: boolean;
+
+        public hasIgnoreTypeCheck: boolean;
+        public hasIgnoreError: boolean;
 
         constructor(private _grunt: IGrunt, private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
             this._source = _source || {};
@@ -99,11 +132,22 @@ module GruntTs{
             this.useTabIndent = !!this._source.useTabIndent;
             this.basePath = prepareBasePath(this._source, this._grunt, this._io);
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
-            this.ignoreTypeCheck = typeof this._source.ignoreTypeCheck === "undefined";
+
+            this.ignoreTypeCheck = prepareIgnoreTypeCheck(this._source, this._grunt);
+            //ignoreTypeCheckを消すまでの一時処置
+            this.hasIgnoreTypeCheck = typeof this._source.ignoreTypeCheck !== "undefined";
+
+            this.noResolve = prepareNoResolve(this._source.noResolve);
+
             this.sourceMap = prepareSourceMap(this._source, this._grunt);
             this.noLib = prepareNoLib(this._source, this._grunt);
             this.declaration = !!this._source.declaration;
             this.removeComments = !this._source.comments;
+
+
+            this.ignoreError = prepareIgnoreError(this._source.ignoreError);
+            //ignoreTypeCheckを消すまでの一時処置
+            this.hasIgnoreError = typeof this._source.ignoreError !== "undefined";
         }
 
         public createCompilationSettings(): TypeScript.ImmutableCompilationSettings{
@@ -159,6 +203,7 @@ module GruntTs{
             }
 
             settings.noLib = this.noLib;
+            settings.noResolve = this.noResolve;
 
             //test
             if(options.disallowAsi){
