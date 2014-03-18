@@ -54,10 +54,9 @@ module.exports = function(grunt: IGrunt){
 
         self.files.forEach(function (file) {
             var dest: string = file.dest,
-                options: any = self.options({}),
                 files: string[] = [],
                 io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
-                opts = new GruntTs.Opts(grunt, options, io, dest);
+                opts = new GruntTs.Opts(self.options({}), io, dest);
 
             setGlobalOption(opts);
 
@@ -66,11 +65,6 @@ module.exports = function(grunt: IGrunt){
             });
 
             dest = io.normalizePath(dest);
-
-            options.outputOne =  opts.outputOne;
-            options.base_path = opts.basePath;
-            options.basePath = opts.basePath;
-            options.ignoreTypeCheck = opts.ignoreTypeCheck;
 
             if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts)){
                 hasError = true;

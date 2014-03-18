@@ -93,12 +93,9 @@ Specify space indent count for code generation: This value will be disregarded i
 ###useTabIndent `boolean`
 Specify tab indent for code generation: false (default) or true. This options is experimental.
 
-###ignoreTypeCheck `boolean`
-Default value is true. This options is obsolete.
-
 ###ignoreError `boolean`
 If the compiler can create a file, the task ignores the error.
-Default value is true. But, a default value is changed into false after deleting the ignoreTypeCheck option. (maybe next release..)
+Default value is false.
 
 ###disallowAsi `boolean`
 Do not allow auto semicolon insertion. This options is experimental.

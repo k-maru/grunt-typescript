@@ -28,10 +28,10 @@ module GruntTs{
         return Object.prototype.toString.call(val) === "[object String]";
     }
 
-    function prepareBasePath(opt: any, grunt: IGrunt, io: GruntTs.GruntIO): string{
+    function prepareBasePath(opt: any, io: GruntTs.GruntIO): string{
         var optVal: string = "";
         if(isStr(opt.base_path)){
-            grunt.log.writeln("The 'base_path' option will be obsoleted. Please use the 'basePath'.".yellow);
+            io.writeWarn("The 'base_path' option will be obsoleted. Please use the 'basePath'.");
             optVal = opt.base_path;
         }
         if(isStr(opt.basePath)){
@@ -49,10 +49,10 @@ module GruntTs{
         return io.normalizePath(optVal);
     }
 
-    function prepareSourceMap(opt: any, grunt: IGrunt): boolean{
+    function prepareSourceMap(opt: any, io: GruntTs.GruntIO): boolean{
         var optVal: boolean = false;
         if(opt.sourcemap){
-            grunt.log.writeln("The 'sourcemap' option will be obsoleted. Please use the 'sourceMap'. (different casing)".yellow);
+            io.writeWarn("The 'sourcemap' option will be obsoleted. Please use the 'sourceMap'. (different casing)");
             optVal = !!opt.sourcemap;
         }
         if(opt.sourceMap){
@@ -61,10 +61,10 @@ module GruntTs{
         return optVal;
     }
 
-    function prepareNoLib(opt: any, grunt: IGrunt): boolean{
+    function prepareNoLib(opt: any, io: GruntTs.GruntIO): boolean{
         var optVal: boolean = false;
         if(opt.nolib){
-            grunt.log.writeln("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)".yellow);
+            io.writeWarn("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)");
             optVal = !!opt.nolib;
         }
         if(opt.noLib){
@@ -73,14 +73,10 @@ module GruntTs{
         return optVal;
     }
 
-    function prepareIgnoreTypeCheck(opt: any, grunt: IGrunt): boolean{
+    function checkIgnoreTypeCheck(opt: any, io: GruntTs.GruntIO){
         if(typeof opt.ignoreTypeCheck !== "undefined"){
-            grunt.log.writeln("The 'ignoreTypeCheck' option will be obsoleted. Please use the 'ignoreError'.".yellow);
+            io.writeWarn("The 'ignoreTypeCheck' option removed. Please use the 'ignoreError'.");
         }
-        if(typeof opt.ignoreTypeCheck === "undefined") return true;
-        return !!opt.ignoreTypeCheck;
-
-        //return typeof opt.ignoreTypeCheck === "undefined" || !!opt.ignoreTypeCheck;
     }
 
     function prepareIgnoreError(optVal: any): boolean{
@@ -95,6 +91,32 @@ module GruntTs{
         var val = false;
         if(typeof optVal !== "undefined"){
             val = !!optVal;
+        }
+        return val;
+    }
+
+    function prepareTarget(optVal: any): TypeScript.LanguageVersion{
+        var val:TypeScript.LanguageVersion = undefined;
+        if (optVal.target) {
+            var temp = (optVal.target + "").toLowerCase();
+            if (temp === 'es3') {
+                val = TypeScript.LanguageVersion.EcmaScript3;
+            } else if (temp == 'es5') {
+                val = TypeScript.LanguageVersion.EcmaScript5;
+            }
+        }
+        return val;
+    }
+
+    function prepareModule(optVal: any): TypeScript.ModuleGenTarget{
+        var val:TypeScript.ModuleGenTarget = undefined;
+        if (optVal.module) {
+            var temp = (optVal.module + "").toLowerCase();
+            if (temp === 'commonjs' || temp === 'node') {
+                val = TypeScript.ModuleGenTarget.Synchronous;
+            } else if (temp === 'amd') {
+                val = TypeScript.ModuleGenTarget.Asynchronous;
+            }
         }
         return val;
     }
@@ -115,100 +137,65 @@ module GruntTs{
         public noLib: boolean;
         public declaration: boolean;
         public removeComments: boolean;
-
         public noResolve: boolean;
-
         public ignoreError: boolean;
-        public ignoreTypeCheck: boolean;
+        public langTarget: TypeScript.LanguageVersion;
+        public moduleTarget: TypeScript.ModuleGenTarget;
+        public noImplicitAny: boolean;
+        public disallowAsi: boolean;
 
-        public hasIgnoreTypeCheck: boolean;
-        public hasIgnoreError: boolean;
-
-        constructor(private _grunt: IGrunt, private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
+        constructor(private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
             this._source = _source || {};
-            //this._dest = _io.normalizePath(_dest);
+            this._dest = _io.normalizePath(_dest);
+
             this.newLine = prepareNewLine(this._source.newLine);
             this.indentStep = prepareIndentStep(this._source.indentStep);
             this.useTabIndent = !!this._source.useTabIndent;
-            this.basePath = prepareBasePath(this._source, this._grunt, this._io);
+            this.basePath = prepareBasePath(this._source, this._io);
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
-
-            this.ignoreTypeCheck = prepareIgnoreTypeCheck(this._source, this._grunt);
-            //ignoreTypeCheckを消すまでの一時処置
-            this.hasIgnoreTypeCheck = typeof this._source.ignoreTypeCheck !== "undefined";
-
             this.noResolve = prepareNoResolve(this._source.noResolve);
-
-            this.sourceMap = prepareSourceMap(this._source, this._grunt);
-            this.noLib = prepareNoLib(this._source, this._grunt);
+            this.sourceMap = prepareSourceMap(this._source, this._io);
+            this.noLib = prepareNoLib(this._source, this._io);
             this.declaration = !!this._source.declaration;
             this.removeComments = !this._source.comments;
-
-
             this.ignoreError = prepareIgnoreError(this._source.ignoreError);
-            //ignoreTypeCheckを消すまでの一時処置
-            this.hasIgnoreError = typeof this._source.ignoreError !== "undefined";
+            this.langTarget = prepareTarget(this._source);
+            this.moduleTarget = prepareModule(this._source);
+            this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
+            this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
+
+            checkIgnoreTypeCheck(this._source, this._io);
         }
 
         public createCompilationSettings(): TypeScript.ImmutableCompilationSettings{
 
             var settings = new TypeScript.CompilationSettings(),
-                temp: string;
+                dest = this._dest,
+                ioHost = this._io;
 
-            var options = this._source;
-            var dest = this._dest;
-            var ioHost = this._io;
-
-            if(options.fullSourceMapPath){
-                ioHost.printLine("fullSourceMapPath not supported.");
-            }
-            if(options.allowbool){
-                ioHost.printLine("allowbool is obsolete.");
-            }
-            if(options.allowimportmodule){
-                ioHost.printLine("allowimportmodule is obsolete.");
-            }
-
-            if(options.outputOne){
+            if(this.outputOne){
                 settings.outFileOption = _path.resolve(ioHost.currentPath(), dest);
             }
 
             settings.mapSourceFiles = this.sourceMap;
-
             settings.generateDeclarationFiles = this.declaration;
             settings.removeComments = this.removeComments;
 
-            //default
-            settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
-            if (options.target) {
-                temp = options.target.toLowerCase();
-                if (temp === 'es3') {
-                    settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
-                } else if (temp == 'es5') {
-                    settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
-                }
+            if(typeof this.langTarget !== "undefined"){
+                settings.codeGenTarget = this.langTarget;
             }
-            //default
-            settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
-            if (options.module) {
-                temp = options.module.toLowerCase();
-                if (temp === 'commonjs' || temp === 'node') {
-                    settings.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
-                } else if (temp === 'amd') {
-                    settings.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
-                }
+            if(typeof this.moduleTarget !== "undefined"){
+                settings.moduleGenTarget = this.moduleTarget;
             }
-            if(options.noImplicitAny){
-                settings.noImplicitAny = true;
+            if(typeof this.noImplicitAny !== "undefined"){
+                settings.noImplicitAny = this.noImplicitAny;
+            }
+            if(typeof this.disallowAsi !== "undefined"){
+                settings.allowAutomaticSemicolonInsertion = this.disallowAsi;
             }
 
             settings.noLib = this.noLib;
             settings.noResolve = this.noResolve;
-
-            //test
-            if(options.disallowAsi){
-                settings.allowAutomaticSemicolonInsertion = false;
-            }
 
             return TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings);
         }

@@ -103,7 +103,7 @@ module.exports = function (grunt) {
             noImplicitAny:{
                 src:"test/fixtures/noImplicitAny.ts",
                 options:{
-                    //ignoreTypeCheck: false,
+                    ignoreError: true,
                     noImplicitAny: true
 
                 }
@@ -111,9 +111,8 @@ module.exports = function (grunt) {
             noImplicitAny2:{
                 src:"test/fixtures/noImplicitAny2.ts",
                 options:{
-                    //ignoreTypeCheck: false,
+                    ignoreError: true,
                     noImplicitAny: true
-
                 }
             },
             newline_lf: {
@@ -179,7 +178,7 @@ module.exports = function (grunt) {
             , errortypecheck: {
                 src: "test/fixtures/error-typecheck.ts",
                 options: {
-                    ignoreTypeCheck: true
+                    ignoreError: true
                 }
             }
 //            , errorsyntax:{

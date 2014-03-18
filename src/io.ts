@@ -149,6 +149,11 @@ module GruntTs{
             }
         }
 
+        appendFile(path: string, content: string) {
+            this.grunt.verbose.write("Append " + path + "...");
+            _fs.appendFileSync(path, content);
+        }
+
         deleteFile(path: string) {
             try {
                 this.grunt.verbose.write("Deleting " + path + "...");
@@ -281,6 +286,11 @@ module GruntTs{
         //original
         resolveMulti(...paths: string[]): string{
             return normalizePath(_path.resolve.apply(_path, paths));
+        }
+
+        //original
+        writeWarn(message: string){
+            this.grunt.log.writeln(message.yellow);
         }
 
         normalizePath(path: string): string{

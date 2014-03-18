@@ -108,62 +108,29 @@ module GruntTs{
                 var sourceFile = this.getSourceFile(resolvedFile.path);
                 compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
             });
-
-            //ignoreTypeCheckを消すまでの一次処理
-            if(this.options.hasIgnoreError){
-                return this.compileWithIgnoreError(compiler);
-            }else{
-                for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
-                    var result = it.current(),
-                        hasError = false,
-                        //not public property
-                        phase = (<any>it).compilerPhase;
-
-                    result.diagnostics.forEach(d => {
-                        var info = d.info();
-                        if (info.category === TypeScript.DiagnosticCategory.Error) {
-                            hasError = true;
-                        }
-                        this.addDiagnostic(d)
-                    });
-                    if(hasError && phase === CompilerPhase.Syntax){
-                        throw new Error();
-                    }
-                    if(hasError && !this.options.ignoreTypeCheck){
-                        throw new Error();
-                    }
-
-                    if (!this.tryWriteOutputFiles(result.outputFiles)) {
-                        throw new Error();
-                    }
-                }
-            }
-        }
-
-        private compileWithIgnoreError(compiler: TypeScript.TypeScriptCompiler): void{
-            var hasError: boolean = false,
-                fileCreated: boolean = false;
+            var ignoreError = this.options.ignoreError,
+                hasOutputFile = false;
             for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
-                var result = it.current();
+                var result: TypeScript.CompileResult = it.current(),
+                    hasError = false;
 
-                result.diagnostics.forEach(d => {
-                    var info = d.info();
+                result.diagnostics.forEach(d  => {
+                    var info: TypeScript.DiagnosticInfo = d.info();
                     if (info.category === TypeScript.DiagnosticCategory.Error) {
                         hasError = true;
                     }
-                    this.addDiagnostic(d)
+                    this.addDiagnostic(d);
                 });
-
-                if(hasError && !this.options.ignoreError){
+                if(hasError && !ignoreError){
                     throw new Error();
                 }
 
-                fileCreated = fileCreated || !!result.outputFiles.length;
+                hasOutputFile = !!result.outputFiles.length || hasOutputFile;
                 if (!this.tryWriteOutputFiles(result.outputFiles)) {
                     throw new Error();
                 }
             }
-            if(hasError && !fileCreated){
+            if(hasError && !hasOutputFile){
                 throw new Error();
             }
         }

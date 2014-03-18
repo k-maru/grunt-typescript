@@ -149,6 +149,11 @@ var GruntTs;
             }
         };
 
+        GruntIO.prototype.appendFile = function (path, content) {
+            this.grunt.verbose.write("Append " + path + "...");
+            _fs.appendFileSync(path, content);
+        };
+
         GruntIO.prototype.deleteFile = function (path) {
             try  {
                 this.grunt.verbose.write("Deleting " + path + "...");
@@ -283,6 +288,11 @@ var GruntTs;
             return normalizePath(_path.resolve.apply(_path, paths));
         };
 
+        //original
+        GruntIO.prototype.writeWarn = function (message) {
+            this.grunt.log.writeln(message.yellow);
+        };
+
         GruntIO.prototype.normalizePath = function (path) {
             return normalizePath(path);
         };
@@ -318,10 +328,10 @@ var GruntTs;
         return Object.prototype.toString.call(val) === "[object String]";
     }
 
-    function prepareBasePath(opt, grunt, io) {
+    function prepareBasePath(opt, io) {
         var optVal = "";
         if (isStr(opt.base_path)) {
-            grunt.log.writeln("The 'base_path' option will be obsoleted. Please use the 'basePath'.".yellow);
+            io.writeWarn("The 'base_path' option will be obsoleted. Please use the 'basePath'.");
             optVal = opt.base_path;
         }
         if (isStr(opt.basePath)) {
@@ -340,10 +350,10 @@ var GruntTs;
         return io.normalizePath(optVal);
     }
 
-    function prepareSourceMap(opt, grunt) {
+    function prepareSourceMap(opt, io) {
         var optVal = false;
         if (opt.sourcemap) {
-            grunt.log.writeln("The 'sourcemap' option will be obsoleted. Please use the 'sourceMap'. (different casing)".yellow);
+            io.writeWarn("The 'sourcemap' option will be obsoleted. Please use the 'sourceMap'. (different casing)");
             optVal = !!opt.sourcemap;
         }
         if (opt.sourceMap) {
@@ -352,10 +362,10 @@ var GruntTs;
         return optVal;
     }
 
-    function prepareNoLib(opt, grunt) {
+    function prepareNoLib(opt, io) {
         var optVal = false;
         if (opt.nolib) {
-            grunt.log.writeln("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)".yellow);
+            io.writeWarn("The 'nolib' option will be obsoleted. Please use the 'noLib'. (different casing)");
             optVal = !!opt.nolib;
         }
         if (opt.noLib) {
@@ -364,14 +374,10 @@ var GruntTs;
         return optVal;
     }
 
-    function prepareIgnoreTypeCheck(opt, grunt) {
+    function checkIgnoreTypeCheck(opt, io) {
         if (typeof opt.ignoreTypeCheck !== "undefined") {
-            grunt.log.writeln("The 'ignoreTypeCheck' option will be obsoleted. Please use the 'ignoreError'.".yellow);
+            io.writeWarn("The 'ignoreTypeCheck' option removed. Please use the 'ignoreError'.");
         }
-        if (typeof opt.ignoreTypeCheck === "undefined")
-            return true;
-        return !!opt.ignoreTypeCheck;
-        //return typeof opt.ignoreTypeCheck === "undefined" || !!opt.ignoreTypeCheck;
     }
 
     function prepareIgnoreError(optVal) {
@@ -390,6 +396,32 @@ var GruntTs;
         return val;
     }
 
+    function prepareTarget(optVal) {
+        var val = undefined;
+        if (optVal.target) {
+            var temp = (optVal.target + "").toLowerCase();
+            if (temp === 'es3') {
+                val = 0 /* EcmaScript3 */;
+            } else if (temp == 'es5') {
+                val = 1 /* EcmaScript5 */;
+            }
+        }
+        return val;
+    }
+
+    function prepareModule(optVal) {
+        var val = undefined;
+        if (optVal.module) {
+            var temp = (optVal.module + "").toLowerCase();
+            if (temp === 'commonjs' || temp === 'node') {
+                val = 1 /* Synchronous */;
+            } else if (temp === 'amd') {
+                val = 2 /* Asynchronous */;
+            }
+        }
+        return val;
+    }
+
     (function (NewLine) {
         NewLine[NewLine["crLf"] = 0] = "crLf";
         NewLine[NewLine["lf"] = 1] = "lf";
@@ -398,95 +430,57 @@ var GruntTs;
     var NewLine = GruntTs.NewLine;
 
     var Opts = (function () {
-        function Opts(_grunt, _source, _io, _dest) {
-            this._grunt = _grunt;
+        function Opts(_source, _io, _dest) {
             this._source = _source;
             this._io = _io;
             this._dest = _dest;
             this._source = _source || {};
+            this._dest = _io.normalizePath(_dest);
 
-            //this._dest = _io.normalizePath(_dest);
             this.newLine = prepareNewLine(this._source.newLine);
             this.indentStep = prepareIndentStep(this._source.indentStep);
             this.useTabIndent = !!this._source.useTabIndent;
-            this.basePath = prepareBasePath(this._source, this._grunt, this._io);
+            this.basePath = prepareBasePath(this._source, this._io);
             this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
-
-            this.ignoreTypeCheck = prepareIgnoreTypeCheck(this._source, this._grunt);
-
-            //ignoreTypeCheckを消すまでの一時処置
-            this.hasIgnoreTypeCheck = typeof this._source.ignoreTypeCheck !== "undefined";
-
             this.noResolve = prepareNoResolve(this._source.noResolve);
-
-            this.sourceMap = prepareSourceMap(this._source, this._grunt);
-            this.noLib = prepareNoLib(this._source, this._grunt);
+            this.sourceMap = prepareSourceMap(this._source, this._io);
+            this.noLib = prepareNoLib(this._source, this._io);
             this.declaration = !!this._source.declaration;
             this.removeComments = !this._source.comments;
-
             this.ignoreError = prepareIgnoreError(this._source.ignoreError);
+            this.langTarget = prepareTarget(this._source);
+            this.moduleTarget = prepareModule(this._source);
+            this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
+            this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
-            //ignoreTypeCheckを消すまでの一時処置
-            this.hasIgnoreError = typeof this._source.ignoreError !== "undefined";
+            checkIgnoreTypeCheck(this._source, this._io);
         }
         Opts.prototype.createCompilationSettings = function () {
-            var settings = new TypeScript.CompilationSettings(), temp;
+            var settings = new TypeScript.CompilationSettings(), dest = this._dest, ioHost = this._io;
 
-            var options = this._source;
-            var dest = this._dest;
-            var ioHost = this._io;
-
-            if (options.fullSourceMapPath) {
-                ioHost.printLine("fullSourceMapPath not supported.");
-            }
-            if (options.allowbool) {
-                ioHost.printLine("allowbool is obsolete.");
-            }
-            if (options.allowimportmodule) {
-                ioHost.printLine("allowimportmodule is obsolete.");
-            }
-
-            if (options.outputOne) {
+            if (this.outputOne) {
                 settings.outFileOption = _path.resolve(ioHost.currentPath(), dest);
             }
 
             settings.mapSourceFiles = this.sourceMap;
-
             settings.generateDeclarationFiles = this.declaration;
             settings.removeComments = this.removeComments;
 
-            //default
-            settings.codeGenTarget = 0 /* EcmaScript3 */;
-            if (options.target) {
-                temp = options.target.toLowerCase();
-                if (temp === 'es3') {
-                    settings.codeGenTarget = 0 /* EcmaScript3 */;
-                } else if (temp == 'es5') {
-                    settings.codeGenTarget = 1 /* EcmaScript5 */;
-                }
+            if (typeof this.langTarget !== "undefined") {
+                settings.codeGenTarget = this.langTarget;
             }
-
-            //default
-            settings.moduleGenTarget = 1 /* Synchronous */;
-            if (options.module) {
-                temp = options.module.toLowerCase();
-                if (temp === 'commonjs' || temp === 'node') {
-                    settings.moduleGenTarget = 1 /* Synchronous */;
-                } else if (temp === 'amd') {
-                    settings.moduleGenTarget = 2 /* Asynchronous */;
-                }
+            if (typeof this.moduleTarget !== "undefined") {
+                settings.moduleGenTarget = this.moduleTarget;
             }
-            if (options.noImplicitAny) {
-                settings.noImplicitAny = true;
+            if (typeof this.noImplicitAny !== "undefined") {
+                settings.noImplicitAny = this.noImplicitAny;
+            }
+            if (typeof this.disallowAsi !== "undefined") {
+                settings.allowAutomaticSemicolonInsertion = this.disallowAsi;
             }
 
             settings.noLib = this.noLib;
             settings.noResolve = this.noResolve;
-
-            //test
-            if (options.disallowAsi) {
-                settings.allowAutomaticSemicolonInsertion = false;
-            }
 
             return TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings);
         };
@@ -608,44 +602,11 @@ var GruntTs;
                 var sourceFile = _this.getSourceFile(resolvedFile.path);
                 compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
             });
-
-            //ignoreTypeCheckを消すまでの一次処理
-            if (this.options.hasIgnoreError) {
-                return this.compileWithIgnoreError(compiler);
-            } else {
-                for (var it = compiler.compile(function (path) {
-                    return _this.resolvePath(path);
-                }); it.moveNext();) {
-                    var result = it.current(), hasError = false, phase = it.compilerPhase;
-
-                    result.diagnostics.forEach(function (d) {
-                        var info = d.info();
-                        if (info.category === 1 /* Error */) {
-                            hasError = true;
-                        }
-                        _this.addDiagnostic(d);
-                    });
-                    if (hasError && phase === 0 /* Syntax */) {
-                        throw new Error();
-                    }
-                    if (hasError && !this.options.ignoreTypeCheck) {
-                        throw new Error();
-                    }
-
-                    if (!this.tryWriteOutputFiles(result.outputFiles)) {
-                        throw new Error();
-                    }
-                }
-            }
-        };
-
-        Compiler.prototype.compileWithIgnoreError = function (compiler) {
-            var _this = this;
-            var hasError = false, fileCreated = false;
+            var ignoreError = this.options.ignoreError, hasOutputFile = false;
             for (var it = compiler.compile(function (path) {
                 return _this.resolvePath(path);
             }); it.moveNext();) {
-                var result = it.current();
+                var result = it.current(), hasError = false;
 
                 result.diagnostics.forEach(function (d) {
                     var info = d.info();
@@ -654,17 +615,16 @@ var GruntTs;
                     }
                     _this.addDiagnostic(d);
                 });
-
-                if (hasError && !this.options.ignoreError) {
+                if (hasError && !ignoreError) {
                     throw new Error();
                 }
 
-                fileCreated = fileCreated || !!result.outputFiles.length;
+                hasOutputFile = !!result.outputFiles.length || hasOutputFile;
                 if (!this.tryWriteOutputFiles(result.outputFiles)) {
                     throw new Error();
                 }
             }
-            if (hasError && !fileCreated) {
+            if (hasError && !hasOutputFile) {
                 throw new Error();
             }
         };
@@ -905,7 +865,7 @@ module.exports = function (grunt) {
         var self = this, typescriptBinPath = getTsBinPathWithLoad(), hasError = false;
 
         self.files.forEach(function (file) {
-            var dest = file.dest, options = self.options({}), files = [], io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(grunt, options, io, dest);
+            var dest = file.dest, files = [], io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(self.options({}), io, dest);
 
             setGlobalOption(opts);
 
@@ -914,11 +874,6 @@ module.exports = function (grunt) {
             });
 
             dest = io.normalizePath(dest);
-
-            options.outputOne = opts.outputOne;
-            options.base_path = opts.basePath;
-            options.basePath = opts.basePath;
-            options.ignoreTypeCheck = opts.ignoreTypeCheck;
 
             if (!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts)) {
                 hasError = true;
