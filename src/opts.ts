@@ -143,6 +143,7 @@ module GruntTs{
         public moduleTarget: TypeScript.ModuleGenTarget;
         public noImplicitAny: boolean;
         public disallowAsi: boolean;
+        public diagnostics: boolean;
 
         constructor(private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
             this._source = _source || {};
@@ -163,6 +164,8 @@ module GruntTs{
             this.moduleTarget = prepareModule(this._source);
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
+
+            this.diagnostics = !!this._source.diagnostics;
 
             checkIgnoreTypeCheck(this._source, this._io);
         }

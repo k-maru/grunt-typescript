@@ -453,6 +453,8 @@ var GruntTs;
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
+            this.diagnostics = !!this._source.diagnostics;
+
             checkIgnoreTypeCheck(this._source, this._io);
         }
         Opts.prototype.createCompilationSettings = function () {
@@ -526,6 +528,8 @@ var GruntTs;
             this.resolvePathCache = TypeScript.createIntrinsicsObject();
         }
         Compiler.prototype.exec = function (files, dest, options) {
+            var start = Date.now();
+
             this.destinationPath = dest;
             this.options = options;
             this.compilationSettings = options.createCompilationSettings();
@@ -540,6 +544,10 @@ var GruntTs;
             }
 
             this.writeResult();
+
+            if (options.diagnostics) {
+                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+            }
 
             return true;
         };

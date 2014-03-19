@@ -181,6 +181,16 @@ module.exports = function (grunt) {
                     ignoreError: true
                 }
             }
+
+//            ,ts:{
+//                src: "tssource/compiler/tsc.ts",
+//                dest: "tsc.js",
+//                options:{
+//                    diagnostics: true
+//                }
+//
+//            }
+
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
 //                options: {

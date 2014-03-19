@@ -36,6 +36,8 @@ module GruntTs{
 
         exec(files: string[], dest: string, options: GruntTs.Opts): boolean {
 
+            var start = Date.now();
+
             this.destinationPath = dest;
             this.options = options;
             this.compilationSettings = options.createCompilationSettings();
@@ -50,6 +52,10 @@ module GruntTs{
             }
 
             this.writeResult();
+
+            if(options.diagnostics){
+                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+            }
 
             return true;
         }
