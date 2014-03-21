@@ -6,3 +6,5 @@ typings
 src
 /.gitignore
 /egen.sh
+/tsd.json
+/.travis.yml
