@@ -230,18 +230,18 @@ module.exports = function (grunt) {
         var done = this.async(),
             command = "node " + path.resolve(path.dirname(require.resolve("typescript")), "tsc "),
             tsc = function(option){
-                var defer = Q.defer(),
-                    childProcess = cp.exec(command + option, {});
-                childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
-                childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
+                return Q.promise(function(resolve, reject){
+                    var childProcess = cp.exec(command + option, {});
+                    childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
+                    childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
 
-                childProcess.on('exit', function(code) {
-                    if (code !== 0) {
-                        defer.reject();;
-                    }
-                    defer.resolve();
+                    childProcess.on('exit', function(code) {
+                        if (code !== 0) {
+                            reject();
+                        }
+                        resolve();
+                    });
                 });
-                return defer.promise;
             };
 
         grunt.file.mkdir("test/expected/multi/dir");
@@ -335,7 +335,7 @@ module.exports = function (grunt) {
 
         }).then(function(){
             done(true);
-        }).fail(function(){
+        }).catch(function(){
             done(false);
         });
     });

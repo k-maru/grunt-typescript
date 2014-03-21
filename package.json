@@ -26,7 +26,8 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "typescript": "0.9.7"
+    "typescript": "0.9.7",
+    "q": "~1.0.0"
   },
   "peerDependencies": {
     "grunt": "~0.4.2"

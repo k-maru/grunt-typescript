@@ -493,10 +493,13 @@ var GruntTs;
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
 var GruntTs;
 (function (GruntTs) {
+    var Q = require('q');
+
     var SourceFile = (function () {
         function SourceFile(scriptSnapshot, byteOrderMark) {
             this.scriptSnapshot = scriptSnapshot;
@@ -528,28 +531,32 @@ var GruntTs;
             this.resolvePathCache = TypeScript.createIntrinsicsObject();
         }
         Compiler.prototype.exec = function (files, dest, options) {
-            var start = Date.now();
+            var _this = this;
+            return Q.promise(function (resolve, reject, notify) {
+                var start = Date.now();
 
-            this.destinationPath = dest;
-            this.options = options;
-            this.compilationSettings = options.createCompilationSettings();
-            this.inputFiles = files;
-            this.logger = new TypeScript.NullLogger();
+                _this.destinationPath = dest;
+                _this.options = options;
+                _this.compilationSettings = options.createCompilationSettings();
+                _this.inputFiles = files;
+                _this.logger = new TypeScript.NullLogger();
 
-            try  {
-                this.resolve();
-                this.compile();
-            } catch (e) {
-                return false;
-            }
+                try  {
+                    _this.resolve();
+                    _this.compile();
+                } catch (e) {
+                    reject(e);
+                    return;
+                }
 
-            this.writeResult();
+                _this.writeResult();
 
-            if (options.diagnostics) {
-                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-            }
+                if (options.diagnostics) {
+                    _this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+                }
 
-            return true;
+                resolve(true);
+            });
         };
 
         Compiler.prototype.resolve = function () {
@@ -829,11 +836,12 @@ var GruntTs;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="opts.ts" />
 ///<reference path="compiler.ts" />
 module.exports = function (grunt) {
-    var _path = require("path"), _vm = require('vm'), _os = require('os'), getTsBinPathWithLoad = function () {
+    var _path = require("path"), _vm = require('vm'), _os = require('os'), Q = require('q'), getTsBinPathWithLoad = function () {
         var typeScriptBinPath = _path.dirname(require.resolve("typescript")), typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"), code;
 
         if (!typeScriptBinPath) {
@@ -870,8 +878,7 @@ module.exports = function (grunt) {
     };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var self = this, typescriptBinPath = getTsBinPathWithLoad(), hasError = false;
-
+        var self = this, typescriptBinPath = getTsBinPathWithLoad(), promises = [], done = self.async();
         self.files.forEach(function (file) {
             var dest = file.dest, files = [], io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(self.options({}), io, dest);
 
@@ -883,15 +890,12 @@ module.exports = function (grunt) {
 
             dest = io.normalizePath(dest);
 
-            if (!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts)) {
-                hasError = true;
-            }
+            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts));
         });
-        if (hasError) {
-            return false;
-        }
-        if (grunt.task.current.errorCount) {
-            return false;
-        }
+        Q.all(promises).then(function () {
+            done();
+        }, function () {
+            done(false);
+        });
     });
 };

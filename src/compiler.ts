@@ -1,10 +1,13 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
 
 module GruntTs{
+
+    var Q = require('q');
 
     class SourceFile {
         constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: TypeScript.ByteOrderMark) {
@@ -34,30 +37,32 @@ module GruntTs{
 
         }
 
-        exec(files: string[], dest: string, options: GruntTs.Opts): boolean {
+        exec(files: string[], dest: string, options: GruntTs.Opts): Q.IPromise<any> {
+            return Q.promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
+                var start = Date.now();
 
-            var start = Date.now();
+                this.destinationPath = dest;
+                this.options = options;
+                this.compilationSettings = options.createCompilationSettings();
+                this.inputFiles = files;
+                this.logger = new TypeScript.NullLogger();
 
-            this.destinationPath = dest;
-            this.options = options;
-            this.compilationSettings = options.createCompilationSettings();
-            this.inputFiles = files;
-            this.logger = new TypeScript.NullLogger();
+                try{
+                    this.resolve();
+                    this.compile();
+                }catch(e){
+                    reject(e);
+                    return;
+                }
 
-            try{
-                this.resolve();
-                this.compile();
-            }catch(e){
-                return false;
-            }
+                this.writeResult();
 
-            this.writeResult();
+                if(options.diagnostics){
+                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+                }
 
-            if(options.diagnostics){
-                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-            }
-
-            return true;
+                resolve(true);
+            });
         }
 
         private resolve(): void{

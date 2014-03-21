@@ -1,5 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="opts.ts" />
 ///<reference path="compiler.ts" />
@@ -10,6 +11,7 @@ module.exports = function(grunt: IGrunt){
     var _path = require("path"),
         _vm = require('vm'),
         _os = require('os'),
+        Q = require('q'),
         getTsBinPathWithLoad = (): string => {
             var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
                 typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"),
@@ -50,9 +52,10 @@ module.exports = function(grunt: IGrunt){
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var self: grunt.task.IMultiTask<{}> = this,
             typescriptBinPath = getTsBinPathWithLoad(),
-            hasError: boolean = false;
-
+            promises: Q.IPromise<any>[] = [],
+            done = self.async();
         self.files.forEach(function (file) {
+
             var dest: string = file.dest,
                 files: string[] = [],
                 io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
@@ -66,15 +69,13 @@ module.exports = function(grunt: IGrunt){
 
             dest = io.normalizePath(dest);
 
-            if(!(new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts)){
-                hasError = true;
-            }
+            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts));
+
         });
-        if(hasError){
-            return false;
-        }
-        if ((<any>grunt.task).current.errorCount) {
-            return false;
-        }
+        Q.all(promises).then(function(){
+            done();
+        }, function(){
+            done(false);
+        })
     });
 };
