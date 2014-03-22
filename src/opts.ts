@@ -5,7 +5,8 @@
 
 module GruntTs{
 
-    var _path = require("path");
+    var _path = require("path"),
+        _fs = require("fs");
 
     function prepareNewLine(optVal: any): NewLine{
         var val: string;
@@ -26,6 +27,10 @@ module GruntTs{
 
     function isStr(val: any): boolean{
         return Object.prototype.toString.call(val) === "[object String]";
+    }
+
+    function isBool(val: any): boolean{
+        return Object.prototype.toString.call(val) === "[object Boolean]";
     }
 
     function prepareBasePath(opt: any, io: GruntTs.GruntIO): string{
@@ -121,8 +126,22 @@ module GruntTs{
         return val;
     }
 
-    function prepareWatch(optVal: any): GruntTs.WatchOpt{
-        var result: WatchOpt = undefined;
+    function prepareWatch(optVal: any, files: string[], io: GruntTs.GruntIO): GruntTs.WatchOpt{
+        var result: WatchOpt = undefined,
+            getDirNames = (files: string[]): string[] => {
+                return files.map<string>(file => {
+                    if(_fs.existsSync(file)){
+                        if(_fs.statSync(file).isDirectory()){
+                            return file;
+                        }
+                    }else{
+                        if(!_path.extname(file)){
+                            return file;
+                        }
+                    }
+                    return io.normalizePath(io.resolvePath(_path.dirname(file)));
+                });
+            };
         if(!optVal){
             return undefined;
         }
@@ -131,6 +150,29 @@ module GruntTs{
                 path: (optVal + "")
             };
         }
+        if(isBool(optVal) && !!optVal){
+            var dirNames: string[] = getDirNames(files),
+                path: string = dirNames.reduce<string>((prev, curr) => {
+                    if(!prev){
+                        return curr;
+                    }
+                    var left =  io.normalizePath(_path.relative(prev, curr)),
+                        right = io.normalizePath(_path.relative(curr, prev)),
+                        match = left.match(/^(\.\.(\/)?)+/);
+                    if(match){
+                        return io.normalizePath(_path.resolve(prev, match[0]));
+                    }
+                    match = right.match(/^(\.\.\/)+/);
+                    if(match){
+                        return io.normalizePath( _path.resolve(curr, match[0]));
+                    }
+                    return prev;
+                }, undefined);
+            return {
+                path: path
+            }
+        }
+
         return {
             path: optVal.path
         };
@@ -190,7 +232,7 @@ module GruntTs{
 
             this.diagnostics = !!this._source.diagnostics;
 
-            this.watch = prepareWatch(this._source.watch);
+            this.watch = prepareWatch(this._source.watch, this.expandedFiles(), _io);
 
             checkIgnoreTypeCheck(this._source, this._io);
         }

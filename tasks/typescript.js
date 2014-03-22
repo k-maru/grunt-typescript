@@ -306,7 +306,7 @@ var GruntTs;
 ///<reference path="io.ts" />
 var GruntTs;
 (function (GruntTs) {
-    var _path = require("path");
+    var _path = require("path"), _fs = require("fs");
 
     function prepareNewLine(optVal) {
         var val;
@@ -326,6 +326,10 @@ var GruntTs;
 
     function isStr(val) {
         return Object.prototype.toString.call(val) === "[object String]";
+    }
+
+    function isBool(val) {
+        return Object.prototype.toString.call(val) === "[object Boolean]";
     }
 
     function prepareBasePath(opt, io) {
@@ -422,8 +426,21 @@ var GruntTs;
         return val;
     }
 
-    function prepareWatch(optVal) {
-        var result = undefined;
+    function prepareWatch(optVal, files, io) {
+        var result = undefined, getDirNames = function (files) {
+            return files.map(function (file) {
+                if (_fs.existsSync(file)) {
+                    if (_fs.statSync(file).isDirectory()) {
+                        return file;
+                    }
+                } else {
+                    if (!_path.extname(file)) {
+                        return file;
+                    }
+                }
+                return io.normalizePath(io.resolvePath(_path.dirname(file)));
+            });
+        };
         if (!optVal) {
             return undefined;
         }
@@ -432,6 +449,26 @@ var GruntTs;
                 path: (optVal + "")
             };
         }
+        if (isBool(optVal) && !!optVal) {
+            var dirNames = getDirNames(files), path = dirNames.reduce(function (prev, curr) {
+                if (!prev) {
+                    return curr;
+                }
+                var left = io.normalizePath(_path.relative(prev, curr)), right = io.normalizePath(_path.relative(curr, prev)), match = left.match(/^(\.\.(\/)?)+/);
+                if (match) {
+                    return io.normalizePath(_path.resolve(prev, match[0]));
+                }
+                match = right.match(/^(\.\.\/)+/);
+                if (match) {
+                    return io.normalizePath(_path.resolve(curr, match[0]));
+                }
+                return prev;
+            }, undefined);
+            return {
+                path: path
+            };
+        }
+
         return {
             path: optVal.path
         };
@@ -471,7 +508,7 @@ var GruntTs;
 
             this.diagnostics = !!this._source.diagnostics;
 
-            this.watch = prepareWatch(this._source.watch);
+            this.watch = prepareWatch(this._source.watch, this.expandedFiles(), _io);
 
             checkIgnoreTypeCheck(this._source, this._io);
         }
@@ -613,7 +650,7 @@ var GruntTs;
             }
             var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, registerEvents = function () {
                 console.log("");
-                console.log("Watching....");
+                console.log("Watching director.... " + watchPath);
 
                 watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                 watcher.on("add", function (path) {

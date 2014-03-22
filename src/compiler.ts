@@ -103,7 +103,7 @@ module GruntTs{
                 registerEvents = () => {
 
                     console.log("");
-                    console.log("Watching....");
+                    console.log("Watching director.... " + watchPath);
 
                     watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                     watcher.on("add", (path: string) => {
