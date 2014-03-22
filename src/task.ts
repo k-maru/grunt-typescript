@@ -50,26 +50,16 @@ module.exports = function(grunt: IGrunt){
         };
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var self: grunt.task.IMultiTask<{}> = this,
+        var self: grunt.task.IMultiTask<{src: string;}> = this,
             typescriptBinPath = getTsBinPathWithLoad(),
             promises: Q.IPromise<any>[] = [],
             done = self.async();
-        self.files.forEach(function (file) {
-
-            var dest: string = file.dest,
-                files: string[] = [],
-                io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
-                opts = new GruntTs.Opts(self.options({}), io, dest);
+        self.files.forEach(function (gruntFile: grunt.file.IFileMap) {
+            var io: GruntTs.GruntIO = new GruntTs.GruntIO(grunt),
+                opts = new GruntTs.Opts(self.options({}),grunt, gruntFile, io);
 
             setGlobalOption(opts);
-
-            grunt.file.expand(file.src).forEach(function (file: string) {
-                files.push(file);
-            });
-
-            dest = io.normalizePath(dest);
-
-            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts));
+            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).start(opts));
 
         });
         Q.all(promises).then(function(){

@@ -422,6 +422,21 @@ var GruntTs;
         return val;
     }
 
+    function prepareWatch(optVal) {
+        var result = undefined;
+        if (!optVal) {
+            return undefined;
+        }
+        if (isStr(optVal)) {
+            return {
+                path: (optVal + "")
+            };
+        }
+        return {
+            path: optVal.path
+        };
+    }
+
     (function (NewLine) {
         NewLine[NewLine["crLf"] = 0] = "crLf";
         NewLine[NewLine["lf"] = 1] = "lf";
@@ -430,18 +445,19 @@ var GruntTs;
     var NewLine = GruntTs.NewLine;
 
     var Opts = (function () {
-        function Opts(_source, _io, _dest) {
+        function Opts(_source, grunt, gruntFile, _io) {
             this._source = _source;
+            this.grunt = grunt;
+            this.gruntFile = gruntFile;
             this._io = _io;
-            this._dest = _dest;
             this._source = _source || {};
-            this._dest = _io.normalizePath(_dest);
+            this.destinationPath = _io.normalizePath(gruntFile.dest);
 
             this.newLine = prepareNewLine(this._source.newLine);
             this.indentStep = prepareIndentStep(this._source.indentStep);
             this.useTabIndent = !!this._source.useTabIndent;
             this.basePath = prepareBasePath(this._source, this._io);
-            this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
+            this.outputOne = !!this.destinationPath && _path.extname(this.destinationPath) === ".js";
             this.noResolve = prepareNoResolve(this._source.noResolve);
             this.sourceMap = prepareSourceMap(this._source, this._io);
             this.noLib = prepareNoLib(this._source, this._io);
@@ -455,10 +471,16 @@ var GruntTs;
 
             this.diagnostics = !!this._source.diagnostics;
 
+            this.watch = prepareWatch(this._source.watch);
+
             checkIgnoreTypeCheck(this._source, this._io);
         }
+        Opts.prototype.expandedFiles = function () {
+            return this.grunt.file.expand(this.gruntFile.orig.src);
+        };
+
         Opts.prototype.createCompilationSettings = function () {
-            var settings = new TypeScript.CompilationSettings(), dest = this._dest, ioHost = this._io;
+            var settings = new TypeScript.CompilationSettings(), dest = this.destinationPath, ioHost = this._io;
 
             if (this.outputOne) {
                 settings.outFileOption = _path.resolve(ioHost.currentPath(), dest);
@@ -530,33 +552,100 @@ var GruntTs;
             this.fileExistsCache = TypeScript.createIntrinsicsObject();
             this.resolvePathCache = TypeScript.createIntrinsicsObject();
         }
-        Compiler.prototype.exec = function (files, dest, options) {
+        Compiler.prototype.start = function (options) {
             var _this = this;
+            //this.destinationPath = dest;
+            this.options = options;
+            this.compilationSettings = options.createCompilationSettings();
+
+            //this.inputFiles = files;
+            this.logger = new TypeScript.NullLogger();
+
             return Q.promise(function (resolve, reject, notify) {
-                var start = Date.now();
+                if (!_this.options.watch) {
+                    try  {
+                        _this.exec();
+                        resolve(true);
+                    } catch (e) {
+                        reject(e);
+                    }
+                } else {
+                    _this.startWatch(resolve, reject);
+                }
+                //                var start = Date.now();
+                //
+                //                try{
+                //                    this.resolve();
+                //                    this.compile();
+                //                }catch(e){
+                //                    reject(e);
+                //                    return;
+                //                }
+                //
+                //                this.writeResult();
+                //
+                //                if(options.diagnostics){
+                //                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+                //                }
+                //                resolve(true);
+            });
+        };
 
-                _this.destinationPath = dest;
-                _this.options = options;
-                _this.compilationSettings = options.createCompilationSettings();
-                _this.inputFiles = files;
-                _this.logger = new TypeScript.NullLogger();
+        Compiler.prototype.exec = function () {
+            var start = Date.now();
 
-                try  {
-                    _this.resolve();
-                    _this.compile();
-                } catch (e) {
-                    reject(e);
+            this.inputFiles = this.options.expandedFiles();
+            this.outputFiles = [];
+            this.resolve();
+            this.compile();
+
+            this.writeResult();
+
+            if (this.options.diagnostics) {
+                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+            }
+        };
+
+        Compiler.prototype.startWatch = function (resolve, reject) {
+            var _this = this;
+            if (!this.options.watch) {
+                resolve(true);
+            }
+            var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, registerEvents = function () {
+                console.log("");
+                console.log("Watching....");
+
+                watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
+                watcher.on("add", function (path) {
+                    _this.ioHost.stdout.WriteLine("Added".cyan + " " + path);
+                    handleEvent(path);
+                }).on("change", function (path) {
+                    _this.ioHost.stdout.WriteLine("Changed".cyan + " " + path);
+                    handleEvent(path);
+                }).on("unlink", function (path) {
+                    _this.ioHost.stdout.WriteLine("Unlinked".cyan + " " + path);
+                    handleEvent(path);
+                }).on("error", function (error) {
+                    _this.ioHost.stdout.WriteLine("Error".red + ": " + error);
+                });
+            }, handleEvent = function (path) {
+                path = _this.ioHost.normalizePath(path);
+
+                if (!/\.ts$/.test(path)) {
                     return;
                 }
+                watcher.close();
 
-                _this.writeResult();
+                _this.fileNameToSourceFile.remove(path);
 
-                if (options.diagnostics) {
-                    _this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+                try  {
+                    _this.exec();
+                } catch (e) {
+                    ;
                 }
-
-                resolve(true);
-            });
+                registerEvents();
+            };
+            registerEvents();
         };
 
         Compiler.prototype.resolve = function () {
@@ -768,7 +857,7 @@ var GruntTs;
             if (this.options.outputOne) {
                 return newFileName;
             }
-            if (!this.destinationPath) {
+            if (!this.options.destinationPath) {
                 return newFileName;
             }
 
@@ -781,7 +870,7 @@ var GruntTs;
                 relativePath = relativePath.substr(basePath.length);
             }
 
-            return this.ioHost.resolveMulti(currentPath, this.destinationPath, relativePath);
+            return this.ioHost.resolveMulti(currentPath, this.options.destinationPath, relativePath);
         };
 
         Compiler.prototype.prepareSourcePath = function (sourceFileName, preparedFileName, contents) {
@@ -792,7 +881,7 @@ var GruntTs;
             if (sourceFileName === preparedFileName) {
                 return contents;
             }
-            if (!this.destinationPath) {
+            if (!this.options.destinationPath) {
                 return contents;
             }
             if (!(/\.js\.map$/.test(sourceFileName))) {
@@ -879,18 +968,11 @@ module.exports = function (grunt) {
 
     grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
         var self = this, typescriptBinPath = getTsBinPathWithLoad(), promises = [], done = self.async();
-        self.files.forEach(function (file) {
-            var dest = file.dest, files = [], io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(self.options({}), io, dest);
+        self.files.forEach(function (gruntFile) {
+            var io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(self.options({}), grunt, gruntFile, io);
 
             setGlobalOption(opts);
-
-            grunt.file.expand(file.src).forEach(function (file) {
-                files.push(file);
-            });
-
-            dest = io.normalizePath(dest);
-
-            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).exec(files, dest, opts));
+            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).start(opts));
         });
         Q.all(promises).then(function () {
             done();

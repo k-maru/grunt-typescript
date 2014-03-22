@@ -29,7 +29,7 @@ module GruntTs{
         private hasErrors: boolean = false;
         private resolvedFiles: TypeScript.IResolvedFile[] = [];
         private logger: TypeScript.ILogger = null;
-        private destinationPath: string;
+        //private destinationPath: string;
         private options: GruntTs.Opts;
         private outputFiles: string[] = [];
 
@@ -37,32 +37,106 @@ module GruntTs{
 
         }
 
-        exec(files: string[], dest: string, options: GruntTs.Opts): Q.IPromise<any> {
+        start(options: GruntTs.Opts): Q.IPromise<any> {
+            //this.destinationPath = dest;
+            this.options = options;
+            this.compilationSettings = options.createCompilationSettings();
+            //this.inputFiles = files;
+            this.logger = new TypeScript.NullLogger();
+
             return Q.promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
-                var start = Date.now();
 
-                this.destinationPath = dest;
-                this.options = options;
-                this.compilationSettings = options.createCompilationSettings();
-                this.inputFiles = files;
-                this.logger = new TypeScript.NullLogger();
+                if(!this.options.watch){
+                    try{
+                        this.exec();
+                        resolve(true);
+                    }catch(e){
+                        reject(e);
+                    }
 
-                try{
-                    this.resolve();
-                    this.compile();
-                }catch(e){
-                    reject(e);
-                    return;
+                }else{
+                    this.startWatch(resolve, reject);
                 }
 
-                this.writeResult();
+//                var start = Date.now();
+//
+//                try{
+//                    this.resolve();
+//                    this.compile();
+//                }catch(e){
+//                    reject(e);
+//                    return;
+//                }
+//
+//                this.writeResult();
+//
+//                if(options.diagnostics){
+//                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+//                }
 
-                if(options.diagnostics){
-                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-                }
-
-                resolve(true);
+//                resolve(true);
             });
+        }
+
+        exec(){
+            var start = Date.now();
+
+            this.inputFiles = this.options.expandedFiles();
+            this.outputFiles = [];
+            this.resolve();
+            this.compile();
+
+            this.writeResult();
+
+            if(this.options.diagnostics){
+                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
+            }
+        }
+
+        startWatch(resolve: (val: any) => void, reject: (val: any) => void){
+            if(!this.options.watch){
+                resolve(true);
+            }
+            var watchPath = this.ioHost.resolvePath(this.options.watch.path),
+                chokidar: any = require("chokidar"),
+                watcher: any,
+                registerEvents = () => {
+
+                    console.log("");
+                    console.log("Watching....");
+
+                    watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
+                    watcher.on("add", (path: string) => {
+                        this.ioHost.stdout.WriteLine("Added".cyan + " " + path);
+                        handleEvent(path);
+                    }).on("change", (path: string) => {
+                        this.ioHost.stdout.WriteLine("Changed".cyan + " " + path);
+                        handleEvent(path);
+                    }).on("unlink", (path: string) =>{
+                        this.ioHost.stdout.WriteLine("Unlinked".cyan + " " + path);
+                        handleEvent(path);
+                    }).on("error", (error: string) => {
+                        this.ioHost.stdout.WriteLine("Error".red + ": " + error);
+                    });
+                },
+                handleEvent = (path: string) => {
+                    path = this.ioHost.normalizePath(path);
+
+                    if (!/\.ts$/.test(path)){
+                        return;
+                    }
+                    watcher.close();
+
+                    this.fileNameToSourceFile.remove(path);
+
+                    try{
+                        this.exec();
+                    }catch(e){
+                        ;
+                    }
+                    registerEvents();
+                };
+            registerEvents();
         }
 
         private resolve(): void{
@@ -275,7 +349,7 @@ module GruntTs{
             if(this.options.outputOne){
                 return newFileName;
             }
-            if(!this.destinationPath){
+            if(!this.options.destinationPath){
                 return newFileName;
             }
 
@@ -289,7 +363,7 @@ module GruntTs{
                 relativePath = relativePath.substr(basePath.length);
             }
 
-            return this.ioHost.resolveMulti(currentPath, this.destinationPath, relativePath);
+            return this.ioHost.resolveMulti(currentPath, this.options.destinationPath, relativePath);
         }
 
         private prepareSourcePath(sourceFileName: string, preparedFileName: string, contents: string): string{
@@ -300,7 +374,7 @@ module GruntTs{
             if(sourceFileName === preparedFileName){
                 return contents;
             }
-            if(!this.destinationPath){
+            if(!this.options.destinationPath){
                 return contents;
             }
             if(!(/\.js\.map$/.test(sourceFileName))){

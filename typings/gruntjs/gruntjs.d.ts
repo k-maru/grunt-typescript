@@ -637,6 +637,9 @@ declare module grunt {
              * destination filename.
              */
             dest: string
+
+
+            orig: any
         }
     }
 

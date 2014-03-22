@@ -121,10 +121,30 @@ module GruntTs{
         return val;
     }
 
+    function prepareWatch(optVal: any): GruntTs.WatchOpt{
+        var result: WatchOpt = undefined;
+        if(!optVal){
+            return undefined;
+        }
+        if(isStr(optVal)){
+            return {
+                path: (optVal + "")
+            };
+        }
+        return {
+            path: optVal.path
+        };
+    }
+
+
     export enum NewLine{
         crLf,
         lf,
         auto
+    }
+
+    export interface WatchOpt{
+        path: string;
     }
 
     export class Opts{
@@ -144,16 +164,19 @@ module GruntTs{
         public noImplicitAny: boolean;
         public disallowAsi: boolean;
         public diagnostics: boolean;
+        public watch: GruntTs.WatchOpt;
 
-        constructor(private _source: any, private _io: GruntTs.GruntIO, private _dest: string){
+        public destinationPath: string;
+
+        constructor(private _source: any, private grunt:IGrunt, private gruntFile: grunt.file.IFileMap,  private _io: GruntTs.GruntIO){
             this._source = _source || {};
-            this._dest = _io.normalizePath(_dest);
+            this.destinationPath = _io.normalizePath(gruntFile.dest);
 
             this.newLine = prepareNewLine(this._source.newLine);
             this.indentStep = prepareIndentStep(this._source.indentStep);
             this.useTabIndent = !!this._source.useTabIndent;
             this.basePath = prepareBasePath(this._source, this._io);
-            this.outputOne = !!this._dest && _path.extname(this._dest) === ".js";
+            this.outputOne = !!this.destinationPath && _path.extname(this.destinationPath) === ".js";
             this.noResolve = prepareNoResolve(this._source.noResolve);
             this.sourceMap = prepareSourceMap(this._source, this._io);
             this.noLib = prepareNoLib(this._source, this._io);
@@ -167,13 +190,19 @@ module GruntTs{
 
             this.diagnostics = !!this._source.diagnostics;
 
+            this.watch = prepareWatch(this._source.watch);
+
             checkIgnoreTypeCheck(this._source, this._io);
+        }
+
+        public expandedFiles(): string[]{
+            return this.grunt.file.expand(<string[]>this.gruntFile.orig.src);
         }
 
         public createCompilationSettings(): TypeScript.ImmutableCompilationSettings{
 
             var settings = new TypeScript.CompilationSettings(),
-                dest = this._dest,
+                dest = this.destinationPath,
                 ioHost = this._io;
 
             if(this.outputOne){
