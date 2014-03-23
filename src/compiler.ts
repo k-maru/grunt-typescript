@@ -49,6 +49,9 @@ module GruntTs{
                 if(!this.options.watch){
                     try{
                         this.exec();
+                        this.fileNameToSourceFile.getAllKeys().forEach((k) => {
+                           this.fileNameToSourceFile.remove(k);
+                        });
                         resolve(true);
                     }catch(e){
                         reject(e);
@@ -57,24 +60,6 @@ module GruntTs{
                 }else{
                     this.startWatch(resolve, reject);
                 }
-
-//                var start = Date.now();
-//
-//                try{
-//                    this.resolve();
-//                    this.compile();
-//                }catch(e){
-//                    reject(e);
-//                    return;
-//                }
-//
-//                this.writeResult();
-//
-//                if(options.diagnostics){
-//                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-//                }
-
-//                resolve(true);
             });
         }
 
