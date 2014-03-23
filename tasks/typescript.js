@@ -602,6 +602,9 @@ var GruntTs;
                 if (!_this.options.watch) {
                     try  {
                         _this.exec();
+                        _this.fileNameToSourceFile.getAllKeys().forEach(function (k) {
+                            _this.fileNameToSourceFile.remove(k);
+                        });
                         resolve(true);
                     } catch (e) {
                         reject(e);
@@ -609,22 +612,6 @@ var GruntTs;
                 } else {
                     _this.startWatch(resolve, reject);
                 }
-                //                var start = Date.now();
-                //
-                //                try{
-                //                    this.resolve();
-                //                    this.compile();
-                //                }catch(e){
-                //                    reject(e);
-                //                    return;
-                //                }
-                //
-                //                this.writeResult();
-                //
-                //                if(options.diagnostics){
-                //                    this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-                //                }
-                //                resolve(true);
             });
         };
 
