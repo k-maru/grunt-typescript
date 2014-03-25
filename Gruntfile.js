@@ -193,7 +193,8 @@ module.exports = function (grunt) {
 //                src: "tssource/compiler/tsc.ts",
 //                dest: "tsc.js",
 //                options:{
-//                    diagnostics: true
+//                    diagnostics: true,
+//                    watch: "tssource"
 //                }
 //
 //            }

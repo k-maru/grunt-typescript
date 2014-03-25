@@ -38,10 +38,8 @@ module GruntTs{
         }
 
         start(options: GruntTs.Opts): Q.IPromise<any> {
-            //this.destinationPath = dest;
             this.options = options;
             this.compilationSettings = options.createCompilationSettings();
-            //this.inputFiles = files;
             this.logger = new TypeScript.NullLogger();
 
             return Q.promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
@@ -49,9 +47,6 @@ module GruntTs{
                 if(!this.options.watch){
                     try{
                         this.exec();
-                        this.fileNameToSourceFile.getAllKeys().forEach((k) => {
-                           this.fileNameToSourceFile.remove(k);
-                        });
                         resolve(true);
                     }catch(e){
                         reject(e);
