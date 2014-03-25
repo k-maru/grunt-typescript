@@ -591,20 +591,14 @@ var GruntTs;
         }
         Compiler.prototype.start = function (options) {
             var _this = this;
-            //this.destinationPath = dest;
             this.options = options;
             this.compilationSettings = options.createCompilationSettings();
-
-            //this.inputFiles = files;
             this.logger = new TypeScript.NullLogger();
 
             return Q.promise(function (resolve, reject, notify) {
                 if (!_this.options.watch) {
                     try  {
                         _this.exec();
-                        _this.fileNameToSourceFile.getAllKeys().forEach(function (k) {
-                            _this.fileNameToSourceFile.remove(k);
-                        });
                         resolve(true);
                     } catch (e) {
                         reject(e);
