@@ -121,7 +121,7 @@ Specify the directory where you want to monitor in the options.
         ...
     });
 
-If you specify the 'true', then automatically detects the directory.
+If you specify the true, then automatically detects the directory.
 
     grunt.initConfig({
             ...
