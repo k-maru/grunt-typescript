@@ -6,6 +6,8 @@ grunt-typescript
 
 Compile TypeScript in Grunt
 
+[Release Note](CHANGELOG.md)
+
 ## Documentation
 You'll need to install `grunt-typescript` first:
 
