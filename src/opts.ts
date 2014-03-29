@@ -205,7 +205,7 @@ module GruntTs{
         public moduleTarget: TypeScript.ModuleGenTarget;
         public noImplicitAny: boolean;
         public disallowAsi: boolean;
-        public diagnostics: boolean;
+        public _showexectime: boolean;
         public watch: GruntTs.WatchOpt;
 
         public destinationPath: string;
@@ -230,7 +230,7 @@ module GruntTs{
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
-            this.diagnostics = !!this._source.diagnostics;
+            this._showexectime = !!this._source._showexectime;
 
             this.watch = prepareWatch(this._source.watch, this.expandedFiles(), _io);
 

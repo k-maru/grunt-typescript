@@ -506,7 +506,7 @@ var GruntTs;
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
-            this.diagnostics = !!this._source.diagnostics;
+            this._showexectime = !!this._source._showexectime;
 
             this.watch = prepareWatch(this._source.watch, this.expandedFiles(), _io);
 
@@ -567,15 +567,6 @@ var GruntTs;
         return SourceFile;
     })();
 
-    var CompilerPhase;
-    (function (CompilerPhase) {
-        CompilerPhase[CompilerPhase["Syntax"] = 0] = "Syntax";
-        CompilerPhase[CompilerPhase["Semantics"] = 1] = "Semantics";
-        CompilerPhase[CompilerPhase["EmitOptionsValidation"] = 2] = "EmitOptionsValidation";
-        CompilerPhase[CompilerPhase["Emit"] = 3] = "Emit";
-        CompilerPhase[CompilerPhase["DeclarationEmit"] = 4] = "DeclarationEmit";
-    })(CompilerPhase || (CompilerPhase = {}));
-
     var Compiler = (function () {
         function Compiler(grunt, tscBinPath, ioHost) {
             this.grunt = grunt;
@@ -619,7 +610,7 @@ var GruntTs;
 
             this.writeResult();
 
-            if (this.options.diagnostics) {
+            if (this.options._showexectime) {
                 this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
             }
         };
@@ -631,7 +622,7 @@ var GruntTs;
             }
             var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, registerEvents = function () {
                 console.log("");
-                console.log("Watching director.... " + watchPath);
+                console.log("Watching directory.... " + watchPath);
 
                 watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                 watcher.on("add", function (path) {

@@ -186,17 +186,8 @@ module.exports = function (grunt) {
 //                dest:"test/temp/multi",
 //                options: {
 //                    watch: true, //"test/fixtures/multi",
-//                    diagnostics: true
+//                    _showexectime: true
 //                }
-//            }
-//            ,ts:{
-//                src: "tssource/compiler/tsc.ts",
-//                dest: "tsc.js",
-//                options:{
-//                    diagnostics: true,
-//                    watch: "tssource"
-//                }
-//
 //            }
 
 //            , errorsyntax:{

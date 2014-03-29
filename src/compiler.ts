@@ -14,14 +14,6 @@ module GruntTs{
         }
     }
 
-    enum CompilerPhase {
-        Syntax,
-        Semantics,
-        EmitOptionsValidation,
-        Emit,
-        DeclarationEmit,
-    }
-
     export class Compiler implements TypeScript.IReferenceResolverHost{
         private compilationSettings: TypeScript.ImmutableCompilationSettings;
         private inputFiles: string[];
@@ -68,7 +60,7 @@ module GruntTs{
 
             this.writeResult();
 
-            if(this.options.diagnostics){
+            if(this.options._showexectime){
                 this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
             }
         }
@@ -83,7 +75,7 @@ module GruntTs{
                 registerEvents = () => {
 
                     console.log("");
-                    console.log("Watching director.... " + watchPath);
+                    console.log("Watching directory.... " + watchPath);
 
                     watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                     watcher.on("add", (path: string) => {
