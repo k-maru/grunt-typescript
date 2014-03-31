@@ -3,7 +3,7 @@
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="opts.ts" />
-///<reference path="compiler.ts" />
+///<reference path="task.ts" />
 
 declare var module: any;
 module.exports = function(grunt: IGrunt){
@@ -59,7 +59,7 @@ module.exports = function(grunt: IGrunt){
                 opts = new GruntTs.Opts(self.options({}),grunt, gruntFile, io);
 
             setGlobalOption(opts);
-            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).start(opts));
+            promises.push((new GruntTs.Task(grunt, typescriptBinPath, io)).start(opts));
 
         });
         Q.all(promises).then(function(){

@@ -567,8 +567,8 @@ var GruntTs;
         return SourceFile;
     })();
 
-    var Compiler = (function () {
-        function Compiler(grunt, tscBinPath, ioHost) {
+    var Task = (function () {
+        function Task(grunt, tscBinPath, ioHost) {
             this.grunt = grunt;
             this.tscBinPath = tscBinPath;
             this.ioHost = ioHost;
@@ -580,7 +580,7 @@ var GruntTs;
             this.fileExistsCache = TypeScript.createIntrinsicsObject();
             this.resolvePathCache = TypeScript.createIntrinsicsObject();
         }
-        Compiler.prototype.start = function (options) {
+        Task.prototype.start = function (options) {
             var _this = this;
             this.options = options;
             this.compilationSettings = options.createCompilationSettings();
@@ -600,7 +600,7 @@ var GruntTs;
             });
         };
 
-        Compiler.prototype.exec = function () {
+        Task.prototype.exec = function () {
             var start = Date.now();
 
             this.inputFiles = this.options.expandedFiles();
@@ -615,7 +615,7 @@ var GruntTs;
             }
         };
 
-        Compiler.prototype.startWatch = function (resolve, reject) {
+        Task.prototype.startWatch = function (resolve, reject) {
             var _this = this;
             if (!this.options.watch) {
                 resolve(true);
@@ -657,7 +657,7 @@ var GruntTs;
             registerEvents();
         };
 
-        Compiler.prototype.resolve = function () {
+        Task.prototype.resolve = function () {
             var _this = this;
             var resolvedFiles = [];
             var includeDefaultLibrary = !this.compilationSettings.noLib();
@@ -707,7 +707,7 @@ var GruntTs;
             this.resolvedFiles = resolvedFiles;
         };
 
-        Compiler.prototype.compile = function () {
+        Task.prototype.compile = function () {
             var _this = this;
             var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
 
@@ -742,7 +742,7 @@ var GruntTs;
             }
         };
 
-        Compiler.prototype.writeResult = function () {
+        Task.prototype.writeResult = function () {
             var result = { js: [], m: [], d: [], other: [] }, resultMessage, pluralizeFile = function (n) {
                 return (n + " file") + ((n === 1) ? "" : "s");
             };
@@ -768,11 +768,11 @@ var GruntTs;
             }
         };
 
-        Compiler.prototype.getScriptSnapshot = function (fileName) {
+        Task.prototype.getScriptSnapshot = function (fileName) {
             return this.getSourceFile(fileName).scriptSnapshot;
         };
 
-        Compiler.prototype.getSourceFile = function (fileName) {
+        Task.prototype.getSourceFile = function (fileName) {
             var sourceFile = this.fileNameToSourceFile.lookup(fileName);
             if (!sourceFile) {
                 // Attempt to read the file
@@ -792,7 +792,7 @@ var GruntTs;
             return sourceFile;
         };
 
-        Compiler.prototype.resolveRelativePath = function (path, directory) {
+        Task.prototype.resolveRelativePath = function (path, directory) {
             var unQuotedPath = TypeScript.stripStartAndEndQuotes(path);
             var normalizedPath;
 
@@ -806,7 +806,7 @@ var GruntTs;
             return normalizedPath;
         };
 
-        Compiler.prototype.fileExists = function (path) {
+        Task.prototype.fileExists = function (path) {
             var exists = this.fileExistsCache[path];
             if (exists === undefined) {
                 exists = this.ioHost.fileExists(path);
@@ -815,11 +815,11 @@ var GruntTs;
             return exists;
         };
 
-        Compiler.prototype.getParentDirectory = function (path) {
+        Task.prototype.getParentDirectory = function (path) {
             return this.ioHost.dirName(path);
         };
 
-        Compiler.prototype.addDiagnostic = function (diagnostic) {
+        Task.prototype.addDiagnostic = function (diagnostic) {
             var diagnosticInfo = diagnostic.info();
             if (diagnosticInfo.category === 1 /* Error */) {
                 this.hasErrors = true;
@@ -832,7 +832,7 @@ var GruntTs;
             this.ioHost.stderr.WriteLine(diagnostic.message());
         };
 
-        Compiler.prototype.tryWriteOutputFiles = function (outputFiles) {
+        Task.prototype.tryWriteOutputFiles = function (outputFiles) {
             for (var i = 0, n = outputFiles.length; i < n; i++) {
                 var outputFile = outputFiles[i];
 
@@ -847,7 +847,7 @@ var GruntTs;
             return true;
         };
 
-        Compiler.prototype.writeFile = function (fileName, contents, writeByteOrderMark) {
+        Task.prototype.writeFile = function (fileName, contents, writeByteOrderMark) {
             var preparedFileName = this.prepareFileName(fileName);
             var path = this.ioHost.resolvePath(preparedFileName);
             var dirName = this.ioHost.dirName(path);
@@ -860,7 +860,7 @@ var GruntTs;
             this.outputFiles.push(path);
         };
 
-        Compiler.prototype.prepareFileName = function (fileName) {
+        Task.prototype.prepareFileName = function (fileName) {
             var newFileName = fileName, basePath = this.options.basePath;
 
             if (this.options.outputOne) {
@@ -882,7 +882,7 @@ var GruntTs;
             return this.ioHost.resolveMulti(currentPath, this.options.destinationPath, relativePath);
         };
 
-        Compiler.prototype.prepareSourcePath = function (sourceFileName, preparedFileName, contents) {
+        Task.prototype.prepareSourcePath = function (sourceFileName, preparedFileName, contents) {
             var io = this.ioHost;
             if (this.options.outputOne) {
                 return contents;
@@ -903,7 +903,7 @@ var GruntTs;
             return JSON.stringify(mapData);
         };
 
-        Compiler.prototype.createDirectoryStructure = function (dirName) {
+        Task.prototype.createDirectoryStructure = function (dirName) {
             if (this.ioHost.directoryExists(dirName)) {
                 return;
             }
@@ -915,12 +915,12 @@ var GruntTs;
             this.ioHost.createDirectory(dirName);
         };
 
-        Compiler.prototype.directoryExists = function (path) {
+        Task.prototype.directoryExists = function (path) {
             return this.ioHost.directoryExists(path);
             ;
         };
 
-        Compiler.prototype.resolvePath = function (path) {
+        Task.prototype.resolvePath = function (path) {
             var cachedValue = this.resolvePathCache[path];
             if (!cachedValue) {
                 cachedValue = this.ioHost.resolvePath(path);
@@ -928,16 +928,16 @@ var GruntTs;
             }
             return cachedValue;
         };
-        return Compiler;
+        return Task;
     })();
-    GruntTs.Compiler = Compiler;
+    GruntTs.Task = Task;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="io.ts" />
 ///<reference path="opts.ts" />
-///<reference path="compiler.ts" />
+///<reference path="task.ts" />
 module.exports = function (grunt) {
     var _path = require("path"), _vm = require('vm'), _os = require('os'), Q = require('q'), getTsBinPathWithLoad = function () {
         var typeScriptBinPath = _path.dirname(require.resolve("typescript")), typeScriptPath = _path.resolve(typeScriptBinPath, "typescript.js"), code;
@@ -981,7 +981,7 @@ module.exports = function (grunt) {
             var io = new GruntTs.GruntIO(grunt), opts = new GruntTs.Opts(self.options({}), grunt, gruntFile, io);
 
             setGlobalOption(opts);
-            promises.push((new GruntTs.Compiler(grunt, typescriptBinPath, io)).start(opts));
+            promises.push((new GruntTs.Task(grunt, typescriptBinPath, io)).start(opts));
         });
         Q.all(promises).then(function () {
             done();

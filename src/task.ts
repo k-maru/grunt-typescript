@@ -14,7 +14,7 @@ module GruntTs{
         }
     }
 
-    export class Compiler implements TypeScript.IReferenceResolverHost{
+    export class Task implements TypeScript.IReferenceResolverHost{
         private compilationSettings: TypeScript.ImmutableCompilationSettings;
         private inputFiles: string[];
         private fileNameToSourceFile = new TypeScript.StringHashTable<SourceFile>();
