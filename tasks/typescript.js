@@ -508,7 +508,8 @@ var GruntTs;
 
             this._showexectime = !!this._source._showexectime;
 
-            this.watch = prepareWatch(this._source.watch, this.expandedFiles(), _io);
+            //experimental
+            this.watch = prepareWatch(this._source._watch, this.expandedFiles(), _io);
 
             checkIgnoreTypeCheck(this._source, this._io);
         }

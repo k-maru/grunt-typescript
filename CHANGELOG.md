@@ -5,4 +5,3 @@
 * Remove `base_path`, `sourcemap` and `nolib` options. (Changed to `basePath`, `sourceMap` and `noLib`)
 * Remove `ignoreTypeCheck` option.
 * **Breaking Changes**: `ignoreError:true` is now the default.
-* Add new `watch` option.
