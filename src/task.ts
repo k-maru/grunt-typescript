@@ -159,7 +159,10 @@ module GruntTs{
         }
 
         private compile(): void{
-            var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
+
+            var g = require("./modules/compiler");
+            //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
+            var compiler = new g.Compiler(this.logger, this.compilationSettings);
 
             this.resolvedFiles.forEach(resolvedFile => {
                 var sourceFile = this.getSourceFile(resolvedFile.path);

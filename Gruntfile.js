@@ -200,48 +200,35 @@ module.exports = function (grunt) {
         },
         nodeunit:{
             tests:["test/test.js"]
-        },
-        exec:{
-            build:{
-                command: function(){
-                    var files = fs.readdirSync("src").filter(function(file){
-                        file = "src/" + file;
-                        return fs.statSync(file).isFile() && /.*\.ts$/.test(file); //絞り込み
-                    }).map(function(file){
-                        return "src" + path.sep + file;
-                    }).join(" ");
-                    return ["node_modules", ".bin", "tsc " + files + " --noImplicitAny --out tasks", "typescript.js"].join(path.sep);
-                }
-            }
         }
     });
 
     grunt.loadTasks("tasks");
-    grunt.loadNpmTasks('grunt-exec');
     grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
 
-    grunt.registerTask("build", ["exec:build"]);
     grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
 
-    grunt.registerTask('egen', 'Genereate test expected files.', function() {
-        var done = this.async(),
-            command = "node " + path.resolve(path.dirname(require.resolve("typescript")), "tsc "),
-            tsc = function(option){
-                return Q.promise(function(resolve, reject){
-                    var childProcess = cp.exec(command + option, {});
-                    childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
-                    childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
+    function tsc(option){
+        var command = "node " + path.resolve(path.dirname(require.resolve("typescript")), "tsc ");
 
-                    childProcess.on('exit', function(code) {
-                        if (code !== 0) {
-                            reject();
-                        }
-                        resolve();
-                    });
-                });
-            };
+        return Q.promise(function(resolve, reject){
+            var childProcess = cp.exec(command + option, {});
+            childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
+            childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
+
+            childProcess.on('exit', function(code) {
+                if (code !== 0) {
+                    reject();
+                }
+                resolve();
+            });
+        });
+    }
+
+    grunt.registerTask('egen', 'Genereate test expected files.', function() {
+        var done = this.async();
 
         grunt.file.mkdir("test/expected/multi/dir");
         grunt.file.mkdir("test/expected/single");
@@ -332,6 +319,29 @@ module.exports = function (grunt) {
             grunt.file.write("test/expected/indentStep_0.js", val.replace(/    /g, ""));
             grunt.file.write("test/expected/indentStep_2.js", val.replace(/    /g, "  "));
 
+        }).then(function(){
+            done(true);
+        }).catch(function(){
+            done(false);
+        });
+    });
+
+    grunt.registerTask("build", "Build", function(){
+        var done = this.async();
+        tsc("src/modules/compiler.ts -m commonjs --noImplicitAny").then(function() {
+            grunt.file.copy("src/modules/compiler.js", "tasks/modules/compiler.js");
+            grunt.file.delete("src/modules/compiler.js");
+
+            var files = fs.readdirSync("src").filter(function (file) {
+                file = "src/" + file;
+
+                return fs.statSync(file).isFile()
+                    && /.*\.ts$/.test(file)
+                    && !/compiler\.ts$/.test(file); //絞り込み
+            }).map(function (file) {
+                return "src" + path.sep + file;
+            }).join(" ");
+            return tsc(files + " --noImplicitAny --out tasks/typescript.js");
         }).then(function(){
             done(true);
         }).catch(function(){
