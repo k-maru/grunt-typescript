@@ -185,7 +185,7 @@ module.exports = function (grunt) {
 //                src:"test/fixtures/multi/**/*.ts",
 //                dest:"test/temp/multi",
 //                options: {
-//                    watch: true, //"test/fixtures/multi",
+//                    _watch: true, //"test/fixtures/multi",
 //                    _showexectime: true
 //                }
 //            }
