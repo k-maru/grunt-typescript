@@ -1,6 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="io.ts" />
 
 module GruntTs{
@@ -8,7 +8,7 @@ module GruntTs{
     var _path = require("path"),
         _fs = require("fs");
 
-    function prepareNewLine(optVal: any): NewLine{
+    function prepareNewLine(optVal: any): GruntTs.NewLine{
         var val: string;
         if(optVal){
             val = optVal.toString().toUpperCase();

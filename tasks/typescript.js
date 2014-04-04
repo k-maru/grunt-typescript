@@ -1,6 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/typescript/typescript.d.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _fs = require('fs');
@@ -149,52 +149,50 @@ var GruntTs;
             }
         };
 
-        GruntIO.prototype.appendFile = function (path, content) {
-            this.grunt.verbose.write("Append " + path + "...");
-            _fs.appendFileSync(path, content);
-        };
-
-        GruntIO.prototype.deleteFile = function (path) {
-            try  {
-                this.grunt.verbose.write("Deleting " + path + "...");
-                _fs.unlinkSync(path);
-                this.grunt.verbose.writeln("OK".green);
-            } catch (e) {
-                this.grunt.verbose.writeln("");
-                this.grunt.verbose.fail("Can't delete file. " + e.message);
-                throw e;
-            }
-        };
-
+        //        appendFile(path: string, content: string) {
+        //            this.grunt.verbose.write("Append " + path + "...");
+        //            _fs.appendFileSync(path, content);
+        //        }
+        //
+        //        deleteFile(path: string) {
+        //            try {
+        //                this.grunt.verbose.write("Deleting " + path + "...");
+        //                _fs.unlinkSync(path);
+        //                this.grunt.verbose.writeln("OK".green);
+        //            } catch (e) {
+        //                this.grunt.verbose.writeln("");
+        //                this.grunt.verbose.fail("Can't delete file. " + e.message);
+        //                throw e;
+        //            }
+        //        }
         GruntIO.prototype.fileExists = function (path) {
             return _fs.existsSync(path);
         };
 
-        GruntIO.prototype.dir = function (path, re, options) {
-            var opts = options || {};
-
-            function filesInFolder(folder) {
-                var paths = [];
-
-                try  {
-                    var files = _fs.readdirSync(folder);
-                    for (var i = 0; i < files.length; i++) {
-                        var stat = _fs.statSync(folder + "/" + files[i]);
-                        if (opts.recursive && stat.isDirectory()) {
-                            paths = paths.concat(filesInFolder(folder + "/" + files[i]));
-                        } else if (stat.isFile() && (!re || files[i].match(re))) {
-                            paths.push(folder + "/" + files[i]);
-                        }
-                    }
-                } catch (err) {
-                }
-
-                return paths;
-            }
-
-            return filesInFolder(path);
-        };
-
+        //        dir(path: string, re?: RegExp, options?: {recursive?: boolean;}): string[] {
+        //            var opts = options || {};
+        //
+        //            function filesInFolder(folder: string): string[]{
+        //                var paths: string[] = [];
+        //
+        //                try {
+        //                    var files = _fs.readdirSync(folder);
+        //                    for (var i = 0; i < files.length; i++) {
+        //                        var stat = _fs.statSync(folder + "/" + files[i]);
+        //                        if (opts.recursive && stat.isDirectory()) {
+        //                            paths = paths.concat(filesInFolder(folder + "/" + files[i]));
+        //                        } else if (stat.isFile() && (!re || files[i].match(re))) {
+        //                            paths.push(folder + "/" + files[i]);
+        //                        }
+        //                    }
+        //                } catch (err) {
+        //                }
+        //
+        //                return paths;
+        //            }
+        //
+        //            return filesInFolder(path);
+        //        }
         GruntIO.prototype.createDirectory = function (path) {
             if (!this.directoryExists(path)) {
                 _fs.mkdirSync(path);
@@ -220,50 +218,51 @@ var GruntTs;
             return dirPath;
         };
 
-        GruntIO.prototype.findFile = function (rootPath, partialFilePath) {
-            var path = rootPath + "/" + partialFilePath;
-
-            while (true) {
-                if (_fs.existsSync(path)) {
-                    return { fileInformation: this.readFile(path, null), path: path };
-                } else {
-                    var parentPath = _path.resolve(rootPath, "..");
-
-                    // Node will just continue to repeat the root path, rather than return null
-                    if (rootPath === parentPath) {
-                        return null;
-                    } else {
-                        rootPath = parentPath;
-                        path = _path.resolve(rootPath, partialFilePath);
-                    }
-                }
-            }
-        };
-
-        GruntIO.prototype.print = function (str) {
-            this.stdout.Write(str);
-        };
-
-        GruntIO.prototype.printLine = function (str) {
-            this.stdout.WriteLine(str);
-        };
-
-        GruntIO.prototype.watchFile = function (fileName, callback) {
-            return null;
-        };
-
-        GruntIO.prototype.run = function (source, fileName) {
-            return;
-        };
-
-        GruntIO.prototype.getExecutingFilePath = function () {
-            return null;
-        };
-
-        GruntIO.prototype.quit = function (exitCode) {
-            return;
-        };
-
+        //        findFile(rootPath: string, partialFilePath: string): {fileInformation: TypeScript.FileInformation; path: string} {
+        //            var path = rootPath + "/" + partialFilePath;
+        //
+        //            while (true) {
+        //                if (_fs.existsSync(path)) {
+        //                    return { fileInformation: this.readFile(path, null), path: path };
+        //                }
+        //                else {
+        //                    var parentPath = _path.resolve(rootPath, "..");
+        //
+        //                    // Node will just continue to repeat the root path, rather than return null
+        //                    if (rootPath === parentPath) {
+        //                        return null;
+        //                    }
+        //                    else {
+        //                        rootPath = parentPath;
+        //                        path = _path.resolve(rootPath, partialFilePath);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //
+        //        print(str: string): void{
+        //            this.stdout.Write(str);
+        //        }
+        //
+        //        printLine(str: string): void{
+        //            this.stdout.WriteLine(str);
+        //        }
+        //
+        //        watchFile(fileName: string, callback: (x:string) => void ): void{
+        //            return;
+        //        }
+        //
+        //        run(source: string, fileName: string): void{
+        //            return;
+        //        }
+        //
+        //        getExecutingFilePath(): string{
+        //            return null;
+        //        }
+        //
+        //        quit(exitCode?: number): void{
+        //            return;
+        //        }
         //original method
         GruntIO.prototype.currentPath = function () {
             return currentPath();
@@ -302,7 +301,7 @@ var GruntTs;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="io.ts" />
 var GruntTs;
 (function (GruntTs) {
@@ -552,7 +551,7 @@ var GruntTs;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/tsc/tsc.d.ts" />
+///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />

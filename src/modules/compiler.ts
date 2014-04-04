@@ -1,4 +1,5 @@
-///<reference path="../../typings/tsc/tsc.d.ts" />
+///<reference path="../../typings/typescript/typescript.d.ts" />
+
 
 module GruntTs{
     export class Compiler extends TypeScript.TypeScriptCompiler{

@@ -41,7 +41,6 @@ module.exports = function (grunt) {
                 src:"test/fixtures/dest.ts",
                 dest: "test/temp/dest",
                 options:{
-                    sourceMap: true,
                     declaration: true,
                     basePath: "test/fixtures"
                 }
