@@ -2,7 +2,7 @@
   "author": "kazuhide maruyama",
   "name": "grunt-typescript",
   "description": "compile typescript to javascript",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "homepage": "https://github.com/k-maru/grunt-typescript",
   "repository": {
     "type": "git",
