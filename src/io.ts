@@ -296,5 +296,10 @@ module GruntTs{
         normalizePath(path: string): string{
             return normalizePath(path);
         }
+
+        getLastMod(path: string){
+            return _fs.statSync(path).mtime;
+        }
+
     }
 }

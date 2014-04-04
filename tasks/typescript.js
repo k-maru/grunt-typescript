@@ -295,6 +295,10 @@ var GruntTs;
         GruntIO.prototype.normalizePath = function (path) {
             return normalizePath(path);
         };
+
+        GruntIO.prototype.getLastMod = function (path) {
+            return _fs.statSync(path).mtime;
+        };
         return GruntIO;
     })();
     GruntTs.GruntIO = GruntIO;
@@ -560,9 +564,12 @@ var GruntTs;
     var Q = require('q');
 
     var SourceFile = (function () {
-        function SourceFile(scriptSnapshot, byteOrderMark) {
+        //TODO: Extend(append lastMod, append Property)
+        function SourceFile(scriptSnapshot, byteOrderMark, lastMod) {
+            if (typeof lastMod === "undefined") { lastMod = new Date(0); }
             this.scriptSnapshot = scriptSnapshot;
             this.byteOrderMark = byteOrderMark;
+            this.lastMod = lastMod;
         }
         return SourceFile;
     })();
@@ -656,7 +663,7 @@ var GruntTs;
                     } catch (e) {
                         _this.writeWatchingMessage(watchPath);
                     }
-                }, 100);
+                }, 300);
             };
             this.writeWatchingMessage(watchPath);
             registerEvents();
@@ -723,16 +730,24 @@ var GruntTs;
             var g = require("./modules/compiler");
 
             //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
-            var compiler = new g.Compiler(this.logger, this.compilationSettings);
+            var compiler = new g.Compiler(this.logger, this.compilationSettings), emitTargets = [];
 
             this.resolvedFiles.forEach(function (resolvedFile) {
-                var sourceFile = _this.getSourceFile(resolvedFile.path);
+                var sourceFile = _this.getSourceFile(resolvedFile.path), lastMod = _this.ioHost.getLastMod(resolvedFile.path);
+
+                //TODO: change
+                if (lastMod > sourceFile.lastMod) {
+                    emitTargets.push(resolvedFile.path);
+                    sourceFile.lastMod = lastMod;
+                }
                 compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
             });
             var ignoreError = this.options.ignoreError, hasOutputFile = false;
-            for (var it = compiler.compile(function (path) {
+
+            for (var it = compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), function (path) {
                 return _this.resolvePath(path);
             }); it.moveNext();) {
+                //for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
                 var result = it.current(), hasError = false;
 
                 result.diagnostics.forEach(function (d) {
@@ -788,6 +803,7 @@ var GruntTs;
 
         Task.prototype.getSourceFile = function (fileName) {
             var sourceFile = this.fileNameToSourceFile.lookup(fileName);
+
             if (!sourceFile) {
                 // Attempt to read the file
                 var fileInformation;

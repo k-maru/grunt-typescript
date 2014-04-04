@@ -104,7 +104,6 @@ module.exports = function (grunt) {
                 options:{
                     ignoreError: true,
                     noImplicitAny: true
-
                 }
             },
             noImplicitAny2:{

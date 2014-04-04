@@ -10,7 +10,8 @@ module GruntTs{
     var Q = require('q');
 
     class SourceFile {
-        constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: TypeScript.ByteOrderMark) {
+        //TODO: Extend(append lastMod, append Property)
+        constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: TypeScript.ByteOrderMark, public lastMod:Date = new Date(0)) {
         }
     }
 
@@ -24,6 +25,8 @@ module GruntTs{
         //private destinationPath: string;
         private options: GruntTs.Opts;
         private outputFiles: string[] = [];
+
+
 
         constructor(private grunt: any, private tscBinPath: string, private ioHost: GruntTs.GruntIO) {
 
@@ -109,7 +112,7 @@ module GruntTs{
                         } catch (e) {
                             this.writeWatchingMessage(watchPath);
                         }
-                    }, 100);
+                    }, 300);
                 };
             this.writeWatchingMessage(watchPath);
             registerEvents();
@@ -172,15 +175,25 @@ module GruntTs{
 
             var g = require("./modules/compiler");
             //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
-            var compiler = new g.Compiler(this.logger, this.compilationSettings);
+            var compiler = new g.Compiler(this.logger, this.compilationSettings),
+                emitTargets: string[] = [];
 
             this.resolvedFiles.forEach(resolvedFile => {
-                var sourceFile = this.getSourceFile(resolvedFile.path);
+                var sourceFile = this.getSourceFile(resolvedFile.path),
+                    lastMod = this.ioHost.getLastMod(resolvedFile.path);
+                //TODO: change
+                if(lastMod > sourceFile.lastMod){
+                    emitTargets.push(resolvedFile.path);
+                    sourceFile.lastMod = lastMod;
+                }
                 compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
             });
             var ignoreError = this.options.ignoreError,
                 hasOutputFile = false;
-            for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
+
+            //TODO: change
+            for (var it = compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), (path: string) => this.resolvePath(path)); it.moveNext();) {
+            //for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
                 var result: TypeScript.CompileResult = it.current(),
                     hasError = false;
 
@@ -235,6 +248,7 @@ module GruntTs{
 
         private getSourceFile(fileName: string): SourceFile {
             var sourceFile: SourceFile = this.fileNameToSourceFile.lookup(fileName);
+
             if (!sourceFile) {
                 // Attempt to read the file
                 var fileInformation: TypeScript.FileInformation;
