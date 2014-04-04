@@ -105,5 +105,54 @@ Do not allow auto semicolon insertion. This options is experimental.
 ###basePath `string`
 Path component to cut off when mapping the source files to dest files.
 
+###_watch `string` or `boolean` or `object`
+Watch .ts files.
+
+Specify the directory where you want to monitor in the options.
+
+    grunt.initConfig({
+            ...
+        typescript: {
+          base: {
+            src: ['path/to/typescript/files/**/*.ts'],
+            options: {
+              _watch: 'path/to/typescript/files'
+            }
+          }
+        },
+        ...
+    });
+
+If you specify the true, then automatically detects the directory.
+
+    grunt.initConfig({
+            ...
+        typescript: {
+          base: {
+            src: ['path/to/typescript/files/**/*.ts'],
+            options: {
+              _watch: true   //Detect all target files root. eg: 'path/to/typescript/files/'
+            }
+          }
+        },
+        ...
+    });
+
+For expansion of the future, You can also be specified 'object'.
+
+    grunt.initConfig({
+            ...
+        typescript: {
+          base: {
+            src: ['path/to/typescript/files/**/*.ts'],
+            options: {
+              _watch: {
+                path: 'path/to/typescript/files'
+              }
+            }
+          }
+        },
+        ...
+    });
 
 ※I'm sorry for poor English
