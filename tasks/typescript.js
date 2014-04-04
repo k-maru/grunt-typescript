@@ -620,41 +620,52 @@ var GruntTs;
             if (!this.options.watch) {
                 resolve(true);
             }
-            var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, registerEvents = function () {
-                console.log("");
-                console.log("Watching directory.... " + watchPath);
-
+            var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, targetPaths = {}, registerEvents = function () {
                 watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                 watcher.on("add", function (path) {
-                    _this.ioHost.stdout.WriteLine("Added".cyan + " " + path);
-                    handleEvent(path);
+                    handleEvent(path, "Added");
                 }).on("change", function (path) {
-                    _this.ioHost.stdout.WriteLine("Changed".cyan + " " + path);
-                    handleEvent(path);
+                    handleEvent(path, "Changed");
                 }).on("unlink", function (path) {
-                    _this.ioHost.stdout.WriteLine("Unlinked".cyan + " " + path);
-                    handleEvent(path);
+                    handleEvent(path, "Unlinked");
                 }).on("error", function (error) {
                     _this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                 });
-            }, handleEvent = function (path) {
+            }, handleEvent = function (path, eventName) {
                 path = _this.ioHost.normalizePath(path);
-
-                if (!/\.ts$/.test(path)) {
+                if (targetPaths[path]) {
+                    targetPaths[path] = eventName;
                     return;
                 }
-                watcher.close();
-
-                _this.fileNameToSourceFile.remove(path);
-
-                try  {
-                    _this.exec();
-                } catch (e) {
-                    ;
-                }
-                registerEvents();
+                targetPaths[path] = eventName;
+                setTimeout(function () {
+                    var keys = Object.keys(targetPaths).filter(function (key) {
+                        var result = !!/\.ts$/.test(key);
+                        if (result) {
+                            _this.ioHost.stdout.WriteLine(targetPaths[key].cyan + " " + key);
+                            _this.fileNameToSourceFile.remove(key);
+                        }
+                        return result;
+                    });
+                    targetPaths = {};
+                    if (!keys.length)
+                        return;
+                    try  {
+                        _this.exec();
+                        _this.writeWatchingMessage(watchPath);
+                    } catch (e) {
+                        _this.writeWatchingMessage(watchPath);
+                    }
+                }, 100);
             };
+            this.writeWatchingMessage(watchPath);
             registerEvents();
+        };
+
+        Task.prototype.writeWatchingMessage = function (watchPath) {
+            //TODO: grunt mesod
+            console.log("");
+            console.log("Watching directory.... " + watchPath);
         };
 
         Task.prototype.resolve = function () {

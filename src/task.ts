@@ -72,43 +72,53 @@ module GruntTs{
             var watchPath = this.ioHost.resolvePath(this.options.watch.path),
                 chokidar: any = require("chokidar"),
                 watcher: any,
+                targetPaths: {[key:string]: string;} = {},
                 registerEvents = () => {
-
-                    console.log("");
-                    console.log("Watching directory.... " + watchPath);
-
                     watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
                     watcher.on("add", (path: string) => {
-                        this.ioHost.stdout.WriteLine("Added".cyan + " " + path);
-                        handleEvent(path);
+                        handleEvent(path, "Added");
                     }).on("change", (path: string) => {
-                        this.ioHost.stdout.WriteLine("Changed".cyan + " " + path);
-                        handleEvent(path);
+                        handleEvent(path, "Changed");
                     }).on("unlink", (path: string) =>{
-                        this.ioHost.stdout.WriteLine("Unlinked".cyan + " " + path);
-                        handleEvent(path);
+                        handleEvent(path, "Unlinked");
                     }).on("error", (error: string) => {
                         this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                     });
                 },
-                handleEvent = (path: string) => {
+                handleEvent = (path: string, eventName: string) => {
                     path = this.ioHost.normalizePath(path);
-
-                    if (!/\.ts$/.test(path)){
+                    if(targetPaths[path]){
+                        targetPaths[path] = eventName
                         return;
                     }
-                    watcher.close();
-
-                    this.fileNameToSourceFile.remove(path);
-
-                    try{
-                        this.exec();
-                    }catch(e){
-                        ;
-                    }
-                    registerEvents();
+                    targetPaths[path] = eventName;
+                    setTimeout(() => {
+                        var keys = Object.keys(targetPaths).filter((key) => {
+                            var result = !!/\.ts$/.test(key);
+                            if(result){
+                                this.ioHost.stdout.WriteLine(targetPaths[key].cyan + " " + key);
+                                this.fileNameToSourceFile.remove(key);
+                            }
+                            return result;
+                        });
+                        targetPaths = {};
+                        if(!keys.length) return;
+                        try  {
+                            this.exec();
+                            this.writeWatchingMessage(watchPath);
+                        } catch (e) {
+                            this.writeWatchingMessage(watchPath);
+                        }
+                    }, 100);
                 };
+            this.writeWatchingMessage(watchPath);
             registerEvents();
+        }
+
+        private writeWatchingMessage(watchPath: string): void{
+            //TODO: grunt mesod
+            console.log("");
+            console.log("Watching directory.... " + watchPath);
         }
 
         private resolve(): void{
