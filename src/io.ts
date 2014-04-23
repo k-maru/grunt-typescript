@@ -1,7 +1,7 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/typescript.d.ts" />
-
+///<reference path="util.ts" />
 
 module GruntTs{
 
@@ -19,7 +19,8 @@ module GruntTs{
     }
 
     function normalizePath(path: string): string{
-        if(Object.prototype.toString.call(path) === "[object String]"){
+        //if(Object.prototype.toString.call(path) === "[object String]"){
+        if(util.isStr(path)){
             return path.replace(/\\/g, "/");
         }
         return path;
@@ -149,51 +150,9 @@ module GruntTs{
             }
         }
 
-//        appendFile(path: string, content: string) {
-//            this.grunt.verbose.write("Append " + path + "...");
-//            _fs.appendFileSync(path, content);
-//        }
-//
-//        deleteFile(path: string) {
-//            try {
-//                this.grunt.verbose.write("Deleting " + path + "...");
-//                _fs.unlinkSync(path);
-//                this.grunt.verbose.writeln("OK".green);
-//            } catch (e) {
-//                this.grunt.verbose.writeln("");
-//                this.grunt.verbose.fail("Can't delete file. " + e.message);
-//                throw e;
-//            }
-//        }
-
         fileExists(path: string): boolean {
             return _fs.existsSync(path);
         }
-
-//        dir(path: string, re?: RegExp, options?: {recursive?: boolean;}): string[] {
-//            var opts = options || {};
-//
-//            function filesInFolder(folder: string): string[]{
-//                var paths: string[] = [];
-//
-//                try {
-//                    var files = _fs.readdirSync(folder);
-//                    for (var i = 0; i < files.length; i++) {
-//                        var stat = _fs.statSync(folder + "/" + files[i]);
-//                        if (opts.recursive && stat.isDirectory()) {
-//                            paths = paths.concat(filesInFolder(folder + "/" + files[i]));
-//                        } else if (stat.isFile() && (!re || files[i].match(re))) {
-//                            paths.push(folder + "/" + files[i]);
-//                        }
-//                    }
-//                } catch (err) {
-//                }
-//
-//                return paths;
-//            }
-//
-//            return filesInFolder(path);
-//        }
 
         createDirectory(path: string): void {
             if (!this.directoryExists(path)) {
@@ -219,52 +178,6 @@ module GruntTs{
 
             return dirPath;
         }
-
-//        findFile(rootPath: string, partialFilePath: string): {fileInformation: TypeScript.FileInformation; path: string} {
-//            var path = rootPath + "/" + partialFilePath;
-//
-//            while (true) {
-//                if (_fs.existsSync(path)) {
-//                    return { fileInformation: this.readFile(path, null), path: path };
-//                }
-//                else {
-//                    var parentPath = _path.resolve(rootPath, "..");
-//
-//                    // Node will just continue to repeat the root path, rather than return null
-//                    if (rootPath === parentPath) {
-//                        return null;
-//                    }
-//                    else {
-//                        rootPath = parentPath;
-//                        path = _path.resolve(rootPath, partialFilePath);
-//                    }
-//                }
-//            }
-//        }
-//
-//        print(str: string): void{
-//            this.stdout.Write(str);
-//        }
-//
-//        printLine(str: string): void{
-//            this.stdout.WriteLine(str);
-//        }
-//
-//        watchFile(fileName: string, callback: (x:string) => void ): void{
-//            return;
-//        }
-//
-//        run(source: string, fileName: string): void{
-//            return;
-//        }
-//
-//        getExecutingFilePath(): string{
-//            return null;
-//        }
-//
-//        quit(exitCode?: number): void{
-//            return;
-//        }
 
         //original method
         currentPath(): string{
@@ -300,6 +213,5 @@ module GruntTs{
         getLastMod(path: string){
             return _fs.statSync(path).mtime;
         }
-
     }
 }

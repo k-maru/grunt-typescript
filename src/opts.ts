@@ -2,6 +2,7 @@
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="io.ts" />
+///<reference path="util.ts" />
 
 module GruntTs{
 
@@ -25,21 +26,13 @@ module GruntTs{
         return -1;
     }
 
-    function isStr(val: any): boolean{
-        return Object.prototype.toString.call(val) === "[object String]";
-    }
-
-    function isBool(val: any): boolean{
-        return Object.prototype.toString.call(val) === "[object Boolean]";
-    }
-
     function prepareBasePath(opt: any, io: GruntTs.GruntIO): string{
         var optVal: string = "";
-        if(isStr(opt.base_path)){
+        if(util.isStr(opt.base_path)){
             io.writeWarn("The 'base_path' option will be obsoleted. Please use the 'basePath'.");
             optVal = opt.base_path;
         }
-        if(isStr(opt.basePath)){
+        if(util.isStr(opt.basePath)){
             optVal = opt.basePath;
         }
 
@@ -79,14 +72,14 @@ module GruntTs{
     }
 
     function checkIgnoreTypeCheck(opt: any, io: GruntTs.GruntIO){
-        if(typeof opt.ignoreTypeCheck !== "undefined"){
+        if(!util.isUndef(opt.ignoreTypeCheck)){
             io.writeWarn("The 'ignoreTypeCheck' option removed. Please use the 'ignoreError'.");
         }
     }
 
     function prepareIgnoreError(optVal: any): boolean{
         var val = false;
-        if(typeof optVal !== "undefined"){
+        if(!util.isUndef(optVal)){
             val = !!optVal;
         }
         return val;
@@ -94,7 +87,7 @@ module GruntTs{
 
     function prepareNoResolve(optVal: any): boolean{
         var val = false;
-        if(typeof optVal !== "undefined"){
+        if(!util.isUndef(optVal)){
             val = !!optVal;
         }
         return val;
@@ -127,7 +120,7 @@ module GruntTs{
     }
 
     function prepareWatch(optVal: any, files: string[], io: GruntTs.GruntIO): GruntTs.WatchOpt{
-        var result: WatchOpt = undefined,
+        var after: string[] = [],
             getDirNames = (files: string[]): string[] => {
                 return files.map<string>(file => {
                     if(_fs.existsSync(file)){
@@ -145,12 +138,12 @@ module GruntTs{
         if(!optVal){
             return undefined;
         }
-        if(isStr(optVal)){
+        if(util.isStr(optVal)){
             return {
                 path: (optVal + "")
             };
         }
-        if(isBool(optVal) && !!optVal){
+        if(util.isBool(optVal) && !!optVal){
             var dirNames: string[] = getDirNames(files),
                 path: string = dirNames.reduce<string>((prev, curr) => {
                     if(!prev){
@@ -174,7 +167,8 @@ module GruntTs{
         }
 
         return {
-            path: optVal.path
+            path: optVal.path,
+            after:  optVal.after
         };
     }
 
@@ -187,6 +181,7 @@ module GruntTs{
 
     export interface WatchOpt{
         path: string;
+        after?: any;
     }
 
     export class Opts{
@@ -205,7 +200,6 @@ module GruntTs{
         public moduleTarget: TypeScript.ModuleGenTarget;
         public noImplicitAny: boolean;
         public disallowAsi: boolean;
-        public _showexectime: boolean;
         public watch: GruntTs.WatchOpt;
 
         public destinationPath: string;
@@ -230,10 +224,8 @@ module GruntTs{
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
-            this._showexectime = !!this._source._showexectime;
-
             //experimental
-            this.watch = prepareWatch(this._source._watch, this.expandedFiles(), _io);
+            this.watch = prepareWatch(this._source.watch || this._source._watch, this.expandedFiles(), _io);
 
             checkIgnoreTypeCheck(this._source, this._io);
         }
@@ -256,16 +248,16 @@ module GruntTs{
             settings.generateDeclarationFiles = this.declaration;
             settings.removeComments = this.removeComments;
 
-            if(typeof this.langTarget !== "undefined"){
+            if(!util.isUndef(this.langTarget)){
                 settings.codeGenTarget = this.langTarget;
             }
-            if(typeof this.moduleTarget !== "undefined"){
+            if(!util.isUndef(this.moduleTarget)){
                 settings.moduleGenTarget = this.moduleTarget;
             }
-            if(typeof this.noImplicitAny !== "undefined"){
+            if(!util.isUndef(this.noImplicitAny)){
                 settings.noImplicitAny = this.noImplicitAny;
             }
-            if(typeof this.disallowAsi !== "undefined"){
+            if(!util.isUndef(this.disallowAsi)){
                 settings.allowAutomaticSemicolonInsertion = this.disallowAsi;
             }
 

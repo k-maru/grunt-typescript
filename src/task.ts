@@ -61,11 +61,8 @@ module GruntTs{
             this.resolve();
             this.compile();
 
-            this.writeResult();
+            this.writeResult(Date.now() - start);
 
-            if(this.options._showexectime){
-                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-            }
         }
 
         startWatch(resolve: (val: any) => void, reject: (val: any) => void){
@@ -88,6 +85,7 @@ module GruntTs{
                         this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                     });
                 },
+                timeoutId: number,
                 handleEvent = (path: string, eventName: string) => {
                     path = this.ioHost.normalizePath(path);
                     if(targetPaths[path]){
@@ -95,7 +93,10 @@ module GruntTs{
                         return;
                     }
                     targetPaths[path] = eventName;
-                    setTimeout(() => {
+                    if(timeoutId){
+                        clearTimeout(timeoutId);
+                    }
+                    timeoutId = setTimeout(() => {
                         var keys = Object.keys(targetPaths).filter((key) => {
                             var result = !!/\.ts$/.test(key);
                             if(result){
@@ -108,10 +109,14 @@ module GruntTs{
                         if(!keys.length) return;
                         try  {
                             this.exec();
+//                            if(this.options.watch && this.options.watch.after){
+//                                this.grunt.task.run(this.options.watch.after);
+//                            }
                             this.writeWatchingMessage(watchPath);
                         } catch (e) {
                             this.writeWatchingMessage(watchPath);
                         }
+                        timeoutId = 0;
                     }, 300);
                 };
             this.writeWatchingMessage(watchPath);
@@ -218,7 +223,7 @@ module GruntTs{
             }
         }
 
-        private writeResult(){
+        private writeResult(ms: number){
             var result:  {js: string[]; m: string[]; d: string[]; other: string[];} = {js: [], m: [], d: [], other: []},
                 resultMessage: string,
                 pluralizeFile = (n: number) => (n + " file") + ((n === 1) ? "" : "s");
@@ -231,7 +236,8 @@ module GruntTs{
 
             resultMessage = "js: " + pluralizeFile(result.js.length)
                 + ", map: " + pluralizeFile(result.m.length)
-                + ", declaration: " + pluralizeFile(result.d.length);
+                + ", declaration: " + pluralizeFile(result.d.length)
+                + " (" + ms + "ms)";
             if (this.options.outputOne) {
                 if(result.js.length > 0){
                     this.grunt.log.writeln("File " + (result.js[0])["cyan"] + " created.");

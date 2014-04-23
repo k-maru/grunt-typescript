@@ -1,6 +1,32 @@
+var GruntTs;
+(function (GruntTs) {
+    (function (util) {
+        function isStr(val) {
+            return Object.prototype.toString.call(val) === "[object String]";
+        }
+        util.isStr = isStr;
+
+        function isBool(val) {
+            return Object.prototype.toString.call(val) === "[object Boolean]";
+        }
+        util.isBool = isBool;
+
+        function isArray(val) {
+            return Object.prototype.toString.call(val) === "[object Array]";
+        }
+        util.isArray = isArray;
+
+        function isUndef(val) {
+            return typeof val === "undefined";
+        }
+        util.isUndef = isUndef;
+    })(GruntTs.util || (GruntTs.util = {}));
+    var util = GruntTs.util;
+})(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/typescript.d.ts" />
+///<reference path="util.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _fs = require('fs');
@@ -15,7 +41,8 @@ var GruntTs;
     }
 
     function normalizePath(path) {
-        if (Object.prototype.toString.call(path) === "[object String]") {
+        //if(Object.prototype.toString.call(path) === "[object String]"){
+        if (GruntTs.util.isStr(path)) {
             return path.replace(/\\/g, "/");
         }
         return path;
@@ -149,50 +176,10 @@ var GruntTs;
             }
         };
 
-        //        appendFile(path: string, content: string) {
-        //            this.grunt.verbose.write("Append " + path + "...");
-        //            _fs.appendFileSync(path, content);
-        //        }
-        //
-        //        deleteFile(path: string) {
-        //            try {
-        //                this.grunt.verbose.write("Deleting " + path + "...");
-        //                _fs.unlinkSync(path);
-        //                this.grunt.verbose.writeln("OK".green);
-        //            } catch (e) {
-        //                this.grunt.verbose.writeln("");
-        //                this.grunt.verbose.fail("Can't delete file. " + e.message);
-        //                throw e;
-        //            }
-        //        }
         GruntIO.prototype.fileExists = function (path) {
             return _fs.existsSync(path);
         };
 
-        //        dir(path: string, re?: RegExp, options?: {recursive?: boolean;}): string[] {
-        //            var opts = options || {};
-        //
-        //            function filesInFolder(folder: string): string[]{
-        //                var paths: string[] = [];
-        //
-        //                try {
-        //                    var files = _fs.readdirSync(folder);
-        //                    for (var i = 0; i < files.length; i++) {
-        //                        var stat = _fs.statSync(folder + "/" + files[i]);
-        //                        if (opts.recursive && stat.isDirectory()) {
-        //                            paths = paths.concat(filesInFolder(folder + "/" + files[i]));
-        //                        } else if (stat.isFile() && (!re || files[i].match(re))) {
-        //                            paths.push(folder + "/" + files[i]);
-        //                        }
-        //                    }
-        //                } catch (err) {
-        //                }
-        //
-        //                return paths;
-        //            }
-        //
-        //            return filesInFolder(path);
-        //        }
         GruntIO.prototype.createDirectory = function (path) {
             if (!this.directoryExists(path)) {
                 _fs.mkdirSync(path);
@@ -218,51 +205,6 @@ var GruntTs;
             return dirPath;
         };
 
-        //        findFile(rootPath: string, partialFilePath: string): {fileInformation: TypeScript.FileInformation; path: string} {
-        //            var path = rootPath + "/" + partialFilePath;
-        //
-        //            while (true) {
-        //                if (_fs.existsSync(path)) {
-        //                    return { fileInformation: this.readFile(path, null), path: path };
-        //                }
-        //                else {
-        //                    var parentPath = _path.resolve(rootPath, "..");
-        //
-        //                    // Node will just continue to repeat the root path, rather than return null
-        //                    if (rootPath === parentPath) {
-        //                        return null;
-        //                    }
-        //                    else {
-        //                        rootPath = parentPath;
-        //                        path = _path.resolve(rootPath, partialFilePath);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //
-        //        print(str: string): void{
-        //            this.stdout.Write(str);
-        //        }
-        //
-        //        printLine(str: string): void{
-        //            this.stdout.WriteLine(str);
-        //        }
-        //
-        //        watchFile(fileName: string, callback: (x:string) => void ): void{
-        //            return;
-        //        }
-        //
-        //        run(source: string, fileName: string): void{
-        //            return;
-        //        }
-        //
-        //        getExecutingFilePath(): string{
-        //            return null;
-        //        }
-        //
-        //        quit(exitCode?: number): void{
-        //            return;
-        //        }
         //original method
         GruntIO.prototype.currentPath = function () {
             return currentPath();
@@ -307,6 +249,7 @@ var GruntTs;
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="io.ts" />
+///<reference path="util.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _path = require("path"), _fs = require("fs");
@@ -327,21 +270,13 @@ var GruntTs;
         return -1;
     }
 
-    function isStr(val) {
-        return Object.prototype.toString.call(val) === "[object String]";
-    }
-
-    function isBool(val) {
-        return Object.prototype.toString.call(val) === "[object Boolean]";
-    }
-
     function prepareBasePath(opt, io) {
         var optVal = "";
-        if (isStr(opt.base_path)) {
+        if (GruntTs.util.isStr(opt.base_path)) {
             io.writeWarn("The 'base_path' option will be obsoleted. Please use the 'basePath'.");
             optVal = opt.base_path;
         }
-        if (isStr(opt.basePath)) {
+        if (GruntTs.util.isStr(opt.basePath)) {
             optVal = opt.basePath;
         }
 
@@ -382,14 +317,14 @@ var GruntTs;
     }
 
     function checkIgnoreTypeCheck(opt, io) {
-        if (typeof opt.ignoreTypeCheck !== "undefined") {
+        if (!GruntTs.util.isUndef(opt.ignoreTypeCheck)) {
             io.writeWarn("The 'ignoreTypeCheck' option removed. Please use the 'ignoreError'.");
         }
     }
 
     function prepareIgnoreError(optVal) {
         var val = false;
-        if (typeof optVal !== "undefined") {
+        if (!GruntTs.util.isUndef(optVal)) {
             val = !!optVal;
         }
         return val;
@@ -397,7 +332,7 @@ var GruntTs;
 
     function prepareNoResolve(optVal) {
         var val = false;
-        if (typeof optVal !== "undefined") {
+        if (!GruntTs.util.isUndef(optVal)) {
             val = !!optVal;
         }
         return val;
@@ -430,7 +365,7 @@ var GruntTs;
     }
 
     function prepareWatch(optVal, files, io) {
-        var result = undefined, getDirNames = function (files) {
+        var after = [], getDirNames = function (files) {
             return files.map(function (file) {
                 if (_fs.existsSync(file)) {
                     if (_fs.statSync(file).isDirectory()) {
@@ -447,12 +382,12 @@ var GruntTs;
         if (!optVal) {
             return undefined;
         }
-        if (isStr(optVal)) {
+        if (GruntTs.util.isStr(optVal)) {
             return {
                 path: (optVal + "")
             };
         }
-        if (isBool(optVal) && !!optVal) {
+        if (GruntTs.util.isBool(optVal) && !!optVal) {
             var dirNames = getDirNames(files), path = dirNames.reduce(function (prev, curr) {
                 if (!prev) {
                     return curr;
@@ -473,7 +408,8 @@ var GruntTs;
         }
 
         return {
-            path: optVal.path
+            path: optVal.path,
+            after: optVal.after
         };
     }
 
@@ -509,10 +445,8 @@ var GruntTs;
             this.noImplicitAny = typeof this._source.noImplicitAny === "undefined" ? undefined : !!this._source.noImplicitAny;
             this.disallowAsi = typeof this._source.disallowAsi === "undefined" ? undefined : !!this._source.disallowAsi;
 
-            this._showexectime = !!this._source._showexectime;
-
             //experimental
-            this.watch = prepareWatch(this._source._watch, this.expandedFiles(), _io);
+            this.watch = prepareWatch(this._source.watch || this._source._watch, this.expandedFiles(), _io);
 
             checkIgnoreTypeCheck(this._source, this._io);
         }
@@ -531,16 +465,16 @@ var GruntTs;
             settings.generateDeclarationFiles = this.declaration;
             settings.removeComments = this.removeComments;
 
-            if (typeof this.langTarget !== "undefined") {
+            if (!GruntTs.util.isUndef(this.langTarget)) {
                 settings.codeGenTarget = this.langTarget;
             }
-            if (typeof this.moduleTarget !== "undefined") {
+            if (!GruntTs.util.isUndef(this.moduleTarget)) {
                 settings.moduleGenTarget = this.moduleTarget;
             }
-            if (typeof this.noImplicitAny !== "undefined") {
+            if (!GruntTs.util.isUndef(this.noImplicitAny)) {
                 settings.noImplicitAny = this.noImplicitAny;
             }
-            if (typeof this.disallowAsi !== "undefined") {
+            if (!GruntTs.util.isUndef(this.disallowAsi)) {
                 settings.allowAutomaticSemicolonInsertion = this.disallowAsi;
             }
 
@@ -615,11 +549,7 @@ var GruntTs;
             this.resolve();
             this.compile();
 
-            this.writeResult();
-
-            if (this.options._showexectime) {
-                this.grunt.log.writeln("execution time = " + (Date.now() - start) + " ms.");
-            }
+            this.writeResult(Date.now() - start);
         };
 
         Task.prototype.startWatch = function (resolve, reject) {
@@ -638,14 +568,17 @@ var GruntTs;
                 }).on("error", function (error) {
                     _this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                 });
-            }, handleEvent = function (path, eventName) {
+            }, timeoutId, handleEvent = function (path, eventName) {
                 path = _this.ioHost.normalizePath(path);
                 if (targetPaths[path]) {
                     targetPaths[path] = eventName;
                     return;
                 }
                 targetPaths[path] = eventName;
-                setTimeout(function () {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                timeoutId = setTimeout(function () {
                     var keys = Object.keys(targetPaths).filter(function (key) {
                         var result = !!/\.ts$/.test(key);
                         if (result) {
@@ -659,10 +592,15 @@ var GruntTs;
                         return;
                     try  {
                         _this.exec();
+
+                        //                            if(this.options.watch && this.options.watch.after){
+                        //                                this.grunt.task.run(this.options.watch.after);
+                        //                            }
                         _this.writeWatchingMessage(watchPath);
                     } catch (e) {
                         _this.writeWatchingMessage(watchPath);
                     }
+                    timeoutId = 0;
                 }, 300);
             };
             this.writeWatchingMessage(watchPath);
@@ -771,7 +709,7 @@ var GruntTs;
             }
         };
 
-        Task.prototype.writeResult = function () {
+        Task.prototype.writeResult = function (ms) {
             var result = { js: [], m: [], d: [], other: [] }, resultMessage, pluralizeFile = function (n) {
                 return (n + " file") + ((n === 1) ? "" : "s");
             };
@@ -786,7 +724,7 @@ var GruntTs;
                     result.other.push(item);
             });
 
-            resultMessage = "js: " + pluralizeFile(result.js.length) + ", map: " + pluralizeFile(result.m.length) + ", declaration: " + pluralizeFile(result.d.length);
+            resultMessage = "js: " + pluralizeFile(result.js.length) + ", map: " + pluralizeFile(result.m.length) + ", declaration: " + pluralizeFile(result.d.length) + " (" + ms + "ms)";
             if (this.options.outputOne) {
                 if (result.js.length > 0) {
                     this.grunt.log.writeln("File " + (result.js[0])["cyan"] + " created.");
