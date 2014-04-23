@@ -747,7 +747,8 @@ declare module grunt {
             /**
              * Returns the options as an array of command line parameters.
              */
-            flags: grunt.IFlag[]
+            //flags: grunt.IFlag[]
+            flags: ()=> string
         }
 
     }
@@ -1142,7 +1143,7 @@ declare module grunt {
             /**
              * The command to execute. It should be in the system path.
              */
-            cmd: string
+            cmd?: string
 
             /**
              * If specified, the same grunt bin that is currently running will be

@@ -121,6 +121,7 @@ module GruntTs{
 
     function prepareWatch(optVal: any, files: string[], io: GruntTs.GruntIO): GruntTs.WatchOpt{
         var after: string[] = [],
+            before: string[] = [],
             getDirNames = (files: string[]): string[] => {
                 return files.map<string>(file => {
                     if(_fs.existsSync(file)){
@@ -134,18 +135,10 @@ module GruntTs{
                     }
                     return io.normalizePath(io.resolvePath(_path.dirname(file)));
                 });
-            };
-        if(!optVal){
-            return undefined;
-        }
-        if(util.isStr(optVal)){
-            return {
-                path: (optVal + "")
-            };
-        }
-        if(util.isBool(optVal) && !!optVal){
-            var dirNames: string[] = getDirNames(files),
-                path: string = dirNames.reduce<string>((prev, curr) => {
+            },
+            extractPath = (files: string[]): string => {
+                var dirNames: string[] = getDirNames(files);
+                return dirNames.reduce<string>((prev, curr) => {
                     if(!prev){
                         return curr;
                     }
@@ -161,17 +154,44 @@ module GruntTs{
                     }
                     return prev;
                 }, undefined);
+            };
+        if(!optVal){
+            return undefined;
+        }
+        if(util.isStr(optVal)){
             return {
-                path: path
+                path: (optVal + ""),
+                after: [],
+                before: []
+            };
+        }
+        if(util.isBool(optVal) && !!optVal){
+            return {
+                path: extractPath(files),
+                after: [],
+                before: []
             }
+        }
+        if(!optVal.path){
+            optVal.path = extractPath(files);
+        }
+        if(optVal.after && !util.isArray(optVal.after)){
+            after.push(<string>optVal.after);
+        }else if(util.isArray(optVal.after)){
+            after = optVal.after;
+        }
+        if(optVal.before && !util.isArray(optVal.before)){
+            before.push(<string>optVal.before);
+        }else if(util.isArray(optVal.before)){
+            before = optVal.before;
         }
 
         return {
             path: optVal.path,
-            after:  optVal.after
+            after:  after,
+            before: before
         };
     }
-
 
     export enum NewLine{
         crLf,
@@ -181,7 +201,8 @@ module GruntTs{
 
     export interface WatchOpt{
         path: string;
-        after?: any;
+        after: string[];
+        before: string[];
     }
 
     export class Opts{

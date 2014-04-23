@@ -4,6 +4,7 @@
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
+///<reference path="./runner.ts" />
 
 module GruntTs{
 
@@ -25,8 +26,6 @@ module GruntTs{
         //private destinationPath: string;
         private options: GruntTs.Opts;
         private outputFiles: string[] = [];
-
-
 
         constructor(private grunt: any, private tscBinPath: string, private ioHost: GruntTs.GruntIO) {
 
@@ -68,6 +67,7 @@ module GruntTs{
         startWatch(resolve: (val: any) => void, reject: (val: any) => void){
             if(!this.options.watch){
                 resolve(true);
+                return;
             }
             var watchPath = this.ioHost.resolvePath(this.options.watch.path),
                 chokidar: any = require("chokidar"),
@@ -107,16 +107,13 @@ module GruntTs{
                         });
                         targetPaths = {};
                         if(!keys.length) return;
-                        try  {
+                        GruntTs.runTask(this.grunt, this.options.watch.before).then(() => {
                             this.exec();
-//                            if(this.options.watch && this.options.watch.after){
-//                                this.grunt.task.run(this.options.watch.after);
-//                            }
+                            return  GruntTs.runTask(this.grunt, this.options.watch.after);
+                        }).fin(() => {
                             this.writeWatchingMessage(watchPath);
-                        } catch (e) {
-                            this.writeWatchingMessage(watchPath);
-                        }
-                        timeoutId = 0;
+                            timeoutId = 0;
+                        });
                     }, 300);
                 };
             this.writeWatchingMessage(watchPath);

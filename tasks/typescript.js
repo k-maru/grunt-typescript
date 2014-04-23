@@ -1,6 +1,9 @@
+///<reference path="../typings/q/Q.d.ts" />
 var GruntTs;
 (function (GruntTs) {
     (function (util) {
+        var Q = require('q');
+
         function isStr(val) {
             return Object.prototype.toString.call(val) === "[object String]";
         }
@@ -20,6 +23,36 @@ var GruntTs;
             return typeof val === "undefined";
         }
         util.isUndef = isUndef;
+
+        function asyncEach(items, callback) {
+            return Q.promise(function (resolve, reject, notify) {
+                var length = items.length, exec = function (i) {
+                    if (length <= i) {
+                        resolve(true);
+                        return;
+                    }
+                    var item = items[i];
+                    console.log(item);
+                    callback(item, i, function () {
+                        i = i + 1;
+                        exec(i);
+                    });
+                };
+                exec(0);
+                //            if(!this.options.watch){
+                //                try{
+                //                    this.exec();
+                //                    resolve(true);
+                //                }catch(e){
+                //                    reject(e);
+                //                }
+                //
+                //            }else{
+                //                this.startWatch(resolve, reject);
+                //            }
+            });
+        }
+        util.asyncEach = asyncEach;
     })(GruntTs.util || (GruntTs.util = {}));
     var util = GruntTs.util;
 })(GruntTs || (GruntTs = {}));
@@ -365,7 +398,7 @@ var GruntTs;
     }
 
     function prepareWatch(optVal, files, io) {
-        var after = [], getDirNames = function (files) {
+        var after = [], before = [], getDirNames = function (files) {
             return files.map(function (file) {
                 if (_fs.existsSync(file)) {
                     if (_fs.statSync(file).isDirectory()) {
@@ -378,17 +411,9 @@ var GruntTs;
                 }
                 return io.normalizePath(io.resolvePath(_path.dirname(file)));
             });
-        };
-        if (!optVal) {
-            return undefined;
-        }
-        if (GruntTs.util.isStr(optVal)) {
-            return {
-                path: (optVal + "")
-            };
-        }
-        if (GruntTs.util.isBool(optVal) && !!optVal) {
-            var dirNames = getDirNames(files), path = dirNames.reduce(function (prev, curr) {
+        }, extractPath = function (files) {
+            var dirNames = getDirNames(files);
+            return dirNames.reduce(function (prev, curr) {
                 if (!prev) {
                     return curr;
                 }
@@ -402,14 +427,44 @@ var GruntTs;
                 }
                 return prev;
             }, undefined);
+        };
+        if (!optVal) {
+            return undefined;
+        }
+        if (GruntTs.util.isStr(optVal)) {
             return {
-                path: path
+                path: (optVal + ""),
+                after: [],
+                before: []
             };
+        }
+        if (GruntTs.util.isBool(optVal) && !!optVal) {
+            return {
+                path: extractPath(files),
+                after: [],
+                before: []
+            };
+        }
+        console.log(optVal.before);
+        console.log(optVal.after);
+        if (!optVal.path) {
+            optVal.path = extractPath(files);
+        }
+        if (optVal.after && !GruntTs.util.isArray(optVal.after)) {
+            after.push(optVal.after);
+        } else if (GruntTs.util.isArray(optVal.after)) {
+            after = optVal.after;
+        }
+        if (optVal.before && !GruntTs.util.isArray(optVal.before)) {
+            before.push(optVal.before);
+        } else if (GruntTs.util.isArray(optVal.before)) {
+            before = optVal.before;
         }
 
         return {
             path: optVal.path,
-            after: optVal.after
+            after: after,
+            before: before
         };
     }
 
@@ -488,11 +543,30 @@ var GruntTs;
     GruntTs.Opts = Opts;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/q/Q.d.ts" />
+///<reference path="util.ts" />
+var GruntTs;
+(function (GruntTs) {
+    function runTask(grunt, tasks) {
+        return GruntTs.util.asyncEach(tasks, function (task, index, next) {
+            grunt.util.spawn({
+                grunt: true,
+                args: [task].concat(grunt.option.flags()),
+                opts: { stdio: 'inherit' }
+            }, function (err, result, code) {
+                next();
+            });
+        });
+    }
+    GruntTs.runTask = runTask;
+})(GruntTs || (GruntTs = {}));
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/typescript.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./opts.ts" />
+///<reference path="./runner.ts" />
 var GruntTs;
 (function (GruntTs) {
     var Q = require('q');
@@ -556,6 +630,7 @@ var GruntTs;
             var _this = this;
             if (!this.options.watch) {
                 resolve(true);
+                return;
             }
             var watchPath = this.ioHost.resolvePath(this.options.watch.path), chokidar = require("chokidar"), watcher, targetPaths = {}, registerEvents = function () {
                 watcher = chokidar.watch(watchPath, { ignoreInitial: true, persistent: true });
@@ -590,17 +665,25 @@ var GruntTs;
                     targetPaths = {};
                     if (!keys.length)
                         return;
-                    try  {
-                        _this.exec();
+                    console.log(_this.options.watch.before);
+                    console.log(_this.options.watch.after);
 
-                        //                            if(this.options.watch && this.options.watch.after){
-                        //                                this.grunt.task.run(this.options.watch.after);
-                        //                            }
+                    //                        try  {
+                    GruntTs.runTask(_this.grunt, _this.options.watch.before).then(function () {
+                        _this.exec();
+                        return GruntTs.runTask(_this.grunt, _this.options.watch.after);
+                    }).fin(function () {
                         _this.writeWatchingMessage(watchPath);
-                    } catch (e) {
-                        _this.writeWatchingMessage(watchPath);
-                    }
-                    timeoutId = 0;
+                        timeoutId = 0;
+                    });
+                    //this.exec();
+                    ////                            if(this.options.watch && this.options.watch.after){
+                    ////                                this.grunt.task.run(this.options.watch.after);
+                    ////                            }
+                    //                            this.writeWatchingMessage(watchPath);
+                    //                        } catch (e) {
+                    //                            this.writeWatchingMessage(watchPath);
+                    //                        }
                 }, 300);
             };
             this.writeWatchingMessage(watchPath);
