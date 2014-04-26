@@ -105,8 +105,9 @@ Do not allow auto semicolon insertion. This options is experimental.
 ###basePath `string`
 Path component to cut off when mapping the source files to dest files.
 
-###_watch `string` or `boolean` or `object`
+###watch `string` or `boolean` or `object`
 Watch .ts files.
+It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.
 
 Specify the directory where you want to monitor in the options.
 
@@ -116,7 +117,7 @@ Specify the directory where you want to monitor in the options.
           base: {
             src: ['path/to/typescript/files/**/*.ts'],
             options: {
-              _watch: 'path/to/typescript/files'
+              watch: 'path/to/typescript/files'
             }
           }
         },
@@ -131,7 +132,7 @@ If you specify the true, then automatically detects the directory.
           base: {
             src: ['path/to/typescript/files/**/*.ts'],
             options: {
-              _watch: true   //Detect all target files root. eg: 'path/to/typescript/files/'
+              watch: true   //Detect all target files root. eg: 'path/to/typescript/files/'
             }
           }
         },
@@ -146,8 +147,10 @@ For expansion of the future, You can also be specified 'object'.
           base: {
             src: ['path/to/typescript/files/**/*.ts'],
             options: {
-              _watch: {
-                path: 'path/to/typescript/files'
+              watch: {
+                path: 'path/to/typescript/files',
+                before: ['beforetasks'],   //Set before tasks. eg: clean task
+                after: ['aftertasks']      //Set after tasks.  eg: minify task
               }
             }
           }
