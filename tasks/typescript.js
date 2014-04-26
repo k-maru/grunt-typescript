@@ -32,24 +32,12 @@ var GruntTs;
                         return;
                     }
                     var item = items[i];
-                    console.log(item);
                     callback(item, i, function () {
                         i = i + 1;
                         exec(i);
                     });
                 };
                 exec(0);
-                //            if(!this.options.watch){
-                //                try{
-                //                    this.exec();
-                //                    resolve(true);
-                //                }catch(e){
-                //                    reject(e);
-                //                }
-                //
-                //            }else{
-                //                this.startWatch(resolve, reject);
-                //            }
             });
         }
         util.asyncEach = asyncEach;
@@ -445,8 +433,6 @@ var GruntTs;
                 before: []
             };
         }
-        console.log(optVal.before);
-        console.log(optVal.after);
         if (!optVal.path) {
             optVal.path = extractPath(files);
         }
@@ -665,10 +651,6 @@ var GruntTs;
                     targetPaths = {};
                     if (!keys.length)
                         return;
-                    console.log(_this.options.watch.before);
-                    console.log(_this.options.watch.after);
-
-                    //                        try  {
                     GruntTs.runTask(_this.grunt, _this.options.watch.before).then(function () {
                         _this.exec();
                         return GruntTs.runTask(_this.grunt, _this.options.watch.after);
@@ -676,14 +658,6 @@ var GruntTs;
                         _this.writeWatchingMessage(watchPath);
                         timeoutId = 0;
                     });
-                    //this.exec();
-                    ////                            if(this.options.watch && this.options.watch.after){
-                    ////                                this.grunt.task.run(this.options.watch.after);
-                    ////                            }
-                    //                            this.writeWatchingMessage(watchPath);
-                    //                        } catch (e) {
-                    //                            this.writeWatchingMessage(watchPath);
-                    //                        }
                 }, 300);
             };
             this.writeWatchingMessage(watchPath);

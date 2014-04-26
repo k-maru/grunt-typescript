@@ -8,3 +8,5 @@ src
 /egen.sh
 /tsd.json
 /.travis.yml
+/Gruntfile.js
+/.npmignore

@@ -30,25 +30,12 @@ module GruntTs.util{
                         return;
                     }
                     var item = items[i];
-                    console.log(item);
                     callback(item, i, function(){
                         i = i + 1;
                         exec(i);
                     });
                 };
             exec(0);
-
-//            if(!this.options.watch){
-//                try{
-//                    this.exec();
-//                    resolve(true);
-//                }catch(e){
-//                    reject(e);
-//                }
-//
-//            }else{
-//                this.startWatch(resolve, reject);
-//            }
-        });
+       });
     }
 }
