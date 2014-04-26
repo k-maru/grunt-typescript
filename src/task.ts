@@ -27,6 +27,8 @@ module GruntTs{
         private options: GruntTs.Opts;
         private outputFiles: string[] = [];
 
+        private compiler: any;
+
         constructor(private grunt: any, private tscBinPath: string, private ioHost: GruntTs.GruntIO) {
 
         }
@@ -175,26 +177,40 @@ module GruntTs{
 
         private compile(): void{
 
-            var g = require("./modules/compiler");
-            //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
-            var compiler = new g.Compiler(this.logger, this.compilationSettings),
-                emitTargets: string[] = [];
+            if(!this.compiler) {
+                var g = require("./modules/compiler");
+                //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
+                console.log("new compiler instance");
+                this.compiler = new g.Compiler(this.logger, this.compilationSettings);
+            }
+
+            var emitTargets: string[] = [];
 
             this.resolvedFiles.forEach(resolvedFile => {
                 var sourceFile = this.getSourceFile(resolvedFile.path),
-                    lastMod = this.ioHost.getLastMod(resolvedFile.path);
+                    lastMod = this.ioHost.getLastMod(resolvedFile.path),
+                    isEmitTarget = lastMod > sourceFile.lastMod;
+
                 //TODO: change
-                if(lastMod > sourceFile.lastMod){
+                //if(lastMod > sourceFile.lastMod){
+                if(isEmitTarget){
                     emitTargets.push(resolvedFile.path);
                     sourceFile.lastMod = lastMod;
                 }
-                compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
+                if(!this.compiler.getDocument(resolvedFile.path)){
+                    this.compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
+                }else{
+                    if(isEmitTarget){
+                        this.compiler.updateFile(resolvedFile.path, sourceFile.scriptSnapshot,/*version*/ 0, /*isOpen*/ false, /*textChangeRange*/ null);
+                    }
+                }
+
             });
             var ignoreError = this.options.ignoreError,
                 hasOutputFile = false;
 
             //TODO: change
-            for (var it = compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), (path: string) => this.resolvePath(path)); it.moveNext();) {
+            for (var it = this.compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), (path: string) => this.resolvePath(path)); it.moveNext();) {
             //for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
                 var result: TypeScript.CompileResult = it.current(),
                     hasError = false;

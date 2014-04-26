@@ -1,5 +1,8 @@
 #Released
 
+## 0.3.2
+* Compilation with watch option is more fast.
+
 ## 0.3.1
 * Add watch option
 

@@ -722,24 +722,36 @@ var GruntTs;
 
         Task.prototype.compile = function () {
             var _this = this;
-            var g = require("./modules/compiler");
+            if (!this.compiler) {
+                var g = require("./modules/compiler");
 
-            //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
-            var compiler = new g.Compiler(this.logger, this.compilationSettings), emitTargets = [];
+                //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
+                console.log("new compiler instance");
+                this.compiler = new g.Compiler(this.logger, this.compilationSettings);
+            }
+
+            var emitTargets = [];
 
             this.resolvedFiles.forEach(function (resolvedFile) {
-                var sourceFile = _this.getSourceFile(resolvedFile.path), lastMod = _this.ioHost.getLastMod(resolvedFile.path);
+                var sourceFile = _this.getSourceFile(resolvedFile.path), lastMod = _this.ioHost.getLastMod(resolvedFile.path), isEmitTarget = lastMod > sourceFile.lastMod;
 
                 //TODO: change
-                if (lastMod > sourceFile.lastMod) {
+                //if(lastMod > sourceFile.lastMod){
+                if (isEmitTarget) {
                     emitTargets.push(resolvedFile.path);
                     sourceFile.lastMod = lastMod;
                 }
-                compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
+                if (!_this.compiler.getDocument(resolvedFile.path)) {
+                    _this.compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
+                } else {
+                    if (isEmitTarget) {
+                        _this.compiler.updateFile(resolvedFile.path, sourceFile.scriptSnapshot, /*version*/ 0, false, null);
+                    }
+                }
             });
             var ignoreError = this.options.ignoreError, hasOutputFile = false;
 
-            for (var it = compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), function (path) {
+            for (var it = this.compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), function (path) {
                 return _this.resolvePath(path);
             }); it.moveNext();) {
                 //for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
