@@ -180,7 +180,6 @@ module GruntTs{
             if(!this.compiler) {
                 var g = require("./modules/compiler");
                 //var compiler = new TypeScript.TypeScriptCompiler(this.logger, this.compilationSettings);
-                console.log("new compiler instance");
                 this.compiler = new g.Compiler(this.logger, this.compilationSettings);
             }
 
