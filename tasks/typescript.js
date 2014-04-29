@@ -423,14 +423,16 @@ var GruntTs;
             return {
                 path: (optVal + ""),
                 after: [],
-                before: []
+                before: [],
+                atBegin: false
             };
         }
         if (GruntTs.util.isBool(optVal) && !!optVal) {
             return {
                 path: extractPath(files),
                 after: [],
-                before: []
+                before: [],
+                atBegin: false
             };
         }
         if (!optVal.path) {
@@ -450,7 +452,8 @@ var GruntTs;
         return {
             path: optVal.path,
             after: after,
-            before: before
+            before: before,
+            atBegin: !!optVal.atBegin
         };
     }
 
@@ -629,7 +632,12 @@ var GruntTs;
                 }).on("error", function (error) {
                     _this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                 });
-            }, timeoutId, handleEvent = function (path, eventName) {
+            }, timeoutId, executeBuild = function () {
+                return GruntTs.runTask(_this.grunt, _this.options.watch.before).then(function () {
+                    _this.exec();
+                    return GruntTs.runTask(_this.grunt, _this.options.watch.after);
+                });
+            }, handleEvent = function (path, eventName) {
                 path = _this.ioHost.normalizePath(path);
                 if (targetPaths[path]) {
                     targetPaths[path] = eventName;
@@ -641,27 +649,35 @@ var GruntTs;
                 }
                 timeoutId = setTimeout(function () {
                     var keys = Object.keys(targetPaths).filter(function (key) {
-                        var result = !!/\.ts$/.test(key);
+                        var result = !!/\.ts$/.test(key), eventName = targetPaths[key];
                         if (result) {
                             _this.ioHost.stdout.WriteLine(targetPaths[key].cyan + " " + key);
                             _this.fileNameToSourceFile.remove(key);
+                            if (eventName === "Unlinked" && _this.compiler) {
+                                _this.compiler.removeFile(key);
+                            }
                         }
                         return result;
                     });
                     targetPaths = {};
                     if (!keys.length)
                         return;
-                    GruntTs.runTask(_this.grunt, _this.options.watch.before).then(function () {
-                        _this.exec();
-                        return GruntTs.runTask(_this.grunt, _this.options.watch.after);
-                    }).fin(function () {
+                    executeBuild().fin(function () {
                         _this.writeWatchingMessage(watchPath);
                         timeoutId = 0;
                     });
                 }, 300);
             };
-            this.writeWatchingMessage(watchPath);
-            registerEvents();
+
+            if (this.options.watch.atBegin) {
+                executeBuild().fin(function () {
+                    _this.writeWatchingMessage(watchPath);
+                    registerEvents();
+                });
+            } else {
+                this.writeWatchingMessage(watchPath);
+                registerEvents();
+            }
         };
 
         Task.prototype.writeWatchingMessage = function (watchPath) {

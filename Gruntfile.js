@@ -184,8 +184,9 @@ module.exports = function (grunt) {
 //                dest:"test/temp/multi",
 //                options: {
 //                    watch: {
-//                     //   before: ["foo", "foo"],
+//                        before: ["typescript:simple"],
 //                     //   after: "foo"
+//                        atBegin: true
 //                    } //"test/fixtures/multi",
 //
 //                }

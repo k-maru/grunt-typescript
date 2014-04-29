@@ -88,6 +88,12 @@ module GruntTs{
                     });
                 },
                 timeoutId: number,
+                executeBuild = () => {
+                    return GruntTs.runTask(this.grunt, this.options.watch.before).then(() => {
+                        this.exec();
+                        return  GruntTs.runTask(this.grunt, this.options.watch.after);
+                    });
+                },
                 handleEvent = (path: string, eventName: string) => {
                     path = this.ioHost.normalizePath(path);
                     if(targetPaths[path]){
@@ -100,26 +106,35 @@ module GruntTs{
                     }
                     timeoutId = setTimeout(() => {
                         var keys = Object.keys(targetPaths).filter((key) => {
-                            var result = !!/\.ts$/.test(key);
+                            var result = !!/\.ts$/.test(key),
+                                eventName = targetPaths[key];
                             if(result){
                                 this.ioHost.stdout.WriteLine(targetPaths[key].cyan + " " + key);
                                 this.fileNameToSourceFile.remove(key);
+                                if(eventName === "Unlinked" && this.compiler){
+                                    this.compiler.removeFile(key);
+                                }
                             }
                             return result;
                         });
                         targetPaths = {};
                         if(!keys.length) return;
-                        GruntTs.runTask(this.grunt, this.options.watch.before).then(() => {
-                            this.exec();
-                            return  GruntTs.runTask(this.grunt, this.options.watch.after);
-                        }).fin(() => {
+                        executeBuild().fin(() => {
                             this.writeWatchingMessage(watchPath);
                             timeoutId = 0;
                         });
                     }, 300);
                 };
-            this.writeWatchingMessage(watchPath);
-            registerEvents();
+
+            if(this.options.watch.atBegin){
+                executeBuild().fin(() => {
+                    this.writeWatchingMessage(watchPath);
+                    registerEvents();
+                });
+            }else{
+                this.writeWatchingMessage(watchPath);
+                registerEvents();
+            }
         }
 
         private writeWatchingMessage(watchPath: string): void{
@@ -203,7 +218,6 @@ module GruntTs{
                         this.compiler.updateFile(resolvedFile.path, sourceFile.scriptSnapshot,/*version*/ 0, /*isOpen*/ false, /*textChangeRange*/ null);
                     }
                 }
-
             });
             var ignoreError = this.options.ignoreError,
                 hasOutputFile = false;

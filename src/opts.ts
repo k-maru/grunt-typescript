@@ -162,14 +162,16 @@ module GruntTs{
             return {
                 path: (optVal + ""),
                 after: [],
-                before: []
+                before: [],
+                atBegin: false
             };
         }
         if(util.isBool(optVal) && !!optVal){
             return {
                 path: extractPath(files),
                 after: [],
-                before: []
+                before: [],
+                atBegin: false
             }
         }
         if(!optVal.path){
@@ -189,7 +191,8 @@ module GruntTs{
         return {
             path: optVal.path,
             after:  after,
-            before: before
+            before: before,
+            atBegin: !!optVal.atBegin
         };
     }
 
@@ -203,6 +206,7 @@ module GruntTs{
         path: string;
         after: string[];
         before: string[];
+        atBegin: boolean;
     }
 
     export class Opts{

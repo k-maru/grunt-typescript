@@ -151,6 +151,7 @@ For expansion of the future, You can also be specified 'object'.
                 path: 'path/to/typescript/files',
                 before: ['beforetasks'],   //Set before tasks. eg: clean task
                 after: ['aftertasks']      //Set after tasks.  eg: minify task
+                atBegin: true              //Run tasks when watcher starts. default false
               }
             }
           }
