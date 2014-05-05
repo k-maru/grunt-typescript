@@ -4950,7 +4950,6 @@ declare module TypeScript.ASTHelpers {
     function isNameOfMemberFunction(ast: AST): boolean;
     function isNameOfMemberAccessExpression(ast: AST): boolean;
     function isRightSideOfQualifiedName(ast: AST): boolean;
-    function parentIsModuleDeclaration(ast: AST): boolean;
     function parametersFromIdentifier(id: Identifier): IParameters;
     function parametersFromParameter(parameter: Parameter): IParameters;
     function parametersFromParameterList(list: ParameterList): IParameters;
@@ -4961,8 +4960,8 @@ declare module TypeScript.ASTHelpers {
     function getVariableDeclaratorModifiers(variableDeclarator: VariableDeclarator): PullElementFlags[];
     function isIntegerLiteralAST(expression: AST): boolean;
     function getEnclosingModuleDeclaration(ast: AST): ModuleDeclaration;
-    function getModuleDeclarationFromNameAST(ast: AST): ModuleDeclaration;
     function isLastNameOfModule(ast: ModuleDeclaration, astName: AST): boolean;
+    function isAnyNameOfModule(ast: ModuleDeclaration, astName: AST): boolean;
     function getNameOfIdenfierOrQualifiedName(name: AST): string;
     function getModuleNames(name: AST, result?: Identifier[]): Identifier[];
 }
@@ -5736,7 +5735,7 @@ declare module TypeScript {
         public isAlias(): boolean;
         public isContainer(): boolean;
         constructor(name: string, declKind: PullElementKind);
-        private findAliasedTypeSymbols(scopeSymbol, skipScopeSymbolAliasesLookIn?, lookIntoOnlyExportedAlias?, aliasSymbols?, visitedScopeDeclarations?);
+        private findAliasedType(scopeSymbol, skipScopeSymbolAliasesLookIn?, lookIntoOnlyExportedAlias?, aliasSymbols?, visitedScopeDeclarations?);
         public getExternalAliasedSymbols(scopeSymbol: PullSymbol): PullTypeAliasSymbol[];
         static _isExternalModuleReferenceAlias(aliasSymbol: PullTypeAliasSymbol): boolean;
         private getExportedInternalAliasSymbol(scopeSymbol);
@@ -6110,34 +6109,20 @@ declare module TypeScript {
     }
 }
 declare module TypeScript {
-    class EnclosingTypeWalkerState {
-        public _hasSetEnclosingType: boolean;
-        public _currentSymbols: PullSymbol[];
-        static getDefaultEnclosingTypeWalkerState(): EnclosingTypeWalkerState;
-        static getNonGenericEnclosingTypeWalkerState(): EnclosingTypeWalkerState;
-        static getGenericEnclosingTypeWalkerState(genericEnclosingType: PullTypeSymbol): EnclosingTypeWalkerState;
-    }
     class PullTypeEnclosingTypeWalker {
-        private static _defaultEnclosingTypeWalkerState;
-        private static _nonGenericEnclosingTypeWalkerState;
-        private enclosingTypeWalkerState;
-        constructor();
-        private setDefaultTypeWalkerState();
-        private setNonGenericEnclosingTypeWalkerState();
-        private canSymbolOrDeclBeUsedAsEnclosingTypeHelper(name, kind);
-        private canDeclBeUsedAsEnclosingType(decl);
-        private canSymbolBeUsedAsEnclosingType(symbol);
+        private currentSymbols;
         public getEnclosingType(): PullTypeSymbol;
         public _canWalkStructure(): boolean;
         public _getCurrentSymbol(): PullSymbol;
         public getGenerativeClassification(): GenerativeTypeClassification;
         private _pushSymbol(symbol);
         private _popSymbol();
-        private setSymbolAsEnclosingType(type);
         private _setEnclosingTypeOfParentDecl(decl, setSignature);
-        public setEnclosingTypeForSymbol(symbol: PullSymbol): EnclosingTypeWalkerState;
-        public startWalkingType(symbol: PullTypeSymbol): EnclosingTypeWalkerState;
-        public endWalkingType(stateWhenStartedWalkingTypes: EnclosingTypeWalkerState): void;
+        private _setEnclosingTypeWorker(symbol, setSignature);
+        public setCurrentSymbol(symbol: PullSymbol): void;
+        public startWalkingType(symbol: PullTypeSymbol): PullSymbol[];
+        public endWalkingType(currentSymbolsWhenStartedWalkingTypes: PullSymbol[]): void;
+        public setEnclosingType(symbol: PullSymbol): void;
         public walkMemberType(memberName: string, resolver: PullTypeResolver): void;
         public postWalkMemberType(): void;
         public walkSignature(kind: PullElementKind, index: number): void;
@@ -6153,8 +6138,6 @@ declare module TypeScript {
         public getBothKindOfIndexSignatures(resolver: PullTypeResolver, context: PullTypeResolutionContext, includeAugmentedType: boolean): IndexSignatureInfo;
         public walkIndexSignatureReturnType(indexSigInfo: IndexSignatureInfo, useStringIndexSignature: boolean, onlySignature?: boolean): void;
         public postWalkIndexSignatureReturnType(onlySignature?: boolean): void;
-        public resetEnclosingTypeWalkerState(): EnclosingTypeWalkerState;
-        public setEnclosingTypeWalkerState(enclosingTypeWalkerState: EnclosingTypeWalkerState): void;
     }
 }
 declare module TypeScript {
@@ -6216,8 +6199,8 @@ declare module TypeScript {
         public fileName: string;
         private contextStack;
         private typeCheckedNodes;
-        private enclosingTypeWalker1;
-        private enclosingTypeWalker2;
+        public enclosingTypeWalker1: PullTypeEnclosingTypeWalker;
+        public enclosingTypeWalker2: PullTypeEnclosingTypeWalker;
         constructor(resolver: PullTypeResolver, inTypeCheck?: boolean, fileName?: string);
         public setTypeChecked(ast: AST): void;
         public canTypeCheckAST(ast: AST): boolean;
@@ -6243,17 +6226,14 @@ declare module TypeScript {
         public setSymbolForAST(ast: AST, symbol: PullSymbol): void;
         public getSymbolForAST(ast: AST): PullSymbol;
         public startWalkingTypes(symbol1: PullTypeSymbol, symbol2: PullTypeSymbol): {
-            stateWhenStartedWalkingTypes1: EnclosingTypeWalkerState;
-            stateWhenStartedWalkingTypes2: EnclosingTypeWalkerState;
+            symbolsWhenStartedWalkingTypes1: PullSymbol[];
+            symbolsWhenStartedWalkingTypes2: PullSymbol[];
         };
-        public endWalkingTypes(statesWhenStartedWalkingTypes: {
-            stateWhenStartedWalkingTypes1: EnclosingTypeWalkerState;
-            stateWhenStartedWalkingTypes2: EnclosingTypeWalkerState;
+        public endWalkingTypes(symbolsWhenStartedWalkingTypes: {
+            symbolsWhenStartedWalkingTypes1: PullSymbol[];
+            symbolsWhenStartedWalkingTypes2: PullSymbol[];
         }): void;
-        public setEnclosingTypeForSymbols(symbol1: PullSymbol, symbol2: PullSymbol): {
-            enclosingTypeWalkerState1: EnclosingTypeWalkerState;
-            enclosingTypeWalkerState2: EnclosingTypeWalkerState;
-        };
+        public setEnclosingTypes(symbol1: PullSymbol, symbol2: PullSymbol): void;
         public walkMemberTypes(memberName: string): void;
         public postWalkMemberTypes(): void;
         public walkSignatures(kind: PullElementKind, index: number, index2?: number): void;
@@ -6277,13 +6257,13 @@ declare module TypeScript {
         public postWalkIndexSignatureReturnTypes(onlySignature?: boolean): void;
         public swapEnclosingTypeWalkers(): void;
         public oneOfClassificationsIsInfinitelyExpanding(): boolean;
-        public resetEnclosingTypeWalkerStates(): {
-            enclosingTypeWalkerState1: EnclosingTypeWalkerState;
-            enclosingTypeWalkerState2: EnclosingTypeWalkerState;
+        public resetEnclosingTypeWalkers(): {
+            enclosingTypeWalker1: PullTypeEnclosingTypeWalker;
+            enclosingTypeWalker2: PullTypeEnclosingTypeWalker;
         };
-        public setEnclosingTypeWalkerStates(enclosingTypeWalkerStates: {
-            enclosingTypeWalkerState1: EnclosingTypeWalkerState;
-            enclosingTypeWalkerState2: EnclosingTypeWalkerState;
+        public setEnclosingTypeWalkers(enclosingTypeWalkers: {
+            enclosingTypeWalker1: PullTypeEnclosingTypeWalker;
+            enclosingTypeWalker2: PullTypeEnclosingTypeWalker;
         }): void;
     }
 }
@@ -6662,7 +6642,7 @@ declare module TypeScript {
         private sourceIsRelatableToTargetInCache(source, target, comparisonCache, comparisonInfo);
         private sourceIsRelatableToTarget(source, target, assignableTo, comparisonCache, ast, context, comparisonInfo, isComparingInstantiatedSignatures);
         private isSourceTypeParameterConstrainedToTargetTypeParameter(source, target);
-        private sourceIsRelatableToTargetWorker(source, target, assignableTo, comparisonCache, ast, context, comparisonInfo, isComparingInstantiatedSignatures);
+        private sourceIsRelatableToTargetWorker(source, target, sourceSubstitution, assignableTo, comparisonCache, ast, context, comparisonInfo, isComparingInstantiatedSignatures);
         private sourceMembersAreRelatableToTargetMembers(source, target, assignableTo, comparisonCache, ast, context, comparisonInfo, isComparingInstantiatedSignatures);
         private infinitelyExpandingSourceTypeIsRelatableToTargetType(sourceType, targetType, assignableTo, comparisonCache, ast, context, comparisonInfo, isComparingInstantiatedSignatures);
         private infinitelyExpandingTypesAreIdentical(sourceType, targetType, context);
@@ -7085,8 +7065,8 @@ declare module TypeScript {
         public getDeclForAST(ast: AST): PullDecl;
         public fileNames(): string[];
         public topLevelDecl(fileName: string): PullDecl;
-        private static getLocationText(location, resolvePath);
-        static getFullDiagnosticText(diagnostic: Diagnostic, resolvePath: (path: string) => string): string;
+        private static getLocationText(location);
+        static getFullDiagnosticText(diagnostic: Diagnostic): string;
     }
     function compareDataObjects(dst: any, src: any): boolean;
 }

@@ -10,3 +10,4 @@ src
 /.travis.yml
 /Gruntfile.js
 /.npmignore
+/lib

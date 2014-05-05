@@ -179,18 +179,18 @@ module.exports = function (grunt) {
                     ignoreError: true
                 }
             }
-//            , watch:{
-//                src:"test/fixtures/multi/**/*.ts",
-//                dest:"test/temp/multi",
-//                options: {
-//                    watch: {
-//                        before: ["typescript:simple"],
-//                     //   after: "foo"
-//                        atBegin: true
-//                    } //"test/fixtures/multi",
-//
-//                }
-//            }
+            , watch:{
+                src:"test/fixtures/multi/**/*.ts",
+                dest:"test/temp/multi",
+                options: {
+                    watch: {
+                        before: ["typescript:simple"],
+                     //   after: "foo"
+                        atBegin: true
+                    } //"test/fixtures/multi",
+
+                }
+            }
 
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
@@ -202,6 +202,14 @@ module.exports = function (grunt) {
         },
         nodeunit:{
             tests:["test/test.js"]
+        },
+        switchv:{
+            "100": {
+                options: {version: "1.0.0"}
+            },
+            "101": {
+                options:{version: "1.0.1"}
+            }
         }
     });
 
@@ -211,6 +219,14 @@ module.exports = function (grunt) {
 
     grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
+
+    grunt.registerMultiTask("switchv", "switch typescript version", function(){
+        var version = this.options({}).version,
+            targetDir = "lib/" + version;
+        grunt.file.copy(targetDir + "/lib.d.ts", "node_modules/typescript/bin/lib.d.ts");
+        grunt.file.copy(targetDir + "/typescript.js", "node_modules/typescript/bin/typescript.js");
+        grunt.file.copy(targetDir + "/typescript.d.ts", "typings/typescript/typescript.d.ts");
+    });
 
     function tsc(option){
         var command = "node " + path.resolve(path.dirname(require.resolve("typescript")), "tsc ");
@@ -350,4 +366,6 @@ module.exports = function (grunt) {
             done(false);
         });
     });
+
+    grunt.registerTask("setup", ["clean", "switchv:101", "egen"])
 };
