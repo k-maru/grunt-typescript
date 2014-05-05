@@ -179,18 +179,18 @@ module.exports = function (grunt) {
                     ignoreError: true
                 }
             }
-            , watch:{
-                src:"test/fixtures/multi/**/*.ts",
-                dest:"test/temp/multi",
-                options: {
-                    watch: {
-                        before: ["typescript:simple"],
-                     //   after: "foo"
-                        atBegin: true
-                    } //"test/fixtures/multi",
-
-                }
-            }
+//            , watch:{
+//                src:"test/fixtures/multi/**/*.ts",
+//                dest:"test/temp/multi",
+//                options: {
+//                    watch: {
+//                        before: ["typescript:simple"],
+//                     //   after: "foo"
+//                        atBegin: true
+//                    } //"test/fixtures/multi",
+//
+//                }
+//            }
 
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
