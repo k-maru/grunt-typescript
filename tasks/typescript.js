@@ -691,7 +691,16 @@ var GruntTs;
             var resolvedFiles = [];
             var includeDefaultLibrary = !this.compilationSettings.noLib();
 
-            if (this.options.noResolve) {
+            if (!this.options.noResolve) {
+                var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings.useCaseSensitiveFileResolution());
+                resolvedFiles = resolutionResults.resolvedFiles;
+
+                includeDefaultLibrary = !this.compilationSettings.noLib() && !resolutionResults.seenNoDefaultLibTag;
+
+                resolutionResults.diagnostics.forEach(function (d) {
+                    return _this.addDiagnostic(d);
+                });
+            } else {
                 for (var i = 0, n = this.inputFiles.length; i < n; i++) {
                     var inputFile = this.inputFiles[i];
                     var referencedFiles = [];
@@ -713,13 +722,6 @@ var GruntTs;
                         importedFiles: importedFiles
                     });
                 }
-            } else {
-                var resolutionResults = TypeScript.ReferenceResolver.resolve(this.inputFiles, this, this.compilationSettings.useCaseSensitiveFileResolution());
-                includeDefaultLibrary = !this.compilationSettings.noLib() && !resolutionResults.seenNoDefaultLibTag;
-                resolvedFiles = resolutionResults.resolvedFiles;
-                resolutionResults.diagnostics.forEach(function (d) {
-                    return _this.addDiagnostic(d);
-                });
             }
 
             if (includeDefaultLibrary) {
