@@ -206,6 +206,10 @@ module GruntTs{
             this.grunt.log.writeln(message.yellow);
         }
 
+        fatal(message: string){
+            this.grunt.fail.fatal(message);
+        }
+
         normalizePath(path: string): string{
             return normalizePath(path);
         }

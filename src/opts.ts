@@ -155,6 +155,7 @@ module GruntTs{
                     return prev;
                 }, undefined);
             };
+
         if(!optVal){
             return undefined;
         }
@@ -176,18 +177,21 @@ module GruntTs{
         }
         if(!optVal.path){
             optVal.path = extractPath(files);
+            if(!optVal.path){
+                io.fatal("Can't auto detect watch directory. Please place one or more files or set the path option.");
+            }
         }
         if(optVal.after && !util.isArray(optVal.after)){
             after.push(<string>optVal.after);
         }else if(util.isArray(optVal.after)){
             after = optVal.after;
         }
+
         if(optVal.before && !util.isArray(optVal.before)){
             before.push(<string>optVal.before);
         }else if(util.isArray(optVal.before)){
             before = optVal.before;
         }
-
         return {
             path: optVal.path,
             after:  after,

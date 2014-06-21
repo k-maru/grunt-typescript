@@ -255,6 +255,10 @@ var GruntTs;
             this.grunt.log.writeln(message.yellow);
         };
 
+        GruntIO.prototype.fatal = function (message) {
+            this.grunt.fail.fatal(message);
+        };
+
         GruntIO.prototype.normalizePath = function (path) {
             return normalizePath(path);
         };
@@ -416,6 +420,7 @@ var GruntTs;
                 return prev;
             }, undefined);
         };
+
         if (!optVal) {
             return undefined;
         }
@@ -437,18 +442,21 @@ var GruntTs;
         }
         if (!optVal.path) {
             optVal.path = extractPath(files);
+            if (!optVal.path) {
+                io.fatal("Can't auto detect watch directory. Please place one or more files or set the path option.");
+            }
         }
         if (optVal.after && !GruntTs.util.isArray(optVal.after)) {
             after.push(optVal.after);
         } else if (GruntTs.util.isArray(optVal.after)) {
             after = optVal.after;
         }
+
         if (optVal.before && !GruntTs.util.isArray(optVal.before)) {
             before.push(optVal.before);
         } else if (GruntTs.util.isArray(optVal.before)) {
             before = optVal.before;
         }
-
         return {
             path: optVal.path,
             after: after,
@@ -632,9 +640,27 @@ var GruntTs;
                 }).on("error", function (error) {
                     _this.ioHost.stdout.WriteLine("Error".red + ": " + error);
                 });
-            }, timeoutId, executeBuild = function () {
+            }, timeoutId, executeBuild = function (files) {
                 return GruntTs.runTask(_this.grunt, _this.options.watch.before).then(function () {
-                    _this.exec();
+                    try  {
+                        _this.exec();
+                    } catch (e) {
+                        //失敗した場合は次回のコンパイル対象にする
+                        if (!files) {
+                            _this.fileNameToSourceFile.map(function (key, value, ctx) {
+                                value.lastMod = new Date(0);
+                            }, null);
+                        } else {
+                            files.forEach(function (fileName) {
+                                var sourceFile = _this.getSourceFile(fileName);
+                                if (sourceFile) {
+                                    sourceFile.lastMod = new Date(0);
+                                }
+                            });
+                        }
+                        throw e;
+                    }
+
                     return GruntTs.runTask(_this.grunt, _this.options.watch.after);
                 });
             }, handleEvent = function (path, eventName) {
@@ -662,7 +688,7 @@ var GruntTs;
                     targetPaths = {};
                     if (!keys.length)
                         return;
-                    executeBuild().fin(function () {
+                    executeBuild(keys).fin(function () {
                         _this.writeWatchingMessage(watchPath);
                         timeoutId = 0;
                     });
@@ -750,14 +776,19 @@ var GruntTs;
             var emitTargets = [];
 
             this.resolvedFiles.forEach(function (resolvedFile) {
-                var sourceFile = _this.getSourceFile(resolvedFile.path), lastMod = _this.ioHost.getLastMod(resolvedFile.path), isEmitTarget = lastMod > sourceFile.lastMod;
+                var sourceFile = _this.getSourceFile(resolvedFile.path), lastMod, isEmitTarget;
 
                 //TODO: change
-                //if(lastMod > sourceFile.lastMod){
-                if (isEmitTarget) {
-                    emitTargets.push(resolvedFile.path);
-                    sourceFile.lastMod = lastMod;
+                if (_this.ioHost.fileExists(resolvedFile.path)) {
+                    lastMod = _this.ioHost.getLastMod(resolvedFile.path);
+                    isEmitTarget = lastMod > sourceFile.lastMod;
+
+                    if (isEmitTarget) {
+                        emitTargets.push(resolvedFile.path);
+                        sourceFile.lastMod = lastMod;
+                    }
                 }
+
                 if (!_this.compiler.getDocument(resolvedFile.path)) {
                     _this.compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, false, resolvedFile.referencedFiles);
                 } else {
@@ -766,6 +797,7 @@ var GruntTs;
                     }
                 }
             });
+
             var ignoreError = this.options.ignoreError, hasOutputFile = false;
 
             for (var it = this.compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), function (path) {

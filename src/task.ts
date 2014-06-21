@@ -88,9 +88,27 @@ module GruntTs{
                     });
                 },
                 timeoutId: number,
-                executeBuild = () => {
+                executeBuild = (files?: string[]) => {
                     return GruntTs.runTask(this.grunt, this.options.watch.before).then(() => {
-                        this.exec();
+                        try{
+                            this.exec();
+                        }catch(e){
+                            //失敗した場合は次回のコンパイル対象にする
+                            if(!files){
+                                this.fileNameToSourceFile.map((key: string, value: SourceFile, ctx: any) => {
+                                    value.lastMod = new Date(0);
+                                }, null);
+                            }else{
+                                files.forEach((fileName) => {
+                                    var sourceFile = this.getSourceFile(fileName);
+                                    if(sourceFile){
+                                        sourceFile.lastMod = new Date(0);
+                                    }
+                                })
+                            }
+                            throw e;
+                        }
+
                         return  GruntTs.runTask(this.grunt, this.options.watch.after);
                     });
                 },
@@ -119,7 +137,7 @@ module GruntTs{
                         });
                         targetPaths = {};
                         if(!keys.length) return;
-                        executeBuild().fin(() => {
+                        executeBuild(keys).fin(() => {
                             this.writeWatchingMessage(watchPath);
                             timeoutId = 0;
                         });
@@ -205,28 +223,35 @@ module GruntTs{
 
             this.resolvedFiles.forEach(resolvedFile => {
                 var sourceFile = this.getSourceFile(resolvedFile.path),
-                    lastMod = this.ioHost.getLastMod(resolvedFile.path),
-                    isEmitTarget = lastMod > sourceFile.lastMod;
+                    lastMod: Date,
+                    isEmitTarget: boolean;
 
                 //TODO: change
-                //if(lastMod > sourceFile.lastMod){
-                if(isEmitTarget){
-                    emitTargets.push(resolvedFile.path);
-                    sourceFile.lastMod = lastMod;
+                if(this.ioHost.fileExists(resolvedFile.path)){
+                    lastMod = this.ioHost.getLastMod(resolvedFile.path);
+                    isEmitTarget = lastMod > sourceFile.lastMod;
+
+                    if (isEmitTarget) {
+                        emitTargets.push(resolvedFile.path);
+                        sourceFile.lastMod = lastMod;
+                    }
                 }
-                if(!this.compiler.getDocument(resolvedFile.path)){
+
+                if (!this.compiler.getDocument(resolvedFile.path)) {
                     this.compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
-                }else{
-                    if(isEmitTarget){
-                        this.compiler.updateFile(resolvedFile.path, sourceFile.scriptSnapshot,/*version*/ 0, /*isOpen*/ false, /*textChangeRange*/ null);
+                } else {
+                    if (isEmitTarget) {
+                        this.compiler.updateFile(resolvedFile.path, sourceFile.scriptSnapshot, /*version*/ 0, /*isOpen*/ false, /*textChangeRange*/ null);
                     }
                 }
             });
+
             var ignoreError = this.options.ignoreError,
                 hasOutputFile = false;
 
             //TODO: change
-            for (var it = this.compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"), (path: string) => this.resolvePath(path)); it.moveNext();) {
+            for (var it = this.compiler.compileEmitTargets(emitTargets, this.ioHost.combine(this.tscBinPath, "lib.d.ts"),
+                (path: string) => this.resolvePath(path)); it.moveNext();) {
             //for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {
                 var result: TypeScript.CompileResult = it.current(),
                     hasError = false;

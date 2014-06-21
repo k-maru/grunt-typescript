@@ -15,7 +15,8 @@ module.exports = function (grunt) {
                 "test/temp/**/*.*",
                 "test/temp"
             ],
-            expect: "test/expected"
+            expect: "test/expected",
+            watch: "test/watch/fixtures/**/*.*"
         },
         typescript:{
             simple:{
@@ -179,18 +180,15 @@ module.exports = function (grunt) {
                     ignoreError: true
                 }
             }
-//            , watch:{
-//                src:"test/fixtures/multi/**/*.ts",
-//                dest:"test/temp/multi",
-//                options: {
-//                    watch: {
-//                        before: ["typescript:simple"],
-//                     //   after: "foo"
-//                        atBegin: true
-//                    } //"test/fixtures/multi",
-//
-//                }
-//            }
+            , watch:{
+                src: "test/watch/fixtures/**/*.ts",
+                options: {
+                    watch: {
+                        path: "test/watch/fixtures"
+                        //atBegin: true
+                    }
+                }
+            }
 
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
@@ -217,7 +215,25 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-contrib-nodeunit");
     grunt.loadNpmTasks("grunt-contrib-clean");
 
-    grunt.registerTask("test", ["clean:test", "typescript", "nodeunit"]);
+    function getTestTsTasks(){
+        var results = [];
+        results.push("clean:test");
+
+        var tsConfig = grunt.config.getRaw("typescript");
+        for(var p in tsConfig){
+            if(!tsConfig.hasOwnProperty(p)){
+                continue;
+            }
+            if(p === "watch"){
+                continue;
+            }
+            results.push("typescript:" + p);
+        }
+        results.push("nodeunit");
+        return results;
+    }
+
+    grunt.registerTask("test", getTestTsTasks()); //["clean:test", "typescript", "nodeunit"]);
     grunt.registerTask("default", ["test"]);
 
     grunt.registerMultiTask("switchv", "switch typescript version", function(){
@@ -367,5 +383,41 @@ module.exports = function (grunt) {
         });
     });
 
-    grunt.registerTask("setup", ["clean", "switchv:101", "egen"])
+    grunt.registerTask("setup", ["clean", "switchv:101", "egen"]);
+
+    grunt.registerTask("watchcheck", "check watch option", function(){
+        var done = this.async();
+
+         grunt.util.spawn({
+            grunt: true,
+            args: "typescript:watch",
+            opts: { stdio: 'inherit' }
+        }, function (err, result, code) {
+
+        });
+
+        Q.delay(2000).then(function(){
+            return Q.delay(1000);
+        }).then(function(){
+            console.log("--create first file");
+            grunt.file.copy("test/watch/templates/first.ts", "test/watch/fixtures/first.ts");
+            return Q.delay(2000);
+        }).then(function(){
+            console.log("--create second file");
+            grunt.file.copy("test/watch/templates/second.ts", "test/watch/fixtures/second.ts");
+            return Q.delay(2000);
+        }).then(function(){
+            console.log("--remove first file");
+            grunt.file.delete("test/watch/fixtures/first.ts");
+            return Q.delay(2000);
+        }).then(function(){
+            console.log("--update second file");
+            grunt.file.write("test/watch/fixtures/second.ts", grunt.file.read("test/watch/templates/second_comp.ts"));
+            return Q.delay(2000);
+        }).done(function(){
+            done();
+        });
+    });
+
+    grunt.registerTask("watchtest", ["clean:watch", "watchcheck"]);
 };
