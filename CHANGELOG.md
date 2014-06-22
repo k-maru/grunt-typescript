@@ -1,5 +1,11 @@
 #Released
 
+## 0.3.7
+* Added support to include the files that fail to file the next target of the compilation failure.
+  watchのコンパイルが失敗した時に、次回のコンパイル対象に含めるように対応
+* Fixed a bug that it had failed to check the update date and time in the file deletion.
+  watchでファイル削除時に更新日時の取得に失敗していた不具合を修正
+
 ## 0.3.6
 * Add support TypeScript version 1.0.0 and 1.0.1
 
