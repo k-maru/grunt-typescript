@@ -46,8 +46,11 @@ var GruntTs;
             this.hadSyntacticDiagnostics = false;
             this.hadSemanticDiagnostics = false;
             this.hadEmitDiagnostics = false;
+            this._outputOne = false;
             this.fileNames = compiler.fileNames();
             this.compilerPhase = startingPhase;
+
+            this._outputOne = !!this.compiler.compilationSettings().outFileOption();
         }
         CompilerIterator.prototype.current = function () {
             return this._current;
@@ -191,7 +194,7 @@ var GruntTs;
                 var fileName = this.fileNames[this.index];
 
                 //TODO: change
-                if (!this.compiler.compilationSettings().outFileOption()) {
+                if (!this._outputOne) {
                     if (!this.emitTargets.some(function (target) {
                         return target === fileName;
                     })) {
@@ -237,7 +240,7 @@ var GruntTs;
                 var fileName = this.fileNames[this.index];
 
                 //TODO: change
-                if (!this.compiler.compilationSettings().outFileOption()) {
+                if (!this._outputOne) {
                     if (!this.emitTargets.some(function (target) {
                         return target === fileName;
                     })) {

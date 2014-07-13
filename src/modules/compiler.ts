@@ -31,6 +31,7 @@ module GruntTs{
         private hadSyntacticDiagnostics: boolean = false;
         private hadSemanticDiagnostics: boolean = false;
         private hadEmitDiagnostics: boolean = false;
+        private _outputOne: boolean = false;
 
         constructor(private emitTargets: string[],
                     private libDPath: string,
@@ -40,6 +41,8 @@ module GruntTs{
                     startingPhase = CompilerPhase.Syntax) {
             this.fileNames = compiler.fileNames();
             this.compilerPhase = startingPhase;
+
+            this._outputOne = !!this.compiler.compilationSettings().outFileOption();
         }
 
         public current(): TypeScript.CompileResult {
@@ -189,7 +192,7 @@ module GruntTs{
 
 
                 //TODO: change
-                if(!this.compiler.compilationSettings().outFileOption()){
+                if(!this._outputOne){
                     if(!this.emitTargets.some((target) => target === fileName)){
                         return true;
                     }
@@ -232,7 +235,7 @@ module GruntTs{
             if (this.index < this.fileNames.length) {
                 var fileName = this.fileNames[this.index];
                 //TODO: change
-                if(!this.compiler.compilationSettings().outFileOption()){
+                if(!this._outputOne){
                     if(!this.emitTargets.some((target) => target === fileName)){
                         return true;
                     }
