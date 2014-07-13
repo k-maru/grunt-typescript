@@ -191,10 +191,12 @@ var GruntTs;
                 var fileName = this.fileNames[this.index];
 
                 //TODO: change
-                if (!this.emitTargets.some(function (target) {
-                    return target === fileName;
-                })) {
-                    return true;
+                if (!this.compiler.compilationSettings().outFileOption()) {
+                    if (!this.emitTargets.some(function (target) {
+                        return target === fileName;
+                    })) {
+                        return true;
+                    }
                 }
 
                 var document = this.compiler.getDocument(fileName);
@@ -235,10 +237,12 @@ var GruntTs;
                 var fileName = this.fileNames[this.index];
 
                 //TODO: change
-                if (!this.emitTargets.some(function (target) {
-                    return target === fileName;
-                })) {
-                    return true;
+                if (!this.compiler.compilationSettings().outFileOption()) {
+                    if (!this.emitTargets.some(function (target) {
+                        return target === fileName;
+                    })) {
+                        return true;
+                    }
                 }
 
                 var document = this.compiler.getDocument(fileName);

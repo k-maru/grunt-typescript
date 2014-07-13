@@ -186,9 +186,13 @@ module GruntTs{
             TypeScript.Debug.assert(this.index >= 0 && this.index <= this.fileNames.length);
             if (this.index < this.fileNames.length) {
                 var fileName = this.fileNames[this.index];
+
+
                 //TODO: change
-                if(!this.emitTargets.some((target) => target === fileName)){
-                    return true;
+                if(!this.compiler.compilationSettings().outFileOption()){
+                    if(!this.emitTargets.some((target) => target === fileName)){
+                        return true;
+                    }
                 }
 
                 var document = this.compiler.getDocument(fileName);
@@ -228,8 +232,10 @@ module GruntTs{
             if (this.index < this.fileNames.length) {
                 var fileName = this.fileNames[this.index];
                 //TODO: change
-                if(!this.emitTargets.some((target) => target === fileName)){
-                    return true;
+                if(!this.compiler.compilationSettings().outFileOption()){
+                    if(!this.emitTargets.some((target) => target === fileName)){
+                        return true;
+                    }
                 }
 
                 var document = this.compiler.getDocument(fileName);

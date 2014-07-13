@@ -189,6 +189,17 @@ module.exports = function (grunt) {
                     }
                 }
             }
+            , watchSingle:{
+                src: "test/watch/fixtures/**/*.ts",
+                dest: "test/watch/fixtures/watchSingle.js",
+                options: {
+                    watch: {
+                        path: "test/watch/fixtures"
+                        //atBegin: true
+                    }
+                }
+            }
+
 
 //            , errorsyntax:{
 //                src: "test/fixtures/error-syntax.ts",
@@ -224,7 +235,7 @@ module.exports = function (grunt) {
             if(!tsConfig.hasOwnProperty(p)){
                 continue;
             }
-            if(p === "watch"){
+            if(p.substr(0,5) === "watch"){
                 continue;
             }
             results.push("typescript:" + p);
@@ -385,8 +396,17 @@ module.exports = function (grunt) {
 
     grunt.registerTask("setup", ["clean", "switchv:101", "egen"]);
 
+
     grunt.registerTask("watchcheck", "check watch option", function(){
         var done = this.async();
+
+        grunt.util.spawn({
+            grunt: true,
+            args: "clean:watch",
+            opts: { stdio: 'inherit' }
+        }, function (err, result, code) {
+
+        });
 
          grunt.util.spawn({
             grunt: true,
@@ -415,6 +435,50 @@ module.exports = function (grunt) {
             grunt.file.write("test/watch/fixtures/second.ts", grunt.file.read("test/watch/templates/second_comp.ts"));
             return Q.delay(2000);
         }).done(function(){
+            done();
+        });
+    });
+
+    grunt.registerTask("watchscheck", "check watch option - singlefile", function(){
+        var done = this.async();
+
+        grunt.util.spawn({
+            grunt: true,
+            args: "clean:watch",
+            opts: { stdio: 'inherit' }
+        }, function (err, result, code) {
+
+        });
+
+        grunt.util.spawn({
+            grunt: true,
+            args: "typescript:watchSingle",
+            opts: { stdio: 'inherit' }
+        }, function (err, result, code) {
+
+        });
+
+        Q.delay(2000).then(function(){
+            return Q.delay(1000);
+        }).then(function(){
+            console.log("--create first file");
+            grunt.file.copy("test/watch/templates/first.ts", "test/watch/fixtures/first.ts");
+            return Q.delay(2000);
+        }).then(function(){
+            console.log("--create second file");
+            grunt.file.copy("test/watch/templates/second.ts", "test/watch/fixtures/second.ts");
+            return Q.delay(2000);
+        }).then(function(){
+            console.log("--update second file");
+            grunt.file.write("test/watch/fixtures/second.ts", grunt.file.read("test/watch/templates/second_comp.ts"))
+            return Q.delay(2000);
+        }).done(function(){
+
+            var  result = grunt.file.read("test/watch/fixtures/watchSingle.js").toString() ===
+                grunt.file.read("test/watch/expect/watchSingle.js").toString();
+
+            console.log("-- expect: " + result);
+
             done();
         });
     });
