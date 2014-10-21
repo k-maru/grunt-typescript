@@ -26,11 +26,11 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "typescript": "1.0.0 - 1.0.1",
     "q": "~1.0.0",
     "chokidar": "~0.8.1"
   },
   "peerDependencies": {
+    "typescript": "~1.0",
     "grunt": "~0.4.2"
   },
   "devDependencies": {
