@@ -8,9 +8,9 @@
 
 module GruntTs{
 
-    var  _fs: any = require('fs'),
-        _os = require('os'),
-        _path: any = require('path'),
+    var  _fs: any = require("fs"),
+        _os = require("os"),
+        _path: any = require("path"),
         existingDirectories: ts.Map<boolean> = {};
 
 

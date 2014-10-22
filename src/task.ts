@@ -14,38 +14,46 @@ module GruntTs{
     export function execute(options: GruntOptions, host: GruntHost): Q.Promise<any>{
 
         return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
-            var start = Date.now(),
-                program = ts.createProgram(options.targetFiles(), options, host),
-                errors: ts.Diagnostic[] = program.getDiagnostics();
 
-            if(writeDiagnostics(errors)){
+
+            if(compile(options, host)){
+                resolve(true);
+            }else{
                 reject(false);
-                return;
             }
 
-            var checker = program.getTypeChecker(/*fullTypeCheckMode*/ true);
-            errors = checker.getDiagnostics();
-
-            if(writeDiagnostics(errors, !!options.ignoreError)){
-                if(!options.ignoreError){
-                    reject(false);
-                    return;
-                }
-            }
-
-            var emitOutput = checker.emitFiles();
-            var emitErrors = emitOutput.errors;
-            if(writeDiagnostics(emitErrors)){
-                reject(false);
-                return;
-            }
-
-            host.writeResult(Date.now() - start);
-            resolve(true);
 
         });
-
     }
+
+    function compile(options: GruntOptions, host: GruntHost): boolean{
+        var start = Date.now(),
+            program = ts.createProgram(options.targetFiles(), options, host),
+            errors: ts.Diagnostic[] = program.getDiagnostics();
+
+        if(writeDiagnostics(errors)){
+            return false;
+        }
+
+        var checker = program.getTypeChecker(/*fullTypeCheckMode*/ true);
+        errors = checker.getDiagnostics();
+
+        if(writeDiagnostics(errors, !!options.ignoreError)){
+            if(!options.ignoreError){
+                return false;
+            }
+        }
+
+        var emitOutput = checker.emitFiles();
+        var emitErrors = emitOutput.errors;
+        if(writeDiagnostics(emitErrors)){
+            return false;
+        }
+
+        host.writeResult(Date.now() - start);
+        return true;
+    }
+
 
     function writeDiagnostics(diags: ts.Diagnostic[],isWarn: boolean = false): boolean{
         diags.forEach((d) => {

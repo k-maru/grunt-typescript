@@ -61,7 +61,7 @@ var GruntTs;
 ///<reference path="./util.ts" />
 var GruntTs;
 (function (GruntTs) {
-    var _path = require('path');
+    var _path = require("path"), _fs = require("fs");
     function prepareBasePath(opt) {
         var result = "";
         if (GruntTs.util.isStr(opt.basePath)) {
@@ -115,31 +115,113 @@ var GruntTs;
         }
         return result;
     }
-    function createGruntOptions(source, grunt, gruntFile) {
-        var removeComments = prepareRemoveComments(source), sourceMap = GruntTs.util.isUndef(source.sourceMap) ? undefined : !!source.sourceMap, dest = ts.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js", basePath = prepareBasePath(source), target = prepareTarget(source), module = prepareModule(source), noLib = GruntTs.util.isUndef(source.noLib) ? undefined : !!source.noLib, noImplicitAny = GruntTs.util.isUndef(source.noImplicitAny) ? undefined : !!source.noImplicitAny, noResolve = GruntTs.util.isUndef(source.noResolve) ? undefined : !!source.noResolve, ignoreError = GruntTs.util.isUndef(source.ignoreError) ? undefined : !!source.ignoreError;
-        if (source.watch) {
-            GruntTs.util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+    function prepareWatch(opt, files) {
+        var after = [], before = [], getDirNames = function (files) {
+            return files.map(function (file) {
+                if (_fs.existsSync(file)) {
+                    if (_fs.statSync(file).isDirectory()) {
+                        return file;
+                    }
+                }
+                else {
+                    if (!_path.extname(file)) {
+                        return file;
+                    }
+                }
+                return ts.normalizePath(_path.resolve(_path.dirname(file)));
+            });
+        }, extractPath = function (files) {
+            var dirNames = getDirNames(files);
+            return dirNames.reduce(function (prev, curr) {
+                if (!prev) {
+                    return curr;
+                }
+                var left = ts.normalizePath(_path.relative(prev, curr)), right = ts.normalizePath(_path.relative(curr, prev)), match = left.match(/^(\.\.(\/)?)+/);
+                if (match) {
+                    return ts.normalizePath(_path.resolve(prev, match[0]));
+                }
+                match = right.match(/^(\.\.\/)+/);
+                if (match) {
+                    return ts.normalizePath(_path.resolve(curr, match[0]));
+                }
+                return prev;
+            }, undefined);
+        };
+        if (!opt) {
+            return undefined;
         }
+        if (GruntTs.util.isStr(opt)) {
+            return {
+                path: (opt + ""),
+                after: [],
+                before: [],
+                atBegin: false
+            };
+        }
+        if (GruntTs.util.isBool(opt) && !!opt) {
+            return {
+                path: extractPath(files),
+                after: [],
+                before: [],
+                atBegin: false
+            };
+        }
+        if (!opt.path) {
+            opt.path = extractPath(files);
+            if (!opt.path) {
+                GruntTs.util.writeWarn("Can't auto detect watch directory. Please place one or more files or set the path option.");
+                return undefined;
+            }
+        }
+        if (opt.after && !GruntTs.util.isArray(opt.after)) {
+            after.push(opt.after);
+        }
+        else if (GruntTs.util.isArray(opt.after)) {
+            after = opt.after;
+        }
+        if (opt.before && !GruntTs.util.isArray(opt.before)) {
+            before.push(opt.before);
+        }
+        else if (GruntTs.util.isArray(opt.before)) {
+            before = opt.before;
+        }
+        return {
+            path: opt.path,
+            after: after,
+            before: before,
+            atBegin: !!opt.atBegin
+        };
+    }
+    function createGruntOptions(source, grunt, gruntFile) {
+        function getTargetFiles() {
+            return grunt.file.expand(gruntFile.orig.src);
+        }
+        function boolOrUndef(source, key) {
+            return GruntTs.util.isUndef(source[key]) ? undefined : !!source[key];
+        }
+        var dest = ts.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
+        //if(source.watch){
+        //    util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+        //}
         if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
             GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
         return {
-            removeComments: removeComments,
-            sourceMap: sourceMap,
-            declaration: !!source.declaration,
-            targetFiles: function () {
-                return grunt.file.expand(gruntFile.orig.src);
-            },
-            dest: gruntFile.dest,
+            removeComments: prepareRemoveComments(source),
+            sourceMap: boolOrUndef(source, "sourceMap"),
+            declaration: boolOrUndef(source, "declaration"),
+            targetFiles: getTargetFiles,
+            dest: dest,
             singleFile: singleFile,
-            basePath: basePath,
-            target: target,
-            module: module,
+            basePath: prepareBasePath(source),
+            target: prepareTarget(source),
+            module: prepareModule(source),
             out: singleFile ? dest : undefined,
-            noLib: noLib,
-            noImplicitAny: noImplicitAny,
-            noResolve: noResolve,
-            ignoreError: ignoreError
+            noLib: boolOrUndef(source, "noLib"),
+            noImplicitAny: boolOrUndef(source, "noImplicitAny"),
+            noResolve: boolOrUndef(source, "noResolve"),
+            ignoreError: boolOrUndef(source, "ignoreError"),
+            gWatch: prepareWatch(source, getTargetFiles())
         };
     }
     GruntTs.createGruntOptions = createGruntOptions;
@@ -219,7 +301,7 @@ var GruntTs;
 ///<reference path="./io.ts" />
 var GruntTs;
 (function (GruntTs) {
-    var _fs = require('fs'), _os = require('os'), _path = require('path'), existingDirectories = {};
+    var _fs = require("fs"), _os = require("os"), _path = require("path"), existingDirectories = {};
     function directoryExists(io, directoryPath) {
         if (ts.hasProperty(existingDirectories, directoryPath)) {
             return true;
@@ -355,30 +437,35 @@ var GruntTs;
     var Q = require("q");
     function execute(options, host) {
         return Q.Promise(function (resolve, reject, notify) {
-            var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();
-            if (writeDiagnostics(errors)) {
+            if (compile(options, host)) {
+                resolve(true);
+            }
+            else {
                 reject(false);
-                return;
             }
-            var checker = program.getTypeChecker(true);
-            errors = checker.getDiagnostics();
-            if (writeDiagnostics(errors, !!options.ignoreError)) {
-                if (!options.ignoreError) {
-                    reject(false);
-                    return;
-                }
-            }
-            var emitOutput = checker.emitFiles();
-            var emitErrors = emitOutput.errors;
-            if (writeDiagnostics(emitErrors)) {
-                reject(false);
-                return;
-            }
-            host.writeResult(Date.now() - start);
-            resolve(true);
         });
     }
     GruntTs.execute = execute;
+    function compile(options, host) {
+        var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();
+        if (writeDiagnostics(errors)) {
+            return false;
+        }
+        var checker = program.getTypeChecker(true);
+        errors = checker.getDiagnostics();
+        if (writeDiagnostics(errors, !!options.ignoreError)) {
+            if (!options.ignoreError) {
+                return false;
+            }
+        }
+        var emitOutput = checker.emitFiles();
+        var emitErrors = emitOutput.errors;
+        if (writeDiagnostics(emitErrors)) {
+            return false;
+        }
+        host.writeResult(Date.now() - start);
+        return true;
+    }
     function writeDiagnostics(diags, isWarn) {
         if (isWarn === void 0) { isWarn = false; }
         diags.forEach(function (d) {

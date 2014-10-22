@@ -6,16 +6,25 @@
 
 module GruntTs {
 
-    var  _path: any = require('path');
+    var _path: any = require("path"),
+        _fs: any = require("fs");
+
+    export interface GruntWatchOptions{
+        path: string;
+        after: string[];
+        before: string[];
+        atBegin: boolean;
+    }
 
     export interface GruntOptions extends ts.CompilerOptions{
-
         targetFiles(): string[];
         dest: string;
         singleFile: boolean;
         basePath: string;
         ignoreError?: boolean;
+        gWatch?: GruntWatchOptions;
     }
+
 
     function prepareBasePath(opt: any): string{
         var result: string = "";
@@ -71,44 +80,125 @@ module GruntTs {
         return result;
     }
 
+    function prepareWatch(opt: any, files: string[]): GruntWatchOptions{
+        var after: string[] = [],
+            before: string[] = [],
+            getDirNames = (files: string[]): string[] => {
+                return files.map<string>(file => {
+                    if(_fs.existsSync(file)){
+                        if(_fs.statSync(file).isDirectory()){
+                            return file;
+                        }
+                    }else{
+                        if(!_path.extname(file)){
+                            return file;
+                        }
+                    }
+                    return ts.normalizePath(_path.resolve(_path.dirname(file)));
+                });
+            },
+            extractPath = (files: string[]): string => {
+                var dirNames: string[] = getDirNames(files);
+                return dirNames.reduce<string>((prev, curr) => {
+                    if(!prev){
+                        return curr;
+                    }
+                    var left =  ts.normalizePath(_path.relative(prev, curr)),
+                        right = ts.normalizePath(_path.relative(curr, prev)),
+                        match = left.match(/^(\.\.(\/)?)+/);
+                    if(match){
+                        return ts.normalizePath(_path.resolve(prev, match[0]));
+                    }
+                    match = right.match(/^(\.\.\/)+/);
+                    if(match){
+                        return ts.normalizePath( _path.resolve(curr, match[0]));
+                    }
+                    return prev;
+                }, undefined);
+            };
+
+        if(!opt){
+            return undefined;
+        }
+        if(util.isStr(opt)){
+            return {
+                path: (opt + ""),
+                after: [],
+                before: [],
+                atBegin: false
+            };
+        }
+        if(util.isBool(opt) && !!opt){
+            return {
+                path: extractPath(files),
+                after: [],
+                before: [],
+                atBegin: false
+            }
+        }
+        if(!opt.path){
+            opt.path = extractPath(files);
+            if(!opt.path){
+                util.writeWarn("Can't auto detect watch directory. Please place one or more files or set the path option.");
+                return undefined;
+            }
+        }
+        if(opt.after && !util.isArray(opt.after)){
+            after.push(<string>opt.after);
+        }else if(util.isArray(opt.after)){
+            after = opt.after;
+        }
+
+        if(opt.before && !util.isArray(opt.before)){
+            before.push(<string>opt.before);
+        }else if(util.isArray(opt.before)){
+            before = opt.before;
+        }
+        return {
+            path: opt.path,
+            after:  after,
+            before: before,
+            atBegin: !!opt.atBegin
+        };
+    }
+
+
     export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap) : GruntOptions {
 
-        var removeComments:boolean = prepareRemoveComments(source),
-            sourceMap:boolean = util.isUndef(source.sourceMap) ? undefined : !!source.sourceMap,
-            dest:string = ts.normalizePath(gruntFile.dest || ""),
-            singleFile:boolean = !!dest && _path.extname(dest) === ".js",
-            basePath:string = prepareBasePath(source),
-            target: ts.ScriptTarget = prepareTarget(source),
-            module: ts.ModuleKind = prepareModule(source),
-            noLib:boolean = util.isUndef(source.noLib) ? undefined : !!source.noLib,
-            noImplicitAny:boolean = util.isUndef(source.noImplicitAny) ? undefined : !!source.noImplicitAny,
-            noResolve:boolean = util.isUndef(source.noResolve) ? undefined : !!source.noResolve,
-            ignoreError: boolean = util.isUndef(source.ignoreError) ? undefined : !!source.ignoreError;
-
-        if(source.watch){
-            util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+        function getTargetFiles(): string[]{
+            return grunt.file.expand(<string[]>gruntFile.orig.src);
         }
+
+        function boolOrUndef(source: any, key: string): boolean{
+            return util.isUndef(source[key]) ? undefined : !!source[key];
+        }
+
+        var dest = ts.normalizePath(gruntFile.dest || ""),
+            singleFile = !!dest && _path.extname(dest) === ".js";
+
+        //if(source.watch){
+        //    util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+        //}
         if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
             util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
 
         return {
-            removeComments: removeComments,
-            sourceMap: sourceMap,
-            declaration: !!source.declaration,
-            targetFiles():string[] {
-                return grunt.file.expand(<string[]>gruntFile.orig.src);
-            },
-            dest: gruntFile.dest,
+            removeComments: prepareRemoveComments(source),
+            sourceMap: boolOrUndef(source, "sourceMap"),
+            declaration: boolOrUndef(source, "declaration"),
+            targetFiles: getTargetFiles,
+            dest: dest,
             singleFile: singleFile,
-            basePath: basePath,
-            target: target,
-            module: module,
+            basePath: prepareBasePath(source),
+            target: prepareTarget(source),
+            module: prepareModule(source),
             out: singleFile ? dest : undefined,
-            noLib: noLib,
-            noImplicitAny: noImplicitAny,
-            noResolve: noResolve,
-            ignoreError: ignoreError
+            noLib: boolOrUndef(source, "noLib"),
+            noImplicitAny: boolOrUndef(source, "noImplicitAny"),
+            noResolve: boolOrUndef(source, "noResolve"),
+            ignoreError: boolOrUndef(source, "ignoreError"),
+            gWatch: prepareWatch(source, getTargetFiles())
         };
     }
 }
