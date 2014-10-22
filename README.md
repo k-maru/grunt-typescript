@@ -86,29 +86,32 @@ Skip resolution and preprocessing.
 
 ##Original Options
 
-###newLine `string`
-Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.
+###~~newLine `string`~~
+~~Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.~~
 
-###indentStep `number`
-Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.
+###~~indentStep `number`~~
+~~Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.~~
 
-###useTabIndent `boolean`
-Specify tab indent for code generation: false (default) or true. This options is experimental.
+###~~useTabIndent `boolean`~~
+~~Specify tab indent for code generation: false (default) or true. This options is experimental.~~
 
 ###ignoreError `boolean`
 If the compiler can create a file, the task ignores the error.
 Default value is false.
 
-###disallowAsi `boolean`
-Do not allow auto semicolon insertion. This options is experimental.
+###~~disallowAsi `boolean`~~
+~~Do not allow auto semicolon insertion. This options is experimental.~~
 
 ###basePath `string`
 Path component to cut off when mapping the source files to dest files.
 
-###watch `string` or `boolean` or `object`
-Watch .ts files.
-It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.
+###~~watch `string` or `boolean` or `object`~~
+~~Watch .ts files.~~
+~~It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.~~
 
+I'll be back.
+
+<!--
 Specify the directory where you want to monitor in the options.
 
     grunt.initConfig({
@@ -158,5 +161,6 @@ For expansion of the future, You can also be specified 'object'.
         },
         ...
     });
+-->
 
 ※I'm sorry for poor English

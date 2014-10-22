@@ -117,6 +117,12 @@ var GruntTs;
     }
     function createGruntOptions(source, grunt, gruntFile) {
         var removeComments = prepareRemoveComments(source), sourceMap = GruntTs.util.isUndef(source.sourceMap) ? undefined : !!source.sourceMap, dest = ts.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js", basePath = prepareBasePath(source), target = prepareTarget(source), module = prepareModule(source), noLib = GruntTs.util.isUndef(source.noLib) ? undefined : !!source.noLib, noImplicitAny = GruntTs.util.isUndef(source.noImplicitAny) ? undefined : !!source.noImplicitAny, noResolve = GruntTs.util.isUndef(source.noResolve) ? undefined : !!source.noResolve, ignoreError = GruntTs.util.isUndef(source.ignoreError) ? undefined : !!source.ignoreError;
+        if (source.watch) {
+            GruntTs.util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+        }
+        if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
+            GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' option is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
+        }
         return {
             removeComments: removeComments,
             sourceMap: sourceMap,

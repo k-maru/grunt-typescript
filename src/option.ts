@@ -83,7 +83,14 @@ module GruntTs {
             noLib:boolean = util.isUndef(source.noLib) ? undefined : !!source.noLib,
             noImplicitAny:boolean = util.isUndef(source.noImplicitAny) ? undefined : !!source.noImplicitAny,
             noResolve:boolean = util.isUndef(source.noResolve) ? undefined : !!source.noResolve,
-            ignoreError: boolean = util.isUndef(source.ignoreError) ? undefined : !!source.ignoreError
+            ignoreError: boolean = util.isUndef(source.ignoreError) ? undefined : !!source.ignoreError;
+
+        if(source.watch){
+            util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
+        }
+        if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
+            util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
+        }
 
         return {
             removeComments: removeComments,
