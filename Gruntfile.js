@@ -240,10 +240,5 @@ module.exports = function(grunt){
 
     grunt.registerTask("test", getTestTsTasks());
 
-    grunt.registerTask("test2", "test2", function(){
-
-        var done = this.async();
-        
-
-    });
+    grunt.registerTask("setup", ["clean", "egen"]);
 };
