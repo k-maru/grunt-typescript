@@ -121,7 +121,7 @@ var GruntTs;
             GruntTs.util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
         }
         if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
-            GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' option is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
+            GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
         return {
             removeComments: removeComments,
