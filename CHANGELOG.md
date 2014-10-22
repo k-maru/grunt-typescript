@@ -1,5 +1,11 @@
 #Released
 
+## 0.4.0
+* All rewrite
+  全部書き直しを実施
+* Support TypeScript version 1.1.0-1
+  TypeScript の ver 1.1.0-1 で動作するように対応
+
 ## 0.3.7
 * Added support to include the files that fail to file the next target of the compilation failure.
   watchのコンパイルが失敗した時に、次回のコンパイル対象に含めるように対応
