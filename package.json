@@ -26,12 +26,12 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
+    "q": "~1.0.0",
+    "chokidar": "~0.8.1"
   },
   "peerDependencies": {
     "grunt": "~0.4.2",
-    "typescript": "1.1.0-1",
-    "q": "~1.0.0",
-    "chokidar": "~0.8.1"
+    "typescript": "1.1.0-1"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
