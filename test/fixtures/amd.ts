@@ -3,5 +3,3 @@ export module Foo {
         return "foobar!";
     }
 }
-
-

@@ -145,17 +145,16 @@ var GruntTs;
                 }
                 return prev;
             }, undefined);
-            //if(result){
-            //    result = ts.normalizePath(result + ((result.charAt(result.length - 1) === "/") ? "" : "/") + "**/*.ts");
-            //}
-            return result;
+            if (result) {
+                return [result];
+            }
         };
         if (!val) {
             return undefined;
         }
-        if (GruntTs.util.isStr(val)) {
+        if (GruntTs.util.isStr(val) || GruntTs.util.isArray(val)) {
             return {
-                path: (val + ""),
+                path: GruntTs.util.isStr(val) ? [val] : val,
                 after: [],
                 before: [],
                 atBegin: false
@@ -300,7 +299,7 @@ var GruntTs;
 ///<reference path="./util.ts" />
 var GruntTs;
 (function (GruntTs) {
-    var _path = require("path");
+    var _path = require("path"), _fs = require("fs");
     function createWatcher(watchPaths, callback) {
         var chokidar = require("chokidar"), watcher, timeoutId, callbacking = false, events = {};
         function start() {
@@ -322,7 +321,20 @@ var GruntTs;
             if (_path.extname(path) !== ".ts") {
                 return;
             }
-            events[path] = stats.mtime.getTime();
+            path = ts.normalizePath(path);
+            if (stats && stats.mtime) {
+                events[path] = {
+                    mtime: stats.mtime.getTime(),
+                    ev: eventName
+                };
+            }
+            else {
+                events[path] = {
+                    mtime: _fs.statSync(path).mtime.getTime(),
+                    ev: eventName
+                };
+            }
+            GruntTs.util.write(eventName.cyan + " " + path);
             executeCallback();
         }
         function clone(value) {
@@ -424,13 +436,24 @@ var GruntTs;
     function createCompilerHost(binPath, options, io) {
         var platform = _os.platform(), 
         // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
-        useCaseSensitiveFileNames = platform !== "win32" && platform !== "win64" && platform !== "darwin", currentDirectory, outputFiles = [];
+        useCaseSensitiveFileNames = platform !== "win32" && platform !== "win64" && platform !== "darwin", currentDirectory, outputFiles = [], sourceFileCache = {}, newSourceFiles = {};
         function getCanonicalFileName(fileName) {
             // if underlying system can distinguish between two files whose names differs only in cases then file name already in canonical form.
             // otherwise use toLowerCase as a canonical form.
             return useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
         }
+        function createSourceFile(fileName, text, languageVersion, version) {
+            if (text !== undefined) {
+                var result = ts.createSourceFile(fileName, text, languageVersion, "0");
+                result.mtime = _fs.statSync(fileName).mtime.getTime();
+                return result;
+            }
+        }
         function getSourceFile(fileName, languageVersion, onError) {
+            fileName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            if (fileName in sourceFileCache) {
+                return sourceFileCache[fileName];
+            }
             try {
                 var text = io.readFile(fileName, options.charset);
             }
@@ -440,9 +463,20 @@ var GruntTs;
                 }
                 text = "";
             }
-            return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, "0") : undefined;
+            var result = createSourceFile(fileName, text, languageVersion, "0"); //text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, /*version:*/ "0") : undefined;
+            if (result) {
+                sourceFileCache[fileName] = result;
+                newSourceFiles[fileName] = result;
+            }
+            return result;
         }
         function writeFile(fileName, data, writeByteOrderMark, onError) {
+            if (!options.singleFile) {
+                var tsFile = fileName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
+                if (!(tsFile in newSourceFiles)) {
+                    return;
+                }
+            }
             //出力先ディレクトリのパスに変換
             var newFileName = prepareOutputDir(fileName, options, io);
             //map ファイルの参照先パスを変換
@@ -481,6 +515,16 @@ var GruntTs;
                 GruntTs.util.write(pluralizeFile(outputFiles.length)["cyan"] + " created. " + resultMessage);
             }
         }
+        function reset(fileNames) {
+            var targets = fileNames || [];
+            targets.forEach(function (f) {
+                if (f in sourceFileCache) {
+                    delete sourceFileCache[f];
+                }
+            });
+            outputFiles.length = 0;
+            newSourceFiles = {};
+        }
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: function () {
@@ -491,7 +535,8 @@ var GruntTs;
             useCaseSensitiveFileNames: function () { return useCaseSensitiveFileNames; },
             getCanonicalFileName: getCanonicalFileName,
             getNewLine: function () { return _os.EOL; },
-            writeResult: writeResult
+            writeResult: writeResult,
+            reset: reset
         };
     }
     GruntTs.createCompilerHost = createCompilerHost;
@@ -524,24 +569,37 @@ var GruntTs;
     }
     GruntTs.execute = execute;
     function watch(grunt, options, host) {
-        var watchOpt = options.gWatch, watchPath = watchOpt.path, targetPaths = {}, watcher = GruntTs.createWatcher([watchPath], function (events, done) {
-            startCompile().finally(function () {
+        var watchOpt = options.gWatch, watchPath = watchOpt.path, targetPaths = {}, watcher = GruntTs.createWatcher(watchPath, function (files, done) {
+            startCompile(Object.keys(files)).finally(function () {
                 done();
             });
         }), startCompile = function (files) {
             return runTask(grunt, watchOpt.before).then(function () {
-                compile(options, host);
+                recompile(options, host, files);
                 return runTask(grunt, watchOpt.after);
+            }).then(function () {
+                writeWatching(watchPath);
             });
         };
         if (watchOpt.atBegin) {
             startCompile().finally(function () {
+                writeWatching(watchPath);
                 watcher.start();
             });
         }
         else {
+            writeWatching(watchPath);
             watcher.start();
         }
+    }
+    function writeWatching(watchPath) {
+        GruntTs.util.write("");
+        GruntTs.util.write("Watching... " + watchPath);
+    }
+    function recompile(options, host, updateFiles) {
+        if (updateFiles === void 0) { updateFiles = []; }
+        host.reset(updateFiles);
+        compile(options, host);
     }
     function compile(options, host) {
         var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();

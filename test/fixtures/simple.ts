@@ -1,7 +1,6 @@
 module Simple1 {
     export function main() {
-        return "hello simple1";
+        return "hello simple 1";
     }
 }
 Simple1.main();
-

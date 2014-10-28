@@ -17,6 +17,11 @@ module GruntTs{
 
     export interface GruntHost extends ts.CompilerHost {
         writeResult(ms: number): void;
+        reset(fileNames: string[]): void;
+    }
+
+    interface GruntSourceFile extends ts.SourceFile{
+        mtime: number;
     }
 
     function directoryExists(io: GruntIO, directoryPath: string): boolean {
@@ -82,7 +87,9 @@ module GruntTs{
             // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
             useCaseSensitiveFileNames: boolean = platform !== "win32" && platform !== "win64" && platform !== "darwin",
             currentDirectory: string,
-            outputFiles: string[] = [];
+            outputFiles: string[] = [],
+            sourceFileCache: {[key: string]: GruntSourceFile} = {},
+            newSourceFiles: {[key: string]: GruntSourceFile} = {};
 
         function getCanonicalFileName(fileName: string): string {
             // if underlying system can distinguish between two files whose names differs only in cases then file name already in canonical form.
@@ -90,7 +97,20 @@ module GruntTs{
             return useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
         }
 
+        function createSourceFile(fileName: string, text: string, languageVersion: ts.ScriptTarget, version: string): GruntSourceFile{
+            if(text !== undefined){
+                var result = <GruntSourceFile>ts.createSourceFile(fileName, text, languageVersion, /*version:*/ "0");
+                result.mtime = _fs.statSync(fileName).mtime.getTime();
+                return result;
+            }
+        }
+
         function getSourceFile(fileName: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
+            fileName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+
+            if(fileName in sourceFileCache){
+                return sourceFileCache[fileName];
+            }
             try {
                 var text = io.readFile(fileName, options.charset);
             }
@@ -100,10 +120,22 @@ module GruntTs{
                 }
                 text = "";
             }
-            return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, /*version:*/ "0") : undefined;
+            var result = createSourceFile(fileName, text, languageVersion, /*version:*/ "0");  //text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, /*version:*/ "0") : undefined;
+            if(result){
+                sourceFileCache[fileName] = result;
+                newSourceFiles[fileName] = result;
+            }
+            return result;
         }
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
+
+            if(!options.singleFile){
+                var tsFile = fileName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
+                if(!(tsFile in newSourceFiles)){
+                    return;
+                }
+            }
 
             //出力先ディレクトリのパスに変換
             var newFileName = prepareOutputDir(fileName, options, io);
@@ -148,6 +180,19 @@ module GruntTs{
             }
         }
 
+        function reset(fileNames: string[]): void{
+            var targets = fileNames || [];
+
+            targets.forEach((f) => {
+               if(f in sourceFileCache){
+                   delete sourceFileCache[f];
+               }
+            });
+
+            outputFiles.length = 0;
+            newSourceFiles = {};
+        }
+
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: () => {
@@ -158,7 +203,8 @@ module GruntTs{
             useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
             getCanonicalFileName: getCanonicalFileName,
             getNewLine: () => _os.EOL,
-            writeResult: writeResult
+            writeResult: writeResult,
+            reset: reset
         };
 
 

@@ -9,7 +9,7 @@ module GruntTs {
         _fs: any = require("fs");
 
     export interface GruntWatchOptions{
-        path: string;
+        path: string[];
         after: string[];
         before: string[];
         atBegin: boolean;
@@ -97,7 +97,7 @@ module GruntTs {
                     return ts.normalizePath(_path.resolve(_path.dirname(file)));
                 });
             },
-            extractPath = (files: string[]): string => {
+            extractPath = (files: string[]): string[] => {
                 var dirNames: string[] = getDirNames(files),
                     result = dirNames.reduce<string>((prev, curr) => {
                         if(!prev){
@@ -115,18 +115,17 @@ module GruntTs {
                         }
                         return prev;
                     }, undefined);
-                //if(result){
-                //    result = ts.normalizePath(result + ((result.charAt(result.length - 1) === "/") ? "" : "/") + "**/*.ts");
-                //}
-                return result;
+                if(result){
+                    return [result];
+                }
             };
 
         if(!val){
             return undefined;
         }
-        if(util.isStr(val)){
+        if(util.isStr(val) || util.isArray(val)){
             return {
-                path: (val + ""),
+                path: util.isStr(val) ? [<string>val] : <string[]>val,
                 after: [],
                 before: [],
                 atBegin: false

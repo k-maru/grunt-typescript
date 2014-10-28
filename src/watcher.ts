@@ -3,19 +3,20 @@
 
 module GruntTs{
 
-    var _path = require("path");
+    var _path = require("path"),
+        _fs: any = require("fs");
 
     export interface Watcher{
         start() : void
     }
 
-    export function createWatcher(watchPaths: string[], callback: (targets: {[key: string]: number}, done: () => void) => void): Watcher{
+    export function createWatcher(watchPaths: string[], callback: (targets: {[key: string]: {mtime: number; ev: string}}, done: () => void) => void): Watcher{
 
         var chokidar: any = require("chokidar"),
             watcher: any,
             timeoutId: any,
             callbacking = false,
-            events: {[key: string]: number} = {};
+            events: {[key: string]:  {mtime: number; ev: string}} = {};
 
         function start() : void{
             if(watcher){
@@ -38,12 +39,27 @@ module GruntTs{
             if(_path.extname(path) !== ".ts"){
                 return;
             }
-            events[path] = stats.mtime.getTime();
+            path = ts.normalizePath(path);
+
+            if(stats && stats.mtime){
+                events[path] = {
+                    mtime: stats.mtime.getTime(),
+                    ev: eventName
+                };
+            }else{
+                events[path] = {
+                    mtime: _fs.statSync(path).mtime.getTime(),
+                    ev: eventName
+                };
+            }
+
+            util.write(eventName.cyan + " " + path);
+
             executeCallback();
         }
 
-        function clone(value: {[key: string]: number}): {[key: string]: number}{
-            var result: {[key: string]: number} = {};
+        function clone(value: {[key: string]:  {mtime: number; ev: string}}): {[key: string]:  {mtime: number; ev: string}}{
+            var result: {[key: string]:  {mtime: number; ev: string}} = {};
             Object.keys(value).forEach((item) => {
                result[item] = value[item];
             });

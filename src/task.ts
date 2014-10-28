@@ -32,25 +32,39 @@ module GruntTs{
         var watchOpt = options.gWatch,
             watchPath = watchOpt.path,
             targetPaths: {[key:string]: string;} = {},
-            watcher = createWatcher([watchPath], (events, done) => {
-                startCompile().finally(() => {
+            watcher = createWatcher(watchPath, (files, done) => {
+                startCompile(Object.keys(files)).finally(() => {
                     done();
                 });
             }),
             startCompile = (files?: string[]) => {
                 return runTask(grunt, watchOpt.before).then(() => {
-                    compile(options, host);
+                    recompile(options, host, files);
                     return runTask(grunt, watchOpt.after);
+                }).then(function(){
+                    writeWatching(watchPath);
                 });
             };
 
         if(watchOpt.atBegin){
             startCompile().finally(() => {
+                writeWatching(watchPath);
                 watcher.start();
             });
         }else{
+            writeWatching(watchPath);
             watcher.start();
         }
+    }
+
+    function writeWatching(watchPath: string[]): void {
+        util.write("");
+        util.write("Watching... " + watchPath);
+    }
+
+    function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []){
+        host.reset(updateFiles);
+        compile(options, host);
     }
 
     function compile(options: GruntOptions, host: GruntHost): boolean{
