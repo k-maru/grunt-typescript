@@ -450,9 +450,9 @@ var GruntTs;
             }
         }
         function getSourceFile(fileName, languageVersion, onError) {
-            fileName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
-            if (fileName in sourceFileCache) {
-                return sourceFileCache[fileName];
+            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            if (fullName in sourceFileCache) {
+                return sourceFileCache[fullName];
             }
             try {
                 var text = io.readFile(fileName, options.charset);
@@ -465,16 +465,20 @@ var GruntTs;
             }
             var result = createSourceFile(fileName, text, languageVersion, "0"); //text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, /*version:*/ "0") : undefined;
             if (result) {
-                sourceFileCache[fileName] = result;
-                newSourceFiles[fileName] = result;
+                sourceFileCache[fullName] = result;
+                newSourceFiles[fullName] = result;
             }
             return result;
         }
         function writeFile(fileName, data, writeByteOrderMark, onError) {
+            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
             if (!options.singleFile) {
-                var tsFile = fileName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
+                var tsFile = fullName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
                 if (!(tsFile in newSourceFiles)) {
-                    return;
+                    tsFile = fullName.replace(/\.d\.ts$/, ".ts");
+                    if (!(tsFile in newSourceFiles)) {
+                        return;
+                    }
                 }
             }
             //出力先ディレクトリのパスに変換
