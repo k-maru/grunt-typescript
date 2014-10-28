@@ -5,6 +5,7 @@
 
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
+///<reference path="./watcher.ts" />
 
 module GruntTs{
 

@@ -1,7 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/tsc.d.ts" />
-
 ///<reference path="./util.ts" />
 
 module GruntTs {
@@ -83,6 +82,7 @@ module GruntTs {
     function prepareWatch(opt: any, files: string[]): GruntWatchOptions{
         var after: string[] = [],
             before: string[] = [],
+            val: any = opt.watch,
             getDirNames = (files: string[]): string[] => {
                 return files.map<string>(file => {
                     if(_fs.existsSync(file)){
@@ -98,37 +98,41 @@ module GruntTs {
                 });
             },
             extractPath = (files: string[]): string => {
-                var dirNames: string[] = getDirNames(files);
-                return dirNames.reduce<string>((prev, curr) => {
-                    if(!prev){
-                        return curr;
-                    }
-                    var left =  ts.normalizePath(_path.relative(prev, curr)),
-                        right = ts.normalizePath(_path.relative(curr, prev)),
-                        match = left.match(/^(\.\.(\/)?)+/);
-                    if(match){
-                        return ts.normalizePath(_path.resolve(prev, match[0]));
-                    }
-                    match = right.match(/^(\.\.\/)+/);
-                    if(match){
-                        return ts.normalizePath( _path.resolve(curr, match[0]));
-                    }
-                    return prev;
-                }, undefined);
+                var dirNames: string[] = getDirNames(files),
+                    result = dirNames.reduce<string>((prev, curr) => {
+                        if(!prev){
+                            return curr;
+                        }
+                        var left =  ts.normalizePath(_path.relative(prev, curr)),
+                            right = ts.normalizePath(_path.relative(curr, prev)),
+                            match = left.match(/^(\.\.(\/)?)+/);
+                        if(match){
+                            return ts.normalizePath(_path.resolve(prev, match[0]));
+                        }
+                        match = right.match(/^(\.\.\/)+/);
+                        if(match){
+                            return ts.normalizePath( _path.resolve(curr, match[0]));
+                        }
+                        return prev;
+                    }, undefined);
+                //if(result){
+                //    result = ts.normalizePath(result + ((result.charAt(result.length - 1) === "/") ? "" : "/") + "**/*.ts");
+                //}
+                return result;
             };
 
-        if(!opt){
+        if(!val){
             return undefined;
         }
-        if(util.isStr(opt)){
+        if(util.isStr(val)){
             return {
-                path: (opt + ""),
+                path: (val + ""),
                 after: [],
                 before: [],
                 atBegin: false
             };
         }
-        if(util.isBool(opt) && !!opt){
+        if(util.isBool(val) && !!val){
             return {
                 path: extractPath(files),
                 after: [],
@@ -136,29 +140,29 @@ module GruntTs {
                 atBegin: false
             }
         }
-        if(!opt.path){
-            opt.path = extractPath(files);
-            if(!opt.path){
+        if(!val.path){
+            val.path = extractPath(files);
+            if(!val.path){
                 util.writeWarn("Can't auto detect watch directory. Please place one or more files or set the path option.");
                 return undefined;
             }
         }
-        if(opt.after && !util.isArray(opt.after)){
-            after.push(<string>opt.after);
-        }else if(util.isArray(opt.after)){
-            after = opt.after;
+        if(val.after && !util.isArray(val.after)){
+            after.push(<string>val.after);
+        }else if(util.isArray(val.after)){
+            after = val.after;
         }
 
-        if(opt.before && !util.isArray(opt.before)){
-            before.push(<string>opt.before);
-        }else if(util.isArray(opt.before)){
-            before = opt.before;
+        if(val.before && !util.isArray(val.before)){
+            before.push(<string>val.before);
+        }else if(util.isArray(val.before)){
+            before = val.before;
         }
         return {
-            path: opt.path,
+            path: val.path,
             after:  after,
             before: before,
-            atBegin: !!opt.atBegin
+            atBegin: !!val.atBegin
         };
     }
 

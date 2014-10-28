@@ -3,5 +3,5 @@ module Simple1 {
         return "hello simple1";
     }
 }
-
 Simple1.main();
+

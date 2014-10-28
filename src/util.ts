@@ -22,7 +22,7 @@ module GruntTs.util{
 
     export function asyncEach<T>(items: T[], callback: (item: T, index: number, next: () => void) => void): Q.Promise<any>{
 
-        return Q.promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
+        return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
             var length = items.length,
                 exec = function(i: number){
                     if(length <= i){

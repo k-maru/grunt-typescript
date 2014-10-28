@@ -2,28 +2,55 @@
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="../typings/typescript/tsc.d.ts" />
-
 ///<reference path="./option.ts" />
 ///<reference path="./host.ts" />
 ///<reference path="./io.ts" />
+///<reference path="./watcher.ts" />
 
 module GruntTs{
 
-    var Q = require("q");
+    var Q = require("q"),
+        _path = require("path");
 
-    export function execute(options: GruntOptions, host: GruntHost): Q.Promise<any>{
+    export function execute(grunt:IGrunt, options: GruntOptions, host: GruntHost): Q.Promise<any>{
 
         return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
 
-
-            if(compile(options, host)){
-                resolve(true);
+            if(options.gWatch){
+                watch(grunt, options, host);
             }else{
-                reject(false);
+                if(compile(options, host)){
+                    resolve(true);
+                }else{
+                    reject(false);
+                }
             }
-
-
         });
+    }
+
+    function watch(grunt:IGrunt, options: GruntOptions, host: GruntHost): void{
+        var watchOpt = options.gWatch,
+            watchPath = watchOpt.path,
+            targetPaths: {[key:string]: string;} = {},
+            watcher = createWatcher([watchPath], (events, done) => {
+                startCompile().finally(() => {
+                    done();
+                });
+            }),
+            startCompile = (files?: string[]) => {
+                return runTask(grunt, watchOpt.before).then(() => {
+                    compile(options, host);
+                    return runTask(grunt, watchOpt.after);
+                });
+            };
+
+        if(watchOpt.atBegin){
+            startCompile().finally(() => {
+                watcher.start();
+            });
+        }else{
+            watcher.start();
+        }
     }
 
     function compile(options: GruntOptions, host: GruntHost): boolean{
@@ -73,4 +100,17 @@ module GruntTs{
         return !!diags.length;
     }
 
+    function runTask(grunt: IGrunt, tasks: string[]): Q.Promise<any>{
+
+        return util.asyncEach<string>(tasks, (task: string, index: number, next: ()=> void) => {
+            grunt.util.spawn({
+                grunt: true,
+                args: [task].concat(grunt.option.flags()),
+                opts: { stdio: 'inherit' }
+            }, function (err, result, code) {
+                next();
+            });
+        });
+
+    }
 }

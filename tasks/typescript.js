@@ -21,7 +21,7 @@ var GruntTs;
         }
         util.isUndef = isUndef;
         function asyncEach(items, callback) {
-            return Q.promise(function (resolve, reject, notify) {
+            return Q.Promise(function (resolve, reject, notify) {
                 var length = items.length, exec = function (i) {
                     if (length <= i) {
                         resolve(true);
@@ -116,7 +116,7 @@ var GruntTs;
         return result;
     }
     function prepareWatch(opt, files) {
-        var after = [], before = [], getDirNames = function (files) {
+        var after = [], before = [], val = opt.watch, getDirNames = function (files) {
             return files.map(function (file) {
                 if (_fs.existsSync(file)) {
                     if (_fs.statSync(file).isDirectory()) {
@@ -131,8 +131,7 @@ var GruntTs;
                 return ts.normalizePath(_path.resolve(_path.dirname(file)));
             });
         }, extractPath = function (files) {
-            var dirNames = getDirNames(files);
-            return dirNames.reduce(function (prev, curr) {
+            var dirNames = getDirNames(files), result = dirNames.reduce(function (prev, curr) {
                 if (!prev) {
                     return curr;
                 }
@@ -146,19 +145,23 @@ var GruntTs;
                 }
                 return prev;
             }, undefined);
+            //if(result){
+            //    result = ts.normalizePath(result + ((result.charAt(result.length - 1) === "/") ? "" : "/") + "**/*.ts");
+            //}
+            return result;
         };
-        if (!opt) {
+        if (!val) {
             return undefined;
         }
-        if (GruntTs.util.isStr(opt)) {
+        if (GruntTs.util.isStr(val)) {
             return {
-                path: (opt + ""),
+                path: (val + ""),
                 after: [],
                 before: [],
                 atBegin: false
             };
         }
-        if (GruntTs.util.isBool(opt) && !!opt) {
+        if (GruntTs.util.isBool(val) && !!val) {
             return {
                 path: extractPath(files),
                 after: [],
@@ -166,30 +169,30 @@ var GruntTs;
                 atBegin: false
             };
         }
-        if (!opt.path) {
-            opt.path = extractPath(files);
-            if (!opt.path) {
+        if (!val.path) {
+            val.path = extractPath(files);
+            if (!val.path) {
                 GruntTs.util.writeWarn("Can't auto detect watch directory. Please place one or more files or set the path option.");
                 return undefined;
             }
         }
-        if (opt.after && !GruntTs.util.isArray(opt.after)) {
-            after.push(opt.after);
+        if (val.after && !GruntTs.util.isArray(val.after)) {
+            after.push(val.after);
         }
-        else if (GruntTs.util.isArray(opt.after)) {
-            after = opt.after;
+        else if (GruntTs.util.isArray(val.after)) {
+            after = val.after;
         }
-        if (opt.before && !GruntTs.util.isArray(opt.before)) {
-            before.push(opt.before);
+        if (val.before && !GruntTs.util.isArray(val.before)) {
+            before.push(val.before);
         }
-        else if (GruntTs.util.isArray(opt.before)) {
-            before = opt.before;
+        else if (GruntTs.util.isArray(val.before)) {
+            before = val.before;
         }
         return {
-            path: opt.path,
+            path: val.path,
             after: after,
             before: before,
-            atBegin: !!opt.atBegin
+            atBegin: !!val.atBegin
         };
     }
     function createGruntOptions(source, grunt, gruntFile) {
@@ -293,12 +296,80 @@ var GruntTs;
     }
     GruntTs.createIO = createIO;
 })(GruntTs || (GruntTs = {}));
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="./util.ts" />
+var GruntTs;
+(function (GruntTs) {
+    var _path = require("path");
+    function createWatcher(watchPaths, callback) {
+        var chokidar = require("chokidar"), watcher, timeoutId, callbacking = false, events = {};
+        function start() {
+            if (watcher) {
+                return;
+            }
+            watcher = chokidar.watch(watchPaths, { ignoreInitial: true, persistent: true });
+            watcher.on("add", function (path, stats) {
+                add(path, "add", stats);
+            }).on("change", function (path, stats) {
+                add(path, "change", stats);
+            }).on("unlink", function (path, stats) {
+                add(path, "unlink", stats);
+            }).on("error", function (error) {
+                GruntTs.util.writeError(error);
+            });
+        }
+        function add(path, eventName, stats) {
+            if (_path.extname(path) !== ".ts") {
+                return;
+            }
+            events[path] = stats.mtime.getTime();
+            executeCallback();
+        }
+        function clone(value) {
+            var result = {};
+            Object.keys(value).forEach(function (item) {
+                result[item] = value[item];
+            });
+            return result;
+        }
+        function executeCallback() {
+            if (!Object.keys(events).length) {
+                return;
+            }
+            if (callbacking) {
+                return;
+            }
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            timeoutId = setTimeout(function () {
+                callbacking = true;
+                var value = clone(events);
+                events = {};
+                try {
+                    callback(value, function () {
+                        callbacking = false;
+                        executeCallback();
+                    });
+                }
+                catch (e) {
+                    callbacking = false;
+                }
+            }, 1000);
+        }
+        return {
+            start: start
+        };
+    }
+    GruntTs.createWatcher = createWatcher;
+})(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
 ///<reference path="../typings/typescript/tsc.d.ts" />
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
+///<reference path="./watcher.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _fs = require("fs"), _os = require("os"), _path = require("path"), existingDirectories = {};
@@ -432,20 +503,46 @@ var GruntTs;
 ///<reference path="./option.ts" />
 ///<reference path="./host.ts" />
 ///<reference path="./io.ts" />
+///<reference path="./watcher.ts" />
 var GruntTs;
 (function (GruntTs) {
-    var Q = require("q");
-    function execute(options, host) {
+    var Q = require("q"), _path = require("path");
+    function execute(grunt, options, host) {
         return Q.Promise(function (resolve, reject, notify) {
-            if (compile(options, host)) {
-                resolve(true);
+            if (options.gWatch) {
+                watch(grunt, options, host);
             }
             else {
-                reject(false);
+                if (compile(options, host)) {
+                    resolve(true);
+                }
+                else {
+                    reject(false);
+                }
             }
         });
     }
     GruntTs.execute = execute;
+    function watch(grunt, options, host) {
+        var watchOpt = options.gWatch, watchPath = watchOpt.path, targetPaths = {}, watcher = GruntTs.createWatcher([watchPath], function (events, done) {
+            startCompile().finally(function () {
+                done();
+            });
+        }), startCompile = function (files) {
+            return runTask(grunt, watchOpt.before).then(function () {
+                compile(options, host);
+                return runTask(grunt, watchOpt.after);
+            });
+        };
+        if (watchOpt.atBegin) {
+            startCompile().finally(function () {
+                watcher.start();
+            });
+        }
+        else {
+            watcher.start();
+        }
+    }
     function compile(options, host) {
         var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
@@ -485,6 +582,17 @@ var GruntTs;
         });
         return !!diags.length;
     }
+    function runTask(grunt, tasks) {
+        return GruntTs.util.asyncEach(tasks, function (task, index, next) {
+            grunt.util.spawn({
+                grunt: true,
+                args: [task].concat(grunt.option.flags()),
+                opts: { stdio: 'inherit' }
+            }, function (err, result, code) {
+                next();
+            });
+        });
+    }
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
@@ -508,11 +616,11 @@ module.exports = function (grunt) {
         _vm.runInThisContext(code, typeScriptPath);
         return typeScriptBinPath;
     }
-    grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
-        var self = this, promises = [], done = self.async(), binPath = getTsBinPathWithLoad();
+    grunt.registerMultiTask('typescript', function () {
+        var self = this, done = self.async(), promises, binPath = getTsBinPathWithLoad();
         promises = self.files.map(function (gruntFile) {
             var opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile), host = GruntTs.createCompilerHost(binPath, opt, GruntTs.createIO(grunt));
-            return GruntTs.execute(opt, host);
+            return GruntTs.execute(grunt, opt, host);
         });
         Q.all(promises).then(function () {
             done();

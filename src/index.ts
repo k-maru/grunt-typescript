@@ -37,25 +37,23 @@ module.exports = function(grunt: IGrunt){
         return typeScriptBinPath;
     }
 
-    grunt.registerMultiTask('typescript', 'Compile TypeScript files', function () {
+    grunt.registerMultiTask('typescript', function () {
 
         var self: grunt.task.IMultiTask<{src: string;}> = this,
-            promises: Q.Promise<any>[] = [],
             done = self.async(),
+            promises: Q.Promise<any>[],
             binPath = getTsBinPathWithLoad();
 
         promises = self.files.map(function(gruntFile: grunt.file.IFileMap){
             var opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile),
                 host = GruntTs.createCompilerHost(binPath, opt, GruntTs.createIO(grunt));
-            return GruntTs.execute(opt, host);
+            return GruntTs.execute(grunt, opt, host);
         });
-
         Q.all(promises).then(function(){
             done();
         }, function(){
             done(false);
         });
-
     });
 
 };

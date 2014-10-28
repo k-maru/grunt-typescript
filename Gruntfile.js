@@ -80,35 +80,29 @@ module.exports = function(grunt){
                 options: {
                     removeComments: false
                 }
-            }
-            //"errorTypecheck": {
-            //    src:"test/fixtures/error-typecheck.ts",
-            //    options: {
-            //        ignoreError: false
-            //    }
-            //},
-            //"errorSyntax": {
-            //    src:"test/fixtures/error-syntax.ts",
-            //    options: {
-            //        ignoreError: true
-            //    }
-            //
-            //},
-            //"comment comment opt": {
-            //    src:"test/fixtures/comments.ts",
-            //    dest: "test/temp/comment/comment_comment.js",
-            //    options: {
-            //        comment: true
-            //    }
-            //}
-            //nomodule: {
-            //    //TODO: 出力を確認
-            //    src:"test/fixtures/nomodule.ts"
-            //}
+            },
+            watch: grunt.option("watch") ? {
+                src: "test/fixtures/simple.ts",
+                options: {
+                    watch: true
+                }
+            } : {},
+            "errorTypecheck": grunt.option("error") ? {
+                src:"test/fixtures/error-typecheck.ts",
+                options: {
+                    ignoreError: false
+                }
+            } : {},
+            "errorSyntax": grunt.option("error") ? {
+                src:"test/fixtures/error-syntax.ts",
+                options: {
+                    ignoreError: true
+                }
+            } : {}
 
         },
         nodeunit:{
-            tests:["test/test.js"]
+            tests:["test/test.js", "test/errorTest.js"]
         },
         clean: {
             test: [
@@ -155,9 +149,6 @@ module.exports = function(grunt){
             if(!tsConfig.hasOwnProperty(p)){
                 continue;
             }
-            //if(p.substr(0,5) === "watch"){
-            //    continue;
-            //}
             results.push("typescript:" + p);
         }
         results.push("nodeunit");
@@ -177,8 +168,6 @@ module.exports = function(grunt){
                     grunt.log.writeln(title + "(" + (Date.now() - start) + "ms)" );
                 });
             }
-
-
 
         execTsc("Simple", "test/fixtures/simple.ts").then(function(){
             grunt.file.copy("test/fixtures/simple.js", "test/expected/simple.js");
