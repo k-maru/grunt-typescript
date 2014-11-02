@@ -100,8 +100,7 @@ module.exports = function(grunt){
                         before: ["watchBeforeTask"],
                         after: ["watchAfterTask"],
                         atBegin: true
-                    },
-                    debug: true
+                    }
                 }
             } : {},
             singleWatch: grunt.option("watch") ? {
@@ -112,8 +111,7 @@ module.exports = function(grunt){
                         before: ["watchBeforeTask"],
                         after: ["watchAfterTask"],
                         atBegin: true
-                    },
-                    debug: true
+                    }
                 }
             } : {},
             multiWatch: grunt.option("watch") ? {
@@ -121,8 +119,7 @@ module.exports = function(grunt){
                 options: {
                     watch: {
                         path:["test/watch/multi/target/target1","test/watch/multi/target/target2"]
-                    },
-                    debug: true
+                    }
                 }
             } : {}
 
