@@ -105,13 +105,11 @@ Default value is false.
 ###basePath `string`
 Path component to cut off when mapping the source files to dest files.
 
-###~~watch `string` or `boolean` or `object`~~
-~~Watch .ts files.~~
-~~It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.~~
+###watch `string` or `boolean` or `object`
+Watch .ts files.
+It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.
 
-I'll be back.
 
-<!--
 Specify the directory where you want to monitor in the options.
 
     grunt.initConfig({
@@ -120,7 +118,7 @@ Specify the directory where you want to monitor in the options.
           base: {
             src: ['path/to/typescript/files/**/*.ts'],
             options: {
-              watch: 'path/to/typescript/files'
+              watch: 'path/to/typescript/files' //or ['path/to/typescript/files1', 'path/to/typescript/files2']
             }
           }
         },
@@ -151,7 +149,7 @@ For expansion of the future, You can also be specified 'object'.
             src: ['path/to/typescript/files/**/*.ts'],
             options: {
               watch: {
-                path: 'path/to/typescript/files',
+                path: 'path/to/typescript/files', //or ['path/to/typescript/files1', 'path/to/typescript/files2']
                 before: ['beforetasks'],   //Set before tasks. eg: clean task
                 after: ['aftertasks']      //Set after tasks.  eg: minify task
                 atBegin: true              //Run tasks when watcher starts. default false
@@ -161,6 +159,5 @@ For expansion of the future, You can also be specified 'object'.
         },
         ...
     });
--->
 
 ※I'm sorry for poor English
