@@ -23,7 +23,7 @@ module GruntTs{
                 return;
             }
 
-            watcher = chokidar.watch(watchPaths, { ignoreInitial: true, persistent: true});
+            watcher = chokidar.watch(watchPaths, { ignoreInitial: true, persistent: true, ignorePermissionErrors: true});
             watcher.on("add", (path: string, stats: any) => {
                 add(path, "add", stats);
             }).on("change", (path: string, stats: any) => {
@@ -48,7 +48,7 @@ module GruntTs{
                 };
             }else{
                 events[path] = {
-                    mtime: _fs.statSync(path).mtime.getTime(),
+                    mtime: eventName === "unlink" ? 0 : _fs.statSync(path).mtime.getTime(),
                     ev: eventName
                 };
             }

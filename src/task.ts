@@ -14,6 +14,8 @@ module GruntTs{
 
     export function execute(grunt:IGrunt, options: GruntOptions, host: GruntHost): Q.Promise<any>{
 
+        host.debug(options, (value) => JSON.stringify(options));
+
         return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
 
             if(options.gWatch){
@@ -38,9 +40,9 @@ module GruntTs{
                 });
             }),
             startCompile = (files?: string[]) => {
-                return runTask(grunt, watchOpt.before).then(() => {
+                return runTask(grunt, host, watchOpt.before).then(() => {
                     recompile(options, host, files);
-                    return runTask(grunt, watchOpt.after);
+                    return runTask(grunt, host, watchOpt.after);
                 }).then(function(){
                     writeWatching(watchPath);
                 });
@@ -48,7 +50,6 @@ module GruntTs{
 
         if(watchOpt.atBegin){
             startCompile().finally(() => {
-                writeWatching(watchPath);
                 watcher.start();
             });
         }else{
@@ -63,6 +64,7 @@ module GruntTs{
     }
 
     function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []){
+        host.debug("rest host object");
         host.reset(updateFiles);
         compile(options, host);
     }
@@ -95,7 +97,6 @@ module GruntTs{
         return true;
     }
 
-
     function writeDiagnostics(diags: ts.Diagnostic[],isWarn: boolean = false): boolean{
         diags.forEach((d) => {
             var output = "";
@@ -114,17 +115,24 @@ module GruntTs{
         return !!diags.length;
     }
 
-    function runTask(grunt: IGrunt, tasks: string[]): Q.Promise<any>{
+    function runTask(grunt: IGrunt, host: GruntHost, tasks: string[]): Q.Promise<any> {
 
-        return util.asyncEach<string>(tasks, (task: string, index: number, next: ()=> void) => {
+        host.debug("run tasks");
+
+        return util.asyncEach<string>(tasks, (task:string, index:number, next:()=> void) => {
+
+            host.debug(task + " task start");
+
             grunt.util.spawn({
                 grunt: true,
                 args: [task].concat(grunt.option.flags()),
-                opts: { stdio: 'inherit' }
+                opts: {stdio: 'inherit'}
             }, function (err, result, code) {
+
+                host.debug(task + " task end");
+
                 next();
             });
         });
-
     }
 }

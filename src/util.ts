@@ -40,18 +40,22 @@ module GruntTs.util{
     }
 
     export function writeError(str: string): void{
-        console.log('>> '.red + str.trim().replace(/\n/g, '\n>> '.red));
+        console.log(">> ".red + str.trim().replace(/\n/g, "\n>> ".red));
     }
 
     export function writeInfo(str: string): void{
-        console.log('>> '.cyan + str.trim().replace(/\n/g, '\n>> '.cyan));
+        console.log(">> ".cyan + str.trim().replace(/\n/g, "\n>> ".cyan));
     }
 
     export function writeWarn(str: string): void{
-        console.log('>> '.yellow + str.trim().replace(/\n/g, '\n>> '.cyan));
+        console.log(">> ".yellow + str.trim().replace(/\n/g, "\n>> ".yellow));
     }
 
     export function write(str: string): void{
         console.log(str);
+    }
+
+    export function writeDebug(str: string): void{
+        console.log(("-- " + str).grey);
     }
 }

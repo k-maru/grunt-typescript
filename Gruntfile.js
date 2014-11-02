@@ -81,12 +81,6 @@ module.exports = function(grunt){
                     removeComments: false
                 }
             },
-            watch: grunt.option("watch") ? {
-                src: "test/fixtures/simple.ts",
-                options: {
-                    watch: true
-                }
-            } : {},
             "errorTypecheck": grunt.option("error") ? {
                 src:"test/fixtures/error-typecheck.ts",
                 options: {
@@ -98,11 +92,44 @@ module.exports = function(grunt){
                 options: {
                     ignoreError: true
                 }
+            } : {},
+            simpleWatch: grunt.option("watch") ? {
+                src: "test/watch/simple/target/**/*.ts",
+                options: {
+                    watch: {
+                        before: ["watchBeforeTask"],
+                        after: ["watchAfterTask"],
+                        atBegin: true
+                    },
+                    debug: true
+                }
+            } : {},
+            singleWatch: grunt.option("watch") ? {
+                src: "test/watch/single/target/**/*.ts",
+                dest: "test/watch/single/target/result.js",
+                options: {
+                    watch: {
+                        before: ["watchBeforeTask"],
+                        after: ["watchAfterTask"],
+                        atBegin: true
+                    },
+                    debug: true
+                }
+            } : {},
+            multiWatch: grunt.option("watch") ? {
+                src: "test/watch/multi/target/**/*.ts",
+                options: {
+                    watch: {
+                        path:["test/watch/multi/target/target1","test/watch/multi/target/target2"]
+                    },
+                    debug: true
+                }
             } : {}
 
         },
         nodeunit:{
             tests:["test/test.js", "test/errorTest.js"]
+            //tests:["test/watchTest.js"]
         },
         clean: {
             test: [
@@ -226,6 +253,22 @@ module.exports = function(grunt){
             done(false);
         });
     });
+
+    grunt.registerTask("watchBeforeTask", function(){
+       var done = this.async();
+        setTimeout(function(){
+            console.log("before");
+            done(true);
+        },100);
+    });
+    grunt.registerTask("watchAfterTask", function(){
+        var done = this.async();
+        setTimeout(function(){
+            console.log("after");
+            done(true);
+        },100);
+    });
+
 
     grunt.registerTask("test", getTestTsTasks());
 

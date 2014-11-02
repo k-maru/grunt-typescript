@@ -22,6 +22,7 @@ module GruntTs {
         basePath: string;
         ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
+        debug: boolean;
     }
 
 
@@ -201,7 +202,8 @@ module GruntTs {
             noImplicitAny: boolOrUndef(source, "noImplicitAny"),
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
-            gWatch: prepareWatch(source, getTargetFiles())
+            gWatch: prepareWatch(source, getTargetFiles()),
+            debug: !!source.debug
         };
     }
 }
