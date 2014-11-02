@@ -474,7 +474,7 @@ var GruntTs;
                 sourceFileCache[fullName] = result;
                 newSourceFiles[fullName] = result;
             }
-            debugWrite("caching: " + fullName);
+            debugWrite("load with cache: " + fullName);
             return result;
         }
         function writeFile(fileName, data, writeByteOrderMark, onError) {
@@ -529,14 +529,18 @@ var GruntTs;
             }
         }
         function reset(fileNames) {
-            var targets = fileNames || [];
-            targets.forEach(function (f) {
-                var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
-                debugWrite("remove source file cache: " + fullName);
-                if (fullName in sourceFileCache) {
-                    delete sourceFileCache[fullName];
-                }
-            });
+            if (typeof fileNames === "undefined") {
+                sourceFileCache = {};
+            }
+            if (GruntTs.util.isArray(fileNames)) {
+                fileNames.forEach(function (f) {
+                    var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
+                    debugWrite("remove source file cache: " + fullName);
+                    if (fullName in sourceFileCache) {
+                        delete sourceFileCache[fullName];
+                    }
+                });
+            }
             outputFiles.length = 0;
             newSourceFiles = {};
         }
@@ -599,7 +603,10 @@ var GruntTs;
             });
         }), startCompile = function (files) {
             return runTask(grunt, host, watchOpt.before).then(function () {
-                recompile(options, host, files);
+                if (!recompile(options, host, files)) {
+                    //失敗だった場合はリセット
+                    host.reset(files);
+                }
                 return runTask(grunt, host, watchOpt.after);
             }).then(function () {
                 writeWatching(watchPath);
@@ -623,7 +630,7 @@ var GruntTs;
         if (updateFiles === void 0) { updateFiles = []; }
         host.debug("rest host object");
         host.reset(updateFiles);
-        compile(options, host);
+        return compile(options, host);
     }
     function compile(options, host) {
         var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();

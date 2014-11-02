@@ -193,16 +193,19 @@ module GruntTs{
         }
 
         function reset(fileNames: string[]): void{
-            var targets = fileNames || [];
+            if(typeof fileNames === "undefined"){
+                sourceFileCache = {};
+            }
+            if(util.isArray(fileNames)){
+                fileNames.forEach((f) => {
+                    var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
+                    debugWrite("remove source file cache: " + fullName);
 
-            targets.forEach((f) => {
-                var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
-                debugWrite("remove source file cache: " + fullName);
-
-                if(fullName in sourceFileCache){
-                    delete sourceFileCache[fullName];
-                }
-            });
+                    if(fullName in sourceFileCache){
+                        delete sourceFileCache[fullName];
+                    }
+                });
+            }
 
             outputFiles.length = 0;
             newSourceFiles = {};

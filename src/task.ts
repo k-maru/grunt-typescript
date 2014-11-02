@@ -41,7 +41,10 @@ module GruntTs{
             }),
             startCompile = (files?: string[]) => {
                 return runTask(grunt, host, watchOpt.before).then(() => {
-                    recompile(options, host, files);
+                    if(!recompile(options, host, files)){
+                        //失敗だった場合はリセット
+                        host.reset(files);
+                    }
                     return runTask(grunt, host, watchOpt.after);
                 }).then(function(){
                     writeWatching(watchPath);
@@ -63,10 +66,10 @@ module GruntTs{
         util.write("Watching... " + watchPath);
     }
 
-    function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []){
+    function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []): boolean {
         host.debug("rest host object");
         host.reset(updateFiles);
-        compile(options, host);
+        return compile(options, host);
     }
 
     function compile(options: GruntOptions, host: GruntHost): boolean{
