@@ -150,61 +150,66 @@ grunt.initConfig({
 ```
 
 ###watch
-**type**: <`string` | `boolean` | {path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }>
+**type**: <`string` | `boolean` | { path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }>
 
 Watch .ts files.
 It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.
 
-
 Specify the directory where you want to monitor in the options.
 
-    grunt.initConfig({
-            ...
-        typescript: {
-          base: {
-            src: ['path/to/typescript/files/**/*.ts'],
-            options: {
-              watch: 'path/to/typescript/files' //or ['path/to/typescript/files1', 'path/to/typescript/files2']
-            }
-          }
-        },
-        ...
-    });
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      options: {
+        watch: 'path/to/typescript/files' //or ['path/to/typescript/files1', 'path/to/typescript/files2']
+      }
+    }
+  },
+  ...
+});
+```
 
 If you specify the true, then automatically detects the directory.
 
-    grunt.initConfig({
-            ...
-        typescript: {
-          base: {
-            src: ['path/to/typescript/files/**/*.ts'],
-            options: {
-              watch: true   //Detect all target files root. eg: 'path/to/typescript/files/'
-            }
-          }
-        },
-        ...
-    });
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      options: {
+        watch: true //Detect all target files root. eg: 'path/to/typescript/files/'
+      }
+    }
+  },
+  ...
+});
+```
 
 For expansion of the future, You can also be specified 'object'.
 
-    grunt.initConfig({
-            ...
-        typescript: {
-          base: {
-            src: ['path/to/typescript/files/**/*.ts'],
-            options: {
-              watch: {
-                path: 'path/to/typescript/files', //or ['path/to/typescript/files1', 'path/to/typescript/files2']
-                before: ['beforetasks'],   //Set before tasks. eg: clean task
-                after: ['aftertasks']      //Set after tasks.  eg: minify task
-                atBegin: true              //Run tasks when watcher starts. default false
-              }
-            }
-          }
-        },
-        ...
-    });
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      options: {
+        watch: {
+          path: 'path/to/typescript/files', //or ['path/to/typescript/files1', 'path/to/typescript/files2']
+          before: ['beforetasks'],   //Set before tasks. eg: clean task
+          after: ['aftertasks']      //Set after tasks.  eg: minify task
+          atBegin: true              //Run tasks when watcher starts. default false
+        }
+      }
+    }
+  },
+  ...
+});
+```
 
 ###~~newLine~~
 ~~**type**: `string`~~
