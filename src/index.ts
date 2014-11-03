@@ -45,8 +45,9 @@ module.exports = function(grunt: IGrunt){
             binPath = getTsBinPathWithLoad();
 
         promises = self.files.map(function(gruntFile: grunt.file.IFileMap){
-            var opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile),
-                host = GruntTs.createCompilerHost(binPath, opt, GruntTs.createIO(grunt));
+            var io = GruntTs.createIO(grunt, binPath),
+                opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile, io),
+                host = GruntTs.createCompilerHost(opt, io);
             return GruntTs.execute(grunt, opt, host);
         });
         Q.all(promises).then(function(){

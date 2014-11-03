@@ -56,6 +56,6 @@ module GruntTs.util{
     }
 
     export function writeDebug(str: string): void{
-        console.log(("-- " + str).grey);
+        console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
     }
 }

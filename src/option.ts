@@ -2,6 +2,7 @@
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/tsc.d.ts" />
 ///<reference path="./util.ts" />
+///<reference path="./io.ts" />
 
 module GruntTs {
 
@@ -22,7 +23,8 @@ module GruntTs {
         basePath: string;
         ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
-        debug: boolean;
+        debug?: boolean;
+        externalLibs(): string[];
     }
 
 
@@ -166,8 +168,38 @@ module GruntTs {
         };
     }
 
+    function prepareExternalLibs(opt: any, io: GruntIO): string[]{
+        var target: string[];
+        if(!opt.extLibs){
+            return [];
+        }
+        if(util.isStr(opt.extLibs)){
+            target = [opt.extLibs];
+        }
+        if(util.isArray(opt.extLibs)){
+            target = opt.extLibs.concat();
+        }
+        if(!target){
+            return [];
+        }
+        return target.map((item) => {
+            if(item === "lib.core.d.ts" || item === "core"){
+                return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+            }
+            if(item === "lib.dom.d.ts" || item === "dom"){
+                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+            }
+            if(item === "lib.scriptHost.d.ts" || item === "scriptHost"){
+                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+            }
+            if(item === "lib.webworker.d.ts" || item === "webworker"){
+                return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+            }
+            return item;
+        });
+    }
 
-    export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap) : GruntOptions {
+    export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap, io: GruntIO) : GruntOptions {
 
         function getTargetFiles(): string[]{
             return grunt.file.expand(<string[]>gruntFile.orig.src);
@@ -177,12 +209,41 @@ module GruntTs {
             return util.isUndef(source[key]) ? undefined : !!source[key];
         }
 
+        function getExternalLibs(): string[]{
+            var target: string[];
+            if(!source.extLibs){
+                return [];
+            }
+            if(util.isStr(source.extLibs)){
+                target = [source.extLibs];
+            }
+            if(util.isArray(source.extLibs)){
+                target = source.extLibs.concat();
+            }
+            if(!target){
+                return [];
+            }
+            target = target.map((item) => {
+                if(item === "lib.core.d.ts" || item === "core"){
+                    return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                }
+                if(item === "lib.dom.d.ts" || item === "dom"){
+                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                }
+                if(item === "lib.scriptHost.d.ts" || item === "scriptHost"){
+                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                }
+                if(item === "lib.webworker.d.ts" || item === "webworker"){
+                    return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                }
+                return item;
+            });
+            return grunt.file.expand(target);
+        }
+
         var dest = ts.normalizePath(gruntFile.dest || ""),
             singleFile = !!dest && _path.extname(dest) === ".js";
 
-        //if(source.watch){
-        //    util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
-        //}
         if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
             util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
@@ -203,7 +264,8 @@ module GruntTs {
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            debug: !!source.debug
+            debug: !!source.debug,
+            externalLibs: getExternalLibs //prepareExternalLibs(source, io)
         };
     }
 }

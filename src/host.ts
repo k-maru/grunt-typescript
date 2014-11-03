@@ -83,7 +83,7 @@ module GruntTs{
     }
 
 
-    export function createCompilerHost(binPath: string, options: GruntOptions, io: GruntIO): GruntHost {
+    export function createCompilerHost(options: GruntOptions, io: GruntIO): GruntHost {
         var platform: string = _os.platform(),
             // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
             useCaseSensitiveFileNames: boolean = platform !== "win32" && platform !== "win64" && platform !== "darwin",
@@ -106,7 +106,7 @@ module GruntTs{
         }
 
         function getSourceFile(fileName: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
-            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            var fullName = io.abs(fileName);
 
             if(fullName in sourceFileCache){
                 debugWrite("has source file cache: " + fullName);
@@ -132,7 +132,7 @@ module GruntTs{
         }
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
-            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            var fullName = io.abs(fileName);
 
             if(!options.singleFile){
                 var tsFile = fullName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
@@ -198,7 +198,7 @@ module GruntTs{
             }
             if(util.isArray(fileNames)){
                 fileNames.forEach((f) => {
-                    var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
+                    var fullName = io.abs(f);
                     debugWrite("remove source file cache: " + fullName);
 
                     if(fullName in sourceFileCache){
@@ -223,7 +223,7 @@ module GruntTs{
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: () => {
-                return ts.combinePaths(binPath, "lib.d.ts");
+                return ts.combinePaths(io.binPath(), "lib.d.ts");
             },
             writeFile: writeFile,
             getCurrentDirectory: () => ts.normalizePath(_path.resolve(".")),
@@ -234,8 +234,5 @@ module GruntTs{
             reset: reset,
             debug: debugWrite
         };
-
-
     }
-
 }

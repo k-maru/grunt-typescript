@@ -15,9 +15,10 @@ module GruntTs {
         createDirectory(directoryName:string): void;
         abs(fileName: string): string;
         currentPath(): string;
+        binPath(): string;
     }
 
-    export function createIO(grunt:IGrunt):GruntIO {
+    export function createIO(grunt:IGrunt, binPath: string):GruntIO {
 
         var currentPath = ts.normalizePath(_path.resolve("."));
 
@@ -82,6 +83,9 @@ module GruntTs {
             abs: abs,
             currentPath: () => {
                 return currentPath;
+            },
+            binPath: () => {
+                return binPath;
             }
         };
     }

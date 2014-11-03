@@ -14,7 +14,7 @@ module GruntTs{
 
     export function execute(grunt:IGrunt, options: GruntOptions, host: GruntHost): Q.Promise<any>{
 
-        host.debug(options, (value) => JSON.stringify(options));
+        host.debug(options, (value) => "options: " + JSON.stringify(options));
 
         return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
 
@@ -67,14 +67,15 @@ module GruntTs{
     }
 
     function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []): boolean {
-        host.debug("rest host object");
+        host.debug("reset host object");
+
         host.reset(updateFiles);
         return compile(options, host);
     }
 
     function compile(options: GruntOptions, host: GruntHost): boolean{
         var start = Date.now(),
-            program = ts.createProgram(options.targetFiles(), options, host),
+            program = ts.createProgram(getTargetFiles(options, host), options, host),
             errors: ts.Diagnostic[] = program.getDiagnostics();
 
         if(writeDiagnostics(errors)){
@@ -98,6 +99,14 @@ module GruntTs{
 
         host.writeResult(Date.now() - start);
         return true;
+    }
+
+    function getTargetFiles(options: GruntOptions, host: GruntHost){
+        var codeFiles = options.targetFiles(),
+            libFiles: string[] = options.externalLibs();
+
+            host.debug(libFiles, (value) => "external libs: " + JSON.stringify(value));
+        return libFiles.concat(codeFiles);
     }
 
     function writeDiagnostics(diags: ts.Diagnostic[],isWarn: boolean = false): boolean{
@@ -124,7 +133,7 @@ module GruntTs{
 
         return util.asyncEach<string>(tasks, (task:string, index:number, next:()=> void) => {
 
-            host.debug(task + " task start");
+            host.debug("external task start: " + task);
 
             grunt.util.spawn({
                 grunt: true,
@@ -132,7 +141,7 @@ module GruntTs{
                 opts: {stdio: 'inherit'}
             }, function (err, result, code) {
 
-                host.debug(task + " task end");
+                host.debug("external task end: " + task);
 
                 next();
             });

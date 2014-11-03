@@ -64,31 +64,58 @@ module.exports = function(grunt){
                 dest: "test/temp/single.js"
             },
             "comment default": {
-                src:"test/fixtures/comments.ts",
+                src: "test/fixtures/comments.ts",
                 dest: "test/temp/comments.js"
             },
             "comment remove true": {
-                src:"test/fixtures/comments.ts",
+                src: "test/fixtures/comments.ts",
                 dest: "test/temp/comments_true.js",
                 options: {
                     removeComments: true
                 }
             },
             "comment remove false": {
-                src:"test/fixtures/comments.ts",
+                src: "test/fixtures/comments.ts",
                 dest: "test/temp/comments_false.js",
                 options: {
                     removeComments: false
                 }
             },
+            extlib: {
+                src: "test/fixtures/extlib.ts",
+                options: {
+                    noLib: true,
+                    extLibs: ["core", "test/libs/**/*.d.ts"]
+                }
+            },
+            "noLib safe": {
+                src: "test/fixtures/noLib.ts",
+                options: {
+                    noLib: true,
+                    extLibs: ["dom"]
+                }
+            },
+            "noLib": grunt.option("error") ? {
+                src: "test/fixtures/noLib.ts",
+                options: {
+                    noLib: true
+                }
+            } : {},
+            "noLibCore": grunt.option("error") ? {
+                src: "test/fixtures/noLib.ts",
+                options: {
+                    noLib: true,
+                    extLibs: "core"
+                }
+            } : {},
             "errorTypecheck": grunt.option("error") ? {
-                src:"test/fixtures/error-typecheck.ts",
+                src: "test/fixtures/error-typecheck.ts",
                 options: {
                     ignoreError: false
                 }
             } : {},
             "errorSyntax": grunt.option("error") ? {
-                src:"test/fixtures/error-syntax.ts",
+                src: "test/fixtures/error-syntax.ts",
                 options: {
                     ignoreError: true
                 }
@@ -126,6 +153,7 @@ module.exports = function(grunt){
         },
         nodeunit:{
             tests:["test/test.js", "test/errorTest.js"]
+            //tests:["test/errorTest.js"]
             //tests:["test/watchTest.js"]
         },
         clean: {
@@ -266,6 +294,12 @@ module.exports = function(grunt){
         },100);
     });
 
+    grunt.registerTask("minimatch", function(){
+        var done = this.async();
+
+        console.log(grunt.file.expand("test/fixtures/extlib/extlib.d.ts"));
+
+    });
 
     grunt.registerTask("test", getTestTsTasks());
 

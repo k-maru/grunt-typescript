@@ -54,7 +54,7 @@ var GruntTs;
         }
         util.write = write;
         function writeDebug(str) {
-            console.log(("-- " + str).grey);
+            console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
         }
         util.writeDebug = writeDebug;
     })(util = GruntTs.util || (GruntTs.util = {}));
@@ -62,7 +62,78 @@ var GruntTs;
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/typescript/tsc.d.ts" />
+var GruntTs;
+(function (GruntTs) {
+    var _fs = require('fs'), _os = require('os'), _path = require('path');
+    function createIO(grunt, binPath) {
+        var currentPath = ts.normalizePath(_path.resolve("."));
+        function readFile(fileName, encoding) {
+            if (!_fs.existsSync(fileName)) {
+                return undefined;
+            }
+            var buffer = _fs.readFileSync(fileName);
+            var len = buffer.length;
+            if (len >= 2 && buffer[0] === 0xFE && buffer[1] === 0xFF) {
+                // Big endian UTF-16 byte order mark detected. Since big endian is not supported by node.js,
+                // flip all byte pairs and treat as little endian.
+                len &= ~1;
+                for (var i = 0; i < len; i += 2) {
+                    var temp = buffer[i];
+                    buffer[i] = buffer[i + 1];
+                    buffer[i + 1] = temp;
+                }
+                return buffer.toString("utf16le", 2);
+            }
+            if (len >= 2 && buffer[0] === 0xFF && buffer[1] === 0xFE) {
+                // Little endian UTF-16 byte order mark detected
+                return buffer.toString("utf16le", 2);
+            }
+            if (len >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+                // UTF-8 byte order mark detected
+                return buffer.toString("utf8", 3);
+            }
+            // Default is UTF-8 with no byte order mark
+            return buffer.toString("utf8");
+        }
+        function writeFile(fileName, data, writeByteOrderMark) {
+            // If a BOM is required, emit one
+            if (writeByteOrderMark) {
+                data = '\uFEFF' + data;
+            }
+            _fs.writeFileSync(fileName, data, "utf8");
+        }
+        function directoryExists(path) {
+            return _fs.existsSync(path) && _fs.statSync(path).isDirectory();
+        }
+        function createDirectory(directoryName) {
+            if (!directoryExists(directoryName)) {
+                _fs.mkdirSync(directoryName);
+            }
+        }
+        function abs(fileName) {
+            return ts.normalizePath(_path.resolve(".", ts.normalizePath(fileName)));
+        }
+        return {
+            readFile: readFile,
+            writeFile: writeFile,
+            createDirectory: createDirectory,
+            directoryExists: directoryExists,
+            abs: abs,
+            currentPath: function () {
+                return currentPath;
+            },
+            binPath: function () {
+                return binPath;
+            }
+        };
+    }
+    GruntTs.createIO = createIO;
+})(GruntTs || (GruntTs = {}));
+///<reference path="../typings/gruntjs/gruntjs.d.ts" />
+///<reference path="../typings/node/node.d.ts" />
+///<reference path="../typings/typescript/tsc.d.ts" />
 ///<reference path="./util.ts" />
+///<reference path="./io.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _path = require("path"), _fs = require("fs");
@@ -198,17 +269,75 @@ var GruntTs;
             atBegin: !!val.atBegin
         };
     }
-    function createGruntOptions(source, grunt, gruntFile) {
+    function prepareExternalLibs(opt, io) {
+        var target;
+        if (!opt.extLibs) {
+            return [];
+        }
+        if (GruntTs.util.isStr(opt.extLibs)) {
+            target = [opt.extLibs];
+        }
+        if (GruntTs.util.isArray(opt.extLibs)) {
+            target = opt.extLibs.concat();
+        }
+        if (!target) {
+            return [];
+        }
+        return target.map(function (item) {
+            if (item === "lib.core.d.ts" || item === "core") {
+                return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+            }
+            if (item === "lib.dom.d.ts" || item === "dom") {
+                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+            }
+            if (item === "lib.scriptHost.d.ts" || item === "scriptHost") {
+                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+            }
+            if (item === "lib.webworker.d.ts" || item === "webworker") {
+                return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+            }
+            return item;
+        });
+    }
+    function createGruntOptions(source, grunt, gruntFile, io) {
         function getTargetFiles() {
             return grunt.file.expand(gruntFile.orig.src);
         }
         function boolOrUndef(source, key) {
             return GruntTs.util.isUndef(source[key]) ? undefined : !!source[key];
         }
+        function getExternalLibs() {
+            var target;
+            if (!source.extLibs) {
+                return [];
+            }
+            if (GruntTs.util.isStr(source.extLibs)) {
+                target = [source.extLibs];
+            }
+            if (GruntTs.util.isArray(source.extLibs)) {
+                target = source.extLibs.concat();
+            }
+            if (!target) {
+                return [];
+            }
+            target = target.map(function (item) {
+                if (item === "lib.core.d.ts" || item === "core") {
+                    return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                }
+                if (item === "lib.dom.d.ts" || item === "dom") {
+                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                }
+                if (item === "lib.scriptHost.d.ts" || item === "scriptHost") {
+                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                }
+                if (item === "lib.webworker.d.ts" || item === "webworker") {
+                    return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                }
+                return item;
+            });
+            return grunt.file.expand(target);
+        }
         var dest = ts.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
-        //if(source.watch){
-        //    util.writeWarn("The 'watch' option is not implemented yet. However, I will implement soon.");
-        //}
         if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
             GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
@@ -228,77 +357,11 @@ var GruntTs;
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            debug: !!source.debug
+            debug: !!source.debug,
+            externalLibs: getExternalLibs //prepareExternalLibs(source, io)
         };
     }
     GruntTs.createGruntOptions = createGruntOptions;
-})(GruntTs || (GruntTs = {}));
-///<reference path="../typings/gruntjs/gruntjs.d.ts" />
-///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
-var GruntTs;
-(function (GruntTs) {
-    var _fs = require('fs'), _os = require('os'), _path = require('path');
-    function createIO(grunt) {
-        var currentPath = ts.normalizePath(_path.resolve("."));
-        function readFile(fileName, encoding) {
-            if (!_fs.existsSync(fileName)) {
-                return undefined;
-            }
-            var buffer = _fs.readFileSync(fileName);
-            var len = buffer.length;
-            if (len >= 2 && buffer[0] === 0xFE && buffer[1] === 0xFF) {
-                // Big endian UTF-16 byte order mark detected. Since big endian is not supported by node.js,
-                // flip all byte pairs and treat as little endian.
-                len &= ~1;
-                for (var i = 0; i < len; i += 2) {
-                    var temp = buffer[i];
-                    buffer[i] = buffer[i + 1];
-                    buffer[i + 1] = temp;
-                }
-                return buffer.toString("utf16le", 2);
-            }
-            if (len >= 2 && buffer[0] === 0xFF && buffer[1] === 0xFE) {
-                // Little endian UTF-16 byte order mark detected
-                return buffer.toString("utf16le", 2);
-            }
-            if (len >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
-                // UTF-8 byte order mark detected
-                return buffer.toString("utf8", 3);
-            }
-            // Default is UTF-8 with no byte order mark
-            return buffer.toString("utf8");
-        }
-        function writeFile(fileName, data, writeByteOrderMark) {
-            // If a BOM is required, emit one
-            if (writeByteOrderMark) {
-                data = '\uFEFF' + data;
-            }
-            _fs.writeFileSync(fileName, data, "utf8");
-        }
-        function directoryExists(path) {
-            return _fs.existsSync(path) && _fs.statSync(path).isDirectory();
-        }
-        function createDirectory(directoryName) {
-            if (!directoryExists(directoryName)) {
-                _fs.mkdirSync(directoryName);
-            }
-        }
-        function abs(fileName) {
-            return ts.normalizePath(_path.resolve(".", ts.normalizePath(fileName)));
-        }
-        return {
-            readFile: readFile,
-            writeFile: writeFile,
-            createDirectory: createDirectory,
-            directoryExists: directoryExists,
-            abs: abs,
-            currentPath: function () {
-                return currentPath;
-            }
-        };
-    }
-    GruntTs.createIO = createIO;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="./util.ts" />
@@ -438,7 +501,7 @@ var GruntTs;
         mapData.sources.push(ts.normalizePath(_path.join(_path.dirname(relative), source)));
         return JSON.stringify(mapData);
     }
-    function createCompilerHost(binPath, options, io) {
+    function createCompilerHost(options, io) {
         var platform = _os.platform(), 
         // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
         useCaseSensitiveFileNames = platform !== "win32" && platform !== "win64" && platform !== "darwin", outputFiles = [], sourceFileCache = {}, newSourceFiles = {};
@@ -455,7 +518,7 @@ var GruntTs;
             }
         }
         function getSourceFile(fileName, languageVersion, onError) {
-            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            var fullName = io.abs(fileName);
             if (fullName in sourceFileCache) {
                 debugWrite("has source file cache: " + fullName);
                 return sourceFileCache[fullName];
@@ -478,7 +541,7 @@ var GruntTs;
             return result;
         }
         function writeFile(fileName, data, writeByteOrderMark, onError) {
-            var fullName = ts.normalizePath(_path.resolve(io.currentPath(), fileName));
+            var fullName = io.abs(fileName);
             if (!options.singleFile) {
                 var tsFile = fullName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
                 if (!(tsFile in newSourceFiles)) {
@@ -534,7 +597,7 @@ var GruntTs;
             }
             if (GruntTs.util.isArray(fileNames)) {
                 fileNames.forEach(function (f) {
-                    var fullName = ts.normalizePath(_path.resolve(io.currentPath(), f));
+                    var fullName = io.abs(f);
                     debugWrite("remove source file cache: " + fullName);
                     if (fullName in sourceFileCache) {
                         delete sourceFileCache[fullName];
@@ -554,7 +617,7 @@ var GruntTs;
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: function () {
-                return ts.combinePaths(binPath, "lib.d.ts");
+                return ts.combinePaths(io.binPath(), "lib.d.ts");
             },
             writeFile: writeFile,
             getCurrentDirectory: function () { return ts.normalizePath(_path.resolve(".")); },
@@ -580,7 +643,7 @@ var GruntTs;
 (function (GruntTs) {
     var Q = require("q"), _path = require("path");
     function execute(grunt, options, host) {
-        host.debug(options, function (value) { return JSON.stringify(options); });
+        host.debug(options, function (value) { return "options: " + JSON.stringify(options); });
         return Q.Promise(function (resolve, reject, notify) {
             if (options.gWatch) {
                 watch(grunt, options, host);
@@ -628,12 +691,12 @@ var GruntTs;
     }
     function recompile(options, host, updateFiles) {
         if (updateFiles === void 0) { updateFiles = []; }
-        host.debug("rest host object");
+        host.debug("reset host object");
         host.reset(updateFiles);
         return compile(options, host);
     }
     function compile(options, host) {
-        var start = Date.now(), program = ts.createProgram(options.targetFiles(), options, host), errors = program.getDiagnostics();
+        var start = Date.now(), program = ts.createProgram(getTargetFiles(options, host), options, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
             return false;
         }
@@ -651,6 +714,11 @@ var GruntTs;
         }
         host.writeResult(Date.now() - start);
         return true;
+    }
+    function getTargetFiles(options, host) {
+        var codeFiles = options.targetFiles(), libFiles = options.externalLibs();
+        host.debug(libFiles, function (value) { return "external libs: " + JSON.stringify(value); });
+        return libFiles.concat(codeFiles);
     }
     function writeDiagnostics(diags, isWarn) {
         if (isWarn === void 0) { isWarn = false; }
@@ -674,13 +742,13 @@ var GruntTs;
     function runTask(grunt, host, tasks) {
         host.debug("run tasks");
         return GruntTs.util.asyncEach(tasks, function (task, index, next) {
-            host.debug(task + " task start");
+            host.debug("external task start: " + task);
             grunt.util.spawn({
                 grunt: true,
                 args: [task].concat(grunt.option.flags()),
                 opts: { stdio: 'inherit' }
             }, function (err, result, code) {
-                host.debug(task + " task end");
+                host.debug("external task end: " + task);
                 next();
             });
         });
@@ -711,7 +779,7 @@ module.exports = function (grunt) {
     grunt.registerMultiTask('typescript', function () {
         var self = this, done = self.async(), promises, binPath = getTsBinPathWithLoad();
         promises = self.files.map(function (gruntFile) {
-            var opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile), host = GruntTs.createCompilerHost(binPath, opt, GruntTs.createIO(grunt));
+            var io = GruntTs.createIO(grunt, binPath), opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile, io), host = GruntTs.createCompilerHost(opt, io);
             return GruntTs.execute(grunt, opt, host);
         });
         Q.all(promises).then(function () {
