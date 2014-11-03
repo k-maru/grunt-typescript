@@ -103,7 +103,7 @@ module GruntTs{
 
     function getTargetFiles(options: GruntOptions, host: GruntHost){
         var codeFiles = options.targetFiles(),
-            libFiles: string[] = options.externalLibs();
+            libFiles: string[] = options.references();
 
             host.debug(libFiles, (value) => "external libs: " + JSON.stringify(value));
         return libFiles.concat(codeFiles);

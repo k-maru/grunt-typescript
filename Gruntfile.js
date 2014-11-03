@@ -81,18 +81,18 @@ module.exports = function(grunt){
                     removeComments: false
                 }
             },
-            extlib: {
-                src: "test/fixtures/extlib.ts",
+            "references": {
+                src: "test/fixtures/ref.ts",
                 options: {
                     noLib: true,
-                    extLibs: ["core", "test/libs/**/*.d.ts"]
+                    references: ["core", "test/libs/**/*.d.ts"]
                 }
             },
             "noLib safe": {
                 src: "test/fixtures/noLib.ts",
                 options: {
                     noLib: true,
-                    extLibs: ["dom"]
+                    references: ["dom"]
                 }
             },
             "noLib": grunt.option("error") ? {
@@ -105,7 +105,7 @@ module.exports = function(grunt){
                 src: "test/fixtures/noLib.ts",
                 options: {
                     noLib: true,
-                    extLibs: "core"
+                    references: "core"
                 }
             } : {},
             "errorTypecheck": grunt.option("error") ? {

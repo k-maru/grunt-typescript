@@ -11,101 +11,147 @@ Compile TypeScript in Grunt
 ## Documentation
 You'll need to install `grunt-typescript` first:
 
-    npm install grunt-typescript --save-dev
+```
+npm install grunt-typescript --save-dev
+```
 
 or add the following line to devDependencies in your package.json
 
-    "grunt-typescript": "",
+```
+"grunt-typescript": "",
+```
 
 Then modify your `Gruntfile.js` file by adding the following line:
 
-    grunt.loadNpmTasks('grunt-typescript');
+```js
+grunt.loadNpmTasks('grunt-typescript');
+```
 
 Then add some configuration for the plugin like so:
 
-    grunt.initConfig({
-        ...
-        typescript: {
-          base: {
-            src: ['path/to/typescript/files/**/*.ts'],
-            dest: 'where/you/want/your/js/files',
-            options: {
-              module: 'amd', //or commonjs
-              target: 'es5', //or es3
-              basePath: 'path/to/typescript/files',
-              sourceMap: true,
-              declaration: true
-            }
-          }
-        },
-        ...
-    });
-   
-If you want to create a js file that is a concatenation of all the ts file (like -out option from tsc), 
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      dest: 'where/you/want/your/js/files',
+      options: {
+        module: 'amd', //or commonjs
+        target: 'es5', //or es3
+        basePath: 'path/to/typescript/files',
+        sourceMap: true,
+        declaration: true
+      }
+    }
+  },
+  ...
+});
+```
+
+If you want to create a js file that is a concatenation of all the ts file (like -out option from tsc),
 you should specify the name of the file with the '.js' extension to dest option.
 
-    grunt.initConfig({
-        ...
-        typescript: {
-          base: {
-            src: ['path/to/typescript/files/**/*.ts'],
-            dest: 'where/you/want/your/js/file.js',
-            options: {
-              module: 'amd', //or commonjs
-            }
-          }
-        },
-        ...
-    });
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      dest: 'where/you/want/your/js/file.js',
+      options: {
+        module: 'amd', //or commonjs
+      }
+    }
+  },
+  ...
+});
+```
 
 ##Options
 
-###noLib `boolean`
+###noLib
+**type**: `boolean`
+
 Do not include a default lib.d.ts with global declarations
 
-###target `string`
+###target
+**type**: `string`
+
 Specify ECMAScript target version: "ES3" (default) or "ES5"
 
-###module `string`
+###module
+**type**: `string`
+
 Specify module code generation: "commonjs" (default) or "amd"
 
-###sourceMap `boolean`
+###sourceMap
+**type**: `boolean`
+
 Generates corresponding .map files
 
-###declaration `boolean`
+###declaration
+**type**: `boolean`
+
 Generates corresponding .d.ts file
 
-###comments `boolean`
+###comments
+**type**: `boolean`
+
 Emit comments to output
 
-###noImplicitAny `boolean`
+###noImplicitAny
+**type**: `boolean`
+
 Warn on expressions and declarations with an implied 'any' type.
 
-###noResolve `boolean`
+###noResolve
+**type**: `boolean`
+
 Skip resolution and preprocessing.
 
 ##Original Options
 
-###~~newLine `string`~~
-~~Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.~~
+###ignoreError
+**type**: `boolean`
 
-###~~indentStep `number`~~
-~~Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.~~
-
-###~~useTabIndent `boolean`~~
-~~Specify tab indent for code generation: false (default) or true. This options is experimental.~~
-
-###ignoreError `boolean`
 If the compiler can create a file, the task ignores the error.
 Default value is false.
 
-###~~disallowAsi `boolean`~~
-~~Do not allow auto semicolon insertion. This options is experimental.~~
+###basePath
+**type**: `string`
 
-###basePath `string`
 Path component to cut off when mapping the source files to dest files.
 
-###watch `string` or `boolean` or `object`
+###references
+**type**: <`string` | `string[]`>
+
+Set auto reference libraries.
+
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      options: {
+        references: [
+          "core",       //lib.core.d.ts
+          "dom",        //lib.dom.d.ts
+          "scriptHost", //lib.scriptHost.d.ts
+          "webworker",  //lib.webworker.d.ts
+          "path/to/reference/files/**/*.d.ts"
+        ]
+      }
+    }
+  },
+  ...
+});
+```
+
+###watch
+**type**: <`string` | `boolean` | {path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }>
+
 Watch .ts files.
 It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.
 
@@ -159,5 +205,25 @@ For expansion of the future, You can also be specified 'object'.
         },
         ...
     });
+
+###~~newLine~~
+~~**type**: `string`~~
+
+~~Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.~~
+
+###~~indentStep~~
+~~**type**: `number`~~
+
+~~Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.~~
+
+###~~useTabIndent~~
+~~**type**: `boolean`~~
+
+~~Specify tab indent for code generation: false (default) or true. This options is experimental.~~
+
+###~~disallowAsi~~
+~~**type**: `boolean`~~
+
+~~Do not allow auto semicolon insertion. This options is experimental.~~
 
 ※I'm sorry for poor English

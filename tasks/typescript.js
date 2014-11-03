@@ -306,16 +306,16 @@ var GruntTs;
         function boolOrUndef(source, key) {
             return GruntTs.util.isUndef(source[key]) ? undefined : !!source[key];
         }
-        function getExternalLibs() {
+        function getReferences() {
             var target;
-            if (!source.extLibs) {
+            if (!source.references) {
                 return [];
             }
-            if (GruntTs.util.isStr(source.extLibs)) {
-                target = [source.extLibs];
+            if (GruntTs.util.isStr(source.references)) {
+                target = [source.references];
             }
-            if (GruntTs.util.isArray(source.extLibs)) {
-                target = source.extLibs.concat();
+            if (GruntTs.util.isArray(source.references)) {
+                target = source.references.concat();
             }
             if (!target) {
                 return [];
@@ -358,7 +358,7 @@ var GruntTs;
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             debug: !!source.debug,
-            externalLibs: getExternalLibs //prepareExternalLibs(source, io)
+            references: getReferences
         };
     }
     GruntTs.createGruntOptions = createGruntOptions;
@@ -716,7 +716,7 @@ var GruntTs;
         return true;
     }
     function getTargetFiles(options, host) {
-        var codeFiles = options.targetFiles(), libFiles = options.externalLibs();
+        var codeFiles = options.targetFiles(), libFiles = options.references();
         host.debug(libFiles, function (value) { return "external libs: " + JSON.stringify(value); });
         return libFiles.concat(codeFiles);
     }

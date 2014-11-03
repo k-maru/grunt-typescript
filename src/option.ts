@@ -24,7 +24,7 @@ module GruntTs {
         ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
         debug?: boolean;
-        externalLibs(): string[];
+        references(): string[];
     }
 
 
@@ -209,16 +209,16 @@ module GruntTs {
             return util.isUndef(source[key]) ? undefined : !!source[key];
         }
 
-        function getExternalLibs(): string[]{
+        function getReferences(): string[]{
             var target: string[];
-            if(!source.extLibs){
+            if(!source.references){
                 return [];
             }
-            if(util.isStr(source.extLibs)){
-                target = [source.extLibs];
+            if(util.isStr(source.references)){
+                target = [source.references];
             }
-            if(util.isArray(source.extLibs)){
-                target = source.extLibs.concat();
+            if(util.isArray(source.references)){
+                target = source.references.concat();
             }
             if(!target){
                 return [];
@@ -265,7 +265,7 @@ module GruntTs {
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             debug: !!source.debug,
-            externalLibs: getExternalLibs //prepareExternalLibs(source, io)
+            references: getReferences
         };
     }
 }
