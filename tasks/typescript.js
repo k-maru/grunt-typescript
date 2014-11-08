@@ -532,7 +532,6 @@ var GruntTs;
                 }
                 text = "";
             }
-            var start = Date.now();
             var result = createSourceFile(fileName, text, languageVersion, "0");
             if (result) {
                 sourceFileCache[fullName] = result;
@@ -716,14 +715,19 @@ var GruntTs;
             }
         }
         errors.length = 0;
-        program.getSourceFiles().forEach(function (sourceFile) {
-            if (!options.noLib && sourceFile.filename === defaultLibFilename) {
-                return;
-            }
-            var emitOutput = checker.emitFiles(sourceFile);
-            errors.push.apply(errors, emitOutput.errors);
-        });
-        /*var emitOutput = checker.emitFiles();*/
+        if (!options.singleFile) {
+            program.getSourceFiles().forEach(function (sourceFile) {
+                if (!options.noLib && sourceFile.filename === defaultLibFilename) {
+                    return;
+                }
+                var emitOutput = checker.emitFiles(sourceFile);
+                errors.push.apply(errors, emitOutput.errors);
+            });
+        }
+        else {
+            errors = checker.emitFiles().errors;
+        }
+        /*var emitOutput = ;*/
         /*var emitErrors = emitOutput.errors;*/
         //if(writeDiagnostics(emitErrors)){
         if (writeDiagnostics(errors)) {

@@ -102,15 +102,20 @@ module GruntTs{
         }
 
         errors.length = 0;
-        program.getSourceFiles().forEach((sourceFile) => {
-            if(!options.noLib && sourceFile.filename === defaultLibFilename){
-                return;
-            }
-            var emitOutput = checker.emitFiles(sourceFile);
-            errors.push.apply(errors, emitOutput.errors);
-        });
+        if(!options.singleFile){
+            program.getSourceFiles().forEach((sourceFile) => {
+                if(!options.noLib && sourceFile.filename === defaultLibFilename){
+                    return;
+                }
+                var emitOutput = checker.emitFiles(sourceFile);
+                errors.push.apply(errors, emitOutput.errors);
+            });
+        }else{
+            errors = checker.emitFiles().errors;
+        }
 
-        /*var emitOutput = checker.emitFiles();*/
+
+        /*var emitOutput = ;*/
         /*var emitErrors = emitOutput.errors;*/
 
         //if(writeDiagnostics(emitErrors)){

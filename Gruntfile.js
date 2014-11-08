@@ -61,7 +61,11 @@ module.exports = function(grunt){
             },
             single:{
                 src: "test/fixtures/single/**/*.ts",
-                dest: "test/temp/single.js"
+                dest: "test/temp/single.js",
+                options: {
+                    declaration: true,
+                    sourceMap: true
+                }
             },
             "comment default": {
                 src: "test/fixtures/comments.ts",
@@ -247,7 +251,7 @@ module.exports = function(grunt){
             return execTsc("CommonJS", "test/fixtures/commonjs.ts --module commonjs");
         }).then(function(){
             grunt.file.copy("test/fixtures/commonjs.js", "test/expected/commonjs.js");
-            return execTsc("Single", "test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js");
+            return execTsc("Single", "test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js --sourceMap");
         }).then(function(){
             grunt.file.copy("test/temp/single.js", "test/expected/single.js");
             return execTsc("Comment", "test/fixtures/comments.ts --out test/expected/comments.js");
