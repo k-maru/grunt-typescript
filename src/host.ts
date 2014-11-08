@@ -121,7 +121,7 @@ module GruntTs{
                 }
                 text = "";
             }
-            var start = Date.now();
+
             var result = createSourceFile(fileName, text, languageVersion, /*version:*/ "0");
 
             if(result){
