@@ -479,7 +479,7 @@ var GruntTs;
         var currentPath = io.currentPath(), relativePath = ts.normalizePath(_path.relative(currentPath, fileName)), basePath = options.basePath;
         if (basePath) {
             if (relativePath.substr(0, basePath.length) !== basePath) {
-                throw new Error(fileName + " is not started base_path");
+                throw new Error(fileName + " is not started basePath");
             }
             relativePath = relativePath.substr(basePath.length);
         }
@@ -532,6 +532,7 @@ var GruntTs;
                 }
                 text = "";
             }
+            var start = Date.now();
             var result = createSourceFile(fileName, text, languageVersion, "0");
             if (result) {
                 sourceFileCache[fullName] = result;
@@ -696,20 +697,36 @@ var GruntTs;
         return compile(options, host);
     }
     function compile(options, host) {
-        var start = Date.now(), program = ts.createProgram(getTargetFiles(options, host), options, host), errors = program.getDiagnostics();
+        var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(), program = ts.createProgram(getTargetFiles(options, host), options, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
             return false;
         }
         var checker = program.getTypeChecker(true);
-        errors = checker.getDiagnostics();
+        errors = checker.getGlobalDiagnostics();
+        program.getSourceFiles().forEach(function (sourceFile) {
+            if (!options.noLib && sourceFile.filename === defaultLibFilename) {
+                return;
+            }
+            errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
+        });
+        //errors = checker.getDiagnostics();
         if (writeDiagnostics(errors, !!options.ignoreError)) {
             if (!options.ignoreError) {
                 return false;
             }
         }
-        var emitOutput = checker.emitFiles();
-        var emitErrors = emitOutput.errors;
-        if (writeDiagnostics(emitErrors)) {
+        errors.length = 0;
+        program.getSourceFiles().forEach(function (sourceFile) {
+            if (!options.noLib && sourceFile.filename === defaultLibFilename) {
+                return;
+            }
+            var emitOutput = checker.emitFiles(sourceFile);
+            errors.push.apply(errors, emitOutput.errors);
+        });
+        /*var emitOutput = checker.emitFiles();*/
+        /*var emitErrors = emitOutput.errors;*/
+        //if(writeDiagnostics(emitErrors)){
+        if (writeDiagnostics(errors)) {
             return false;
         }
         host.writeResult(Date.now() - start);

@@ -57,7 +57,7 @@ module GruntTs{
 
         if(basePath){
             if(relativePath.substr(0, basePath.length) !== basePath){
-                throw new Error(fileName + " is not started base_path");
+                throw new Error(fileName + " is not started basePath");
             }
             relativePath = relativePath.substr(basePath.length);
         }
@@ -121,7 +121,9 @@ module GruntTs{
                 }
                 text = "";
             }
+            var start = Date.now();
             var result = createSourceFile(fileName, text, languageVersion, /*version:*/ "0");
+
             if(result){
                 sourceFileCache[fullName] = result;
                 newSourceFiles[fullName] = result;

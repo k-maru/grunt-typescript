@@ -149,7 +149,6 @@ module.exports = function(grunt){
                     }
                 }
             } : {}
-
         },
         nodeunit:{
             tests:["test/test.js", "test/errorTest.js"]
@@ -257,13 +256,6 @@ module.exports = function(grunt){
         }).then(function(){
             return execTsc("Comment false", "test/fixtures/comments.ts --out test/expected/comments_false.js"); //default
         }).then(function(){
-
-            //    grunt.log.writeln("NoModule");
-        //    return tsc("test/fixtures/nomodule.ts");
-        //}).then(function(){
-        //    grunt.file.copy("test/fixtures/nomodule.js", "test/expected/nomodule.js");
-
-        }).then(function(){
             done(true);
         }).catch(function(){
             done(false);
@@ -286,19 +278,13 @@ module.exports = function(grunt){
             done(true);
         },100);
     });
+
     grunt.registerTask("watchAfterTask", function(){
         var done = this.async();
         setTimeout(function(){
             console.log("after");
             done(true);
         },100);
-    });
-
-    grunt.registerTask("minimatch", function(){
-        var done = this.async();
-
-        console.log(grunt.file.expand("test/fixtures/extlib/extlib.d.ts"));
-
     });
 
     grunt.registerTask("test", getTestTsTasks());

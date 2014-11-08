@@ -73,8 +73,9 @@ module GruntTs{
         return compile(options, host);
     }
 
-    function compile(options: GruntOptions, host: GruntHost): boolean{
+    function compile(options: GruntOptions, host: GruntHost): boolean {
         var start = Date.now(),
+            defaultLibFilename = host.getDefaultLibFilename(),
             program = ts.createProgram(getTargetFiles(options, host), options, host),
             errors: ts.Diagnostic[] = program.getDiagnostics();
 
@@ -83,7 +84,16 @@ module GruntTs{
         }
 
         var checker = program.getTypeChecker(/*fullTypeCheckMode*/ true);
-        errors = checker.getDiagnostics();
+
+        errors = checker.getGlobalDiagnostics();
+        program.getSourceFiles().forEach((sourceFile) => {
+            if(!options.noLib && sourceFile.filename === defaultLibFilename) {
+                return;
+            }
+            errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
+        });
+
+        //errors = checker.getDiagnostics();
 
         if(writeDiagnostics(errors, !!options.ignoreError)){
             if(!options.ignoreError){
@@ -91,9 +101,20 @@ module GruntTs{
             }
         }
 
-        var emitOutput = checker.emitFiles();
-        var emitErrors = emitOutput.errors;
-        if(writeDiagnostics(emitErrors)){
+        errors.length = 0;
+        program.getSourceFiles().forEach((sourceFile) => {
+            if(!options.noLib && sourceFile.filename === defaultLibFilename){
+                return;
+            }
+            var emitOutput = checker.emitFiles(sourceFile);
+            errors.push.apply(errors, emitOutput.errors);
+        });
+
+        /*var emitOutput = checker.emitFiles();*/
+        /*var emitErrors = emitOutput.errors;*/
+
+        //if(writeDiagnostics(emitErrors)){
+        if(writeDiagnostics(errors)){
             return false;
         }
 
