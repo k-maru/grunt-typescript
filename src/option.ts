@@ -23,7 +23,6 @@ module GruntTs {
         basePath: string;
         ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
-        debug?: boolean;
         references(): string[];
     }
 
@@ -264,7 +263,6 @@ module GruntTs {
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            debug: !!source.debug,
             references: getReferences
         };
     }

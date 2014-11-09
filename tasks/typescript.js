@@ -365,7 +365,6 @@ var GruntTs;
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            debug: !!source.debug,
             references: getReferences
         };
     }
