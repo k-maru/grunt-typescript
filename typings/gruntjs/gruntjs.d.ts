@@ -117,14 +117,14 @@ declare module minimatch {
 declare module grunt {
 
     module config {
-       
+
         /**
          * {@link http://gruntjs.com/sample-gruntfile}
          */
         interface IProjectConfig{
             [plugin: string]: any
             pkg: any; // unfortunate. It is actually a string
-        }                
+        }
 
         /**
          * {@link http://gruntjs.com/api/grunt.config}
@@ -1296,4 +1296,6 @@ interface IGrunt extends grunt.IConfigComponents, grunt.fail.FailModule, grunt.I
      * The current Grunt version, as a string. This is just a shortcut to the grunt.package.version property.
      */
     version: string
+
+    verbose: grunt.log.VerboseLogModule
 }

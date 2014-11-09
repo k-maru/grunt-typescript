@@ -37,6 +37,10 @@ var GruntTs;
             });
         }
         util.asyncEach = asyncEach;
+        function writeAbort(str) {
+            console.log((str || "").red);
+        }
+        util.writeAbort = writeAbort;
         function writeError(str) {
             console.log(">> ".red + str.trim().replace(/\n/g, "\n>> ".red));
         }
@@ -124,6 +128,10 @@ var GruntTs;
             },
             binPath: function () {
                 return binPath;
+            },
+            verbose: function (message) {
+                //console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
+                grunt.verbose.writeln((message + "").grey);
             }
         };
     }
@@ -518,9 +526,10 @@ var GruntTs;
             }
         }
         function getSourceFile(fileName, languageVersion, onError) {
+            io.verbose("--host.getSourceFile: " + fileName);
             var fullName = io.abs(fileName);
             if (fullName in sourceFileCache) {
-                debugWrite("has source file cache: " + fullName);
+                io.verbose("  cache");
                 return sourceFileCache[fullName];
             }
             try {
@@ -537,17 +546,18 @@ var GruntTs;
                 sourceFileCache[fullName] = result;
                 newSourceFiles[fullName] = result;
             }
-            debugWrite("load with cache: " + fullName);
+            io.verbose("  create");
             return result;
         }
         function writeFile(fileName, data, writeByteOrderMark, onError) {
+            io.verbose("--host.writeFile: " + fileName);
             var fullName = io.abs(fileName);
             if (!options.singleFile) {
                 var tsFile = fullName.replace(/\.js\.map$/, ".ts").replace(/\.js$/, ".ts");
                 if (!(tsFile in newSourceFiles)) {
                     tsFile = fullName.replace(/\.d\.ts$/, ".ts");
                     if (!(tsFile in newSourceFiles)) {
-                        debugWrite("cancel write file: " + fileName);
+                        io.verbose("  cancel");
                         return;
                     }
                 }
@@ -556,12 +566,12 @@ var GruntTs;
             var newFileName = prepareOutputDir(fileName, options, io);
             //map ファイルの参照先パスを変換
             var targetData = prepareSourcePath(fileName, newFileName, data, options);
-            debugWrite("write file: " + fileName + " => " + newFileName);
             try {
                 ensureDirectoriesExist(io, ts.getDirectoryPath(ts.normalizePath(newFileName)));
                 //TODO:
                 io.writeFile(newFileName, targetData, writeByteOrderMark);
                 outputFiles.push(newFileName);
+                io.verbose("  write file: " + fileName + " => " + newFileName);
             }
             catch (e) {
                 if (onError)
@@ -592,13 +602,14 @@ var GruntTs;
             }
         }
         function reset(fileNames) {
+            io.verbose("--host.reset");
             if (typeof fileNames === "undefined") {
                 sourceFileCache = {};
             }
             if (GruntTs.util.isArray(fileNames)) {
                 fileNames.forEach(function (f) {
                     var fullName = io.abs(f);
-                    debugWrite("remove source file cache: " + fullName);
+                    io.verbose("  remove: " + fullName);
                     if (fullName in sourceFileCache) {
                         delete sourceFileCache[fullName];
                     }
@@ -606,13 +617,6 @@ var GruntTs;
             }
             outputFiles.length = 0;
             newSourceFiles = {};
-        }
-        function debugWrite(value, format) {
-            var text = "";
-            if (options.debug) {
-                text = !!format ? format(value) : !!value ? value + "" : "";
-                GruntTs.util.writeDebug(text);
-            }
         }
         return {
             getSourceFile: getSourceFile,
@@ -626,7 +630,7 @@ var GruntTs;
             getNewLine: function () { return _os.EOL; },
             writeResult: writeResult,
             reset: reset,
-            debug: debugWrite
+            io: io
         };
     }
     GruntTs.createCompilerHost = createCompilerHost;
@@ -643,16 +647,26 @@ var GruntTs;
 (function (GruntTs) {
     var Q = require("q"), _path = require("path");
     function execute(grunt, options, host) {
-        host.debug(options, function (value) { return "options: " + JSON.stringify(options); });
+        host.io.verbose("--task.execute");
+        host.io.verbose("  options: " + JSON.stringify(options));
         return Q.Promise(function (resolve, reject, notify) {
             if (options.gWatch) {
                 watch(grunt, options, host);
             }
             else {
-                if (compile(options, host)) {
-                    resolve(true);
+                try {
+                    if (compile(options, host)) {
+                        resolve(true);
+                    }
+                    else {
+                        reject(false);
+                    }
                 }
-                else {
+                catch (e) {
+                    GruntTs.util.writeAbort(e.message);
+                    if (e.stack) {
+                        GruntTs.util.writeAbort(e.stack);
+                    }
                     reject(false);
                 }
             }
@@ -691,11 +705,12 @@ var GruntTs;
     }
     function recompile(options, host, updateFiles) {
         if (updateFiles === void 0) { updateFiles = []; }
-        host.debug("reset host object");
+        host.io.verbose("--task.recompile");
         host.reset(updateFiles);
         return compile(options, host);
     }
     function compile(options, host) {
+        host.io.verbose("--task.compile");
         var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(), program = ts.createProgram(getTargetFiles(options, host), options, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
             return false;
@@ -737,8 +752,9 @@ var GruntTs;
         return true;
     }
     function getTargetFiles(options, host) {
+        host.io.verbose("--task.getTargetFiles");
         var codeFiles = options.targetFiles(), libFiles = options.references();
-        host.debug(libFiles, function (value) { return "external libs: " + JSON.stringify(value); });
+        host.io.verbose("  external libs: " + JSON.stringify(libFiles));
         return libFiles.concat(codeFiles);
     }
     function writeDiagnostics(diags, isWarn) {
@@ -761,15 +777,15 @@ var GruntTs;
         return !!diags.length;
     }
     function runTask(grunt, host, tasks) {
-        host.debug("run tasks");
+        host.io.verbose("--task.runTask");
         return GruntTs.util.asyncEach(tasks, function (task, index, next) {
-            host.debug("external task start: " + task);
+            host.io.verbose("  external task start: " + task);
             grunt.util.spawn({
                 grunt: true,
                 args: [task].concat(grunt.option.flags()),
                 opts: { stdio: 'inherit' }
             }, function (err, result, code) {
-                host.debug("external task end: " + task);
+                host.io.verbose("external task end: " + task);
                 next();
             });
         });

@@ -14,16 +14,25 @@ module GruntTs{
 
     export function execute(grunt:IGrunt, options: GruntOptions, host: GruntHost): Q.Promise<any>{
 
-        host.debug(options, (value) => "options: " + JSON.stringify(options));
+        host.io.verbose("--task.execute");
+        host.io.verbose("  options: " + JSON.stringify(options));
 
         return Q.Promise((resolve: (val: any) => void, reject: (val: any) => void, notify: (val: any) => void) => {
 
             if(options.gWatch){
                 watch(grunt, options, host);
             }else{
-                if(compile(options, host)){
-                    resolve(true);
-                }else{
+                try{
+                    if(compile(options, host)){
+                        resolve(true);
+                    }else{
+                        reject(false);
+                    }
+                }catch(e){
+                    util.writeAbort(e.message);
+                    if(e.stack){
+                        util.writeAbort(e.stack);
+                    }
                     reject(false);
                 }
             }
@@ -67,13 +76,16 @@ module GruntTs{
     }
 
     function recompile(options: GruntOptions, host: GruntHost, updateFiles: string[] = []): boolean {
-        host.debug("reset host object");
+
+        host.io.verbose("--task.recompile");
 
         host.reset(updateFiles);
         return compile(options, host);
     }
 
     function compile(options: GruntOptions, host: GruntHost): boolean {
+        host.io.verbose("--task.compile");
+
         var start = Date.now(),
             defaultLibFilename = host.getDefaultLibFilename(),
             program = ts.createProgram(getTargetFiles(options, host), options, host),
@@ -114,7 +126,6 @@ module GruntTs{
             errors = checker.emitFiles().errors;
         }
 
-
         /*var emitOutput = ;*/
         /*var emitErrors = emitOutput.errors;*/
 
@@ -128,10 +139,14 @@ module GruntTs{
     }
 
     function getTargetFiles(options: GruntOptions, host: GruntHost){
+
+        host.io.verbose("--task.getTargetFiles");
+
         var codeFiles = options.targetFiles(),
             libFiles: string[] = options.references();
 
-            host.debug(libFiles, (value) => "external libs: " + JSON.stringify(value));
+        host.io.verbose("  external libs: " + JSON.stringify(libFiles));
+
         return libFiles.concat(codeFiles);
     }
 
@@ -155,11 +170,11 @@ module GruntTs{
 
     function runTask(grunt: IGrunt, host: GruntHost, tasks: string[]): Q.Promise<any> {
 
-        host.debug("run tasks");
+        host.io.verbose("--task.runTask");
 
         return util.asyncEach<string>(tasks, (task:string, index:number, next:()=> void) => {
 
-            host.debug("external task start: " + task);
+            host.io.verbose("  external task start: " + task);
 
             grunt.util.spawn({
                 grunt: true,
@@ -167,7 +182,7 @@ module GruntTs{
                 opts: {stdio: 'inherit'}
             }, function (err, result, code) {
 
-                host.debug("external task end: " + task);
+                host.io.verbose("external task end: " + task);
 
                 next();
             });

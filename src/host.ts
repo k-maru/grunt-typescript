@@ -18,7 +18,8 @@ module GruntTs{
     export interface GruntHost extends ts.CompilerHost {
         writeResult(ms: number): void;
         reset(fileNames: string[]): void;
-        debug(value: any, format?: (value: any) => string): void;
+        io: GruntIO;
+        //debug(value: any, format?: (value: any) => string): void;
     }
 
     interface GruntSourceFile extends ts.SourceFile{
@@ -106,10 +107,12 @@ module GruntTs{
         }
 
         function getSourceFile(fileName: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
+            io.verbose("--host.getSourceFile: " + fileName);
+
             var fullName = io.abs(fileName);
 
             if(fullName in sourceFileCache){
-                debugWrite("has source file cache: " + fullName);
+                io.verbose("  cache");
                 return sourceFileCache[fullName];
             }
             try {
@@ -128,12 +131,15 @@ module GruntTs{
                 sourceFileCache[fullName] = result;
                 newSourceFiles[fullName] = result;
             }
-            debugWrite("load with cache: " + fullName);
+            io.verbose("  create");
 
             return result;
         }
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
+
+            io.verbose("--host.writeFile: " + fileName);
+
             var fullName = io.abs(fileName);
 
             if(!options.singleFile){
@@ -142,7 +148,7 @@ module GruntTs{
                     tsFile = fullName.replace(/\.d\.ts$/, ".ts");
                     if(!(tsFile in newSourceFiles)) {
 
-                        debugWrite("cancel write file: " + fileName);
+                        io.verbose("  cancel");
 
                         return;
                     }
@@ -154,13 +160,13 @@ module GruntTs{
             //map ファイルの参照先パスを変換
             var targetData = prepareSourcePath(fileName, newFileName, data, options);
 
-            debugWrite("write file: " + fileName + " => " + newFileName);
-
             try {
                 ensureDirectoriesExist(io, ts.getDirectoryPath(ts.normalizePath(newFileName)));
                 //TODO:
                 io.writeFile(newFileName, targetData, writeByteOrderMark);
                 outputFiles.push(newFileName);
+
+                io.verbose("  write file: " + fileName + " => " + newFileName);
             }
             catch (e) {
                 if (onError) onError(e.message);
@@ -195,13 +201,14 @@ module GruntTs{
         }
 
         function reset(fileNames: string[]): void{
+            io.verbose("--host.reset");
             if(typeof fileNames === "undefined"){
                 sourceFileCache = {};
             }
             if(util.isArray(fileNames)){
                 fileNames.forEach((f) => {
                     var fullName = io.abs(f);
-                    debugWrite("remove source file cache: " + fullName);
+                    io.verbose("  remove: " + fullName);
 
                     if(fullName in sourceFileCache){
                         delete sourceFileCache[fullName];
@@ -211,15 +218,6 @@ module GruntTs{
 
             outputFiles.length = 0;
             newSourceFiles = {};
-        }
-
-        function debugWrite(value: any, format?: (value: any) => string): void{
-            var text = "";
-            if(options.debug){
-                text = !!format ? format(value) :
-                       !!value ? value + "" : "";
-                util.writeDebug(text);
-            }
         }
 
         return {
@@ -234,7 +232,7 @@ module GruntTs{
             getNewLine: () => _os.EOL,
             writeResult: writeResult,
             reset: reset,
-            debug: debugWrite
+            io: io
         };
     }
 }

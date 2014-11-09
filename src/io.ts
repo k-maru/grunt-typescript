@@ -16,6 +16,7 @@ module GruntTs {
         abs(fileName: string): string;
         currentPath(): string;
         binPath(): string;
+        verbose(message: string): void;
     }
 
     export function createIO(grunt:IGrunt, binPath: string):GruntIO {
@@ -86,6 +87,11 @@ module GruntTs {
             },
             binPath: () => {
                 return binPath;
+            },
+            verbose: (message: string) => {
+                //console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
+                
+                grunt.verbose.writeln((message + "").grey);
             }
         };
     }

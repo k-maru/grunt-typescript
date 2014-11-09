@@ -39,6 +39,10 @@ module GruntTs.util{
        });
     }
 
+    export function writeAbort(str: string): void{
+        console.log((str || "").red);
+    }
+
     export function writeError(str: string): void{
         console.log(">> ".red + str.trim().replace(/\n/g, "\n>> ".red));
     }
@@ -58,4 +62,5 @@ module GruntTs.util{
     export function writeDebug(str: string): void{
         console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
     }
+
 }
