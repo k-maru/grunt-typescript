@@ -365,7 +365,8 @@ var GruntTs;
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            references: getReferences
+            references: getReferences,
+            _showNearlyTscCommand: !!grunt.option("showtsc")
         };
     }
     GruntTs.createGruntOptions = createGruntOptions;
@@ -710,7 +711,11 @@ var GruntTs;
     }
     function compile(options, host) {
         host.io.verbose("--task.compile");
-        var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(), program = ts.createProgram(getTargetFiles(options, host), options, host), errors = program.getDiagnostics();
+        var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(), targetFiles = getTargetFiles(options, host);
+        if (options._showNearlyTscCommand) {
+            writeNearlyTscCommand(targetFiles, options);
+        }
+        var program = ts.createProgram(targetFiles, options, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
             return false;
         }
@@ -788,6 +793,45 @@ var GruntTs;
                 next();
             });
         });
+    }
+    function writeNearlyTscCommand(targetFiles, options) {
+        try {
+            var strs = [];
+            strs.push("tsc");
+            if (options.declaration) {
+                strs.push("-d");
+            }
+            if (options.sourceMap) {
+                strs.push("--sourceMap");
+            }
+            if (options.module) {
+                strs.push("-m");
+                strs.push(options.module === 1 /* CommonJS */ ? "commonjs" : "amd");
+            }
+            if (options.target) {
+                strs.push("-t");
+                strs.push(options.target === 0 /* ES3 */ ? "es3" : "es5");
+            }
+            if (options.noImplicitAny) {
+                strs.push("--noImplicitAny");
+            }
+            if (options.noLib) {
+                strs.push("--noLib");
+            }
+            if (options.noResolve) {
+                strs.push("--noResolve");
+            }
+            if (options.removeComments) {
+                strs.push("--removeComments");
+            }
+            if (options.singleFile) {
+                strs.push("--out");
+                strs.push(options.out);
+            }
+            GruntTs.util.writeInfo(strs.concat(targetFiles).join(" "));
+        }
+        catch (e) {
+        }
     }
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />

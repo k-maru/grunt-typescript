@@ -88,7 +88,13 @@ module GruntTs{
 
         var start = Date.now(),
             defaultLibFilename = host.getDefaultLibFilename(),
-            program = ts.createProgram(getTargetFiles(options, host), options, host),
+            targetFiles = getTargetFiles(options, host);
+
+        if(options._showNearlyTscCommand){
+            writeNearlyTscCommand(targetFiles, options);
+        }
+
+        var program = ts.createProgram(targetFiles, options, host),
             errors: ts.Diagnostic[] = program.getDiagnostics();
 
         if(writeDiagnostics(errors)){
@@ -187,5 +193,45 @@ module GruntTs{
                 next();
             });
         });
+    }
+
+    function writeNearlyTscCommand(targetFiles: string[], options: GruntOptions): void{
+        try{
+            var strs: string[] = [];
+            strs.push("tsc");
+            if(options.declaration){
+                strs.push("-d");
+            }
+            if(options.sourceMap){
+                strs.push("--sourceMap");
+            }
+            if(options.module){
+                strs.push("-m");
+                strs.push(options.module === ts.ModuleKind.CommonJS ? "commonjs" : "amd");
+            }
+            if(options.target){
+                strs.push("-t");
+                strs.push(options.target === ts.ScriptTarget.ES3 ? "es3" : "es5");
+            }
+            if(options.noImplicitAny){
+                strs.push("--noImplicitAny");
+            }
+            if(options.noLib){
+                strs.push("--noLib");
+            }
+            if(options.noResolve){
+                strs.push("--noResolve");
+            }
+            if(options.removeComments){
+                strs.push("--removeComments");
+            }
+            if(options.singleFile){
+                strs.push("--out");
+                strs.push(options.out);
+            }
+            util.writeInfo(strs.concat(targetFiles).join(" "));
+        }catch(e){
+
+        }
     }
 }

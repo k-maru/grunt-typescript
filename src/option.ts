@@ -24,6 +24,7 @@ module GruntTs {
         ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
         references(): string[];
+        _showNearlyTscCommand: boolean;
     }
 
 
@@ -263,7 +264,8 @@ module GruntTs {
             noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
-            references: getReferences
+            references: getReferences,
+            _showNearlyTscCommand: !!grunt.option("showtsc")
         };
     }
 }
