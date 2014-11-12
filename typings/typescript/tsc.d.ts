@@ -560,6 +560,11 @@ declare module ts {
             category: DiagnosticCategory;
             key: string;
         };
+        An_enum_member_cannot_have_a_numeric_name: {
+            code: number;
+            category: DiagnosticCategory;
+            key: string;
+        };
         Duplicate_identifier_0: {
             code: number;
             category: DiagnosticCategory;
@@ -2569,6 +2574,7 @@ declare module ts {
     interface TypeChecker {
         getProgram(): Program;
         getDiagnostics(sourceFile?: SourceFile): Diagnostic[];
+        getDeclarationDiagnostics(sourceFile: SourceFile): Diagnostic[];
         getGlobalDiagnostics(): Diagnostic[];
         getNodeCount(): number;
         getIdentifierCount(): number;
@@ -2588,31 +2594,47 @@ declare module ts {
         getTypeOfNode(node: Node): Type;
         getApparentType(type: Type): ApparentType;
         typeToString(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags): string;
+        writeType(type: Type, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
         symbolToString(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): string;
-        typeToDisplayParts(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags): SymbolDisplayPart[];
-        symbolToDisplayParts(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): SymbolDisplayPart[];
+        writeSymbol(symbol: Symbol, writer: SymbolWriter, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): void;
         getFullyQualifiedName(symbol: Symbol): string;
         getAugmentedPropertiesOfApparentType(type: Type): Symbol[];
         getRootSymbol(symbol: Symbol): Symbol;
         getContextualType(node: Node): Type;
         getResolvedSignature(node: CallExpression, candidatesOutArray?: Signature[]): Signature;
+        getSignatureFromDeclaration(declaration: SignatureDeclaration): Signature;
+        writeSignature(signatures: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        writeTypeParameter(tp: TypeParameter, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
+        writeTypeParametersOfSymbol(symbol: Symbol, writer: SymbolWriter, enclosingDeclaraiton?: Node, flags?: TypeFormatFlags): void;
+        isImplementationOfOverload(node: FunctionDeclaration): boolean;
+        isUndefinedSymbol(symbol: Symbol): boolean;
+        isArgumentsSymbol(symbol: Symbol): boolean;
         getEnumMemberValue(node: EnumMember): number;
         isValidPropertyAccess(node: PropertyAccess, propertyName: string): boolean;
         getAliasedSymbol(symbol: Symbol): Symbol;
     }
-    interface TextWriter {
-        write(s: string): void;
-        trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
+    interface SymbolWriter {
+        writeKind(text: string, kind: SymbolDisplayPartKind): void;
+        writeSymbol(text: string, symbol: Symbol): void;
         writeLine(): void;
         increaseIndent(): void;
         decreaseIndent(): void;
-        getText(): string;
+        clear(): void;
+        trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
     }
     enum TypeFormatFlags {
         None = 0,
         WriteArrayAsGenericType = 1,
         UseTypeOfFunction = 2,
         NoTruncation = 4,
+        WriteArrowStyleSignature = 8,
+        WriteOwnNameForAnyLike = 16,
+        WriteTypeArgumentsOfSignature = 32,
+    }
+    enum SymbolFormatFlags {
+        None = 0,
+        WriteTypeParametersOrArguments = 1,
+        UseOnlyExternalAliasing = 2,
     }
     enum SymbolAccessibility {
         Accessible = 0,
@@ -2637,10 +2659,10 @@ declare module ts {
         hasSemanticErrors(): boolean;
         isDeclarationVisible(node: Declaration): boolean;
         isImplementationOfOverload(node: FunctionDeclaration): boolean;
-        writeTypeAtLocation(location: Node, enclosingDeclaration: Node, flags: TypeFormatFlags, writer: TextWriter): void;
-        writeReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: TypeFormatFlags, writer: TextWriter): void;
+        writeTypeAtLocation(location: Node, enclosingDeclaration: Node, flags: TypeFormatFlags, writer: SymbolWriter): void;
+        writeReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: TypeFormatFlags, writer: SymbolWriter): void;
         isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node, meaning: SymbolFlags): SymbolAccessiblityResult;
-        isImportDeclarationEntityNameReferenceDeclarationVisibile(entityName: EntityName): SymbolAccessiblityResult;
+        isImportDeclarationEntityNameReferenceDeclarationVisible(entityName: EntityName): SymbolAccessiblityResult;
         getConstantValue(node: PropertyAccess): number;
     }
     enum SymbolFlags {
@@ -3047,17 +3069,6 @@ declare module ts {
         tab = 9,
         verticalTab = 11,
     }
-    class SymbolDisplayPart {
-        text: string;
-        kind: SymbolDisplayPartKind;
-        symbol: Symbol;
-        constructor(text: string, kind: SymbolDisplayPartKind, symbol: Symbol);
-        toJSON(): {
-            text: string;
-            kind: string;
-        };
-        static toString(parts: SymbolDisplayPart[]): string;
-    }
     enum SymbolDisplayPartKind {
         aliasName = 0,
         className = 1,
@@ -3065,25 +3076,22 @@ declare module ts {
         fieldName = 3,
         interfaceName = 4,
         keyword = 5,
-        labelName = 6,
-        lineBreak = 7,
-        numericLiteral = 8,
-        stringLiteral = 9,
-        localName = 10,
-        methodName = 11,
-        moduleName = 12,
-        namespaceName = 13,
-        operator = 14,
-        parameterName = 15,
-        propertyName = 16,
-        punctuation = 17,
-        space = 18,
-        anonymousTypeIndicator = 19,
-        text = 20,
-        typeParameterName = 21,
-        enumMemberName = 22,
-        functionName = 23,
-        regularExpressionLiteral = 24,
+        lineBreak = 6,
+        numericLiteral = 7,
+        stringLiteral = 8,
+        localName = 9,
+        methodName = 10,
+        moduleName = 11,
+        operator = 12,
+        parameterName = 13,
+        propertyName = 14,
+        punctuation = 15,
+        space = 16,
+        text = 17,
+        typeParameterName = 18,
+        enumMemberName = 19,
+        functionName = 20,
+        regularExpressionLiteral = 21,
     }
     interface CancellationToken {
         isCancellationRequested(): boolean;
@@ -3207,6 +3215,7 @@ declare module ts {
     function createDiagnosticForNodeFromMessageChain(node: Node, messageChain: DiagnosticMessageChain, newLine: string): Diagnostic;
     function getErrorSpanForNode(node: Node): Node;
     function isExternalModule(file: SourceFile): boolean;
+    function isDeclarationFile(file: SourceFile): boolean;
     function isPrologueDirective(node: Node): boolean;
     function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode?: SourceFile): CommentRange[];
     function getJsDocComments(node: Declaration, sourceFileOfNode: SourceFile): CommentRange[];
@@ -3214,9 +3223,6 @@ declare module ts {
     function forEachChild<T>(node: Node, cbNode: (node: Node) => T, cbNodes?: (nodes: Node[]) => T): T;
     function forEachReturnStatement<T>(body: Block, visitor: (stmt: ReturnStatement) => T): T;
     function isAnyFunction(node: Node): boolean;
-    function isTypeNode(node: Node): boolean;
-    function isTypeDeclarationName(name: Node): boolean;
-    function isTypeDeclaration(node: Node): boolean;
     function getContainingFunction(node: Node): SignatureDeclaration;
     function getThisContainer(node: Node, includeArrowFunctions: boolean): Node;
     function getSuperContainer(node: Node): Node;
@@ -3237,19 +3243,19 @@ declare module ts {
     function bindSourceFile(file: SourceFile): void;
 }
 declare module ts {
+    function getIndentString(level: number): string;
     function shouldEmitToOwnFile(sourceFile: SourceFile, compilerOptions: CompilerOptions): boolean;
     function isExternalModuleOrDeclarationFile(sourceFile: SourceFile): boolean;
+    function getDeclarationDiagnostics(program: Program, resolver: EmitResolver, targetSourceFile: SourceFile): Diagnostic[];
     function emitFiles(resolver: EmitResolver, targetSourceFile?: SourceFile): EmitResult;
 }
 declare module ts {
     function getDeclarationOfKind(symbol: Symbol, kind: SyntaxKind): Declaration;
+    interface StringSymbolWriter extends SymbolWriter {
+        string(): string;
+    }
+    function getSingleLineStringWriter(): StringSymbolWriter;
     function createTypeChecker(program: Program, fullTypeCheck: boolean): TypeChecker;
-    function spacePart(): SymbolDisplayPart;
-    function keywordPart(kind: SyntaxKind): SymbolDisplayPart;
-    function punctuationPart(kind: SyntaxKind): SymbolDisplayPart;
-    function operatorPart(kind: SyntaxKind): SymbolDisplayPart;
-    function textPart(text: string): SymbolDisplayPart;
-    function symbolPart(text: string, symbol: Symbol): SymbolDisplayPart;
 }
 declare module ts {
     var optionDeclarations: CommandLineOption[];
