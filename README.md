@@ -95,7 +95,12 @@ Generates corresponding .map files
 
 Generates corresponding .d.ts file
 
-###comments
+###comment
+**type**: `boolean`
+
+Emit comments to output
+
+###removeComments
 **type**: `boolean`
 
 Emit comments to output
