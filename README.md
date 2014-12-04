@@ -95,15 +95,15 @@ Generates corresponding .map files
 
 Generates corresponding .d.ts file
 
-###comment
-**type**: `boolean`
-
-Emit comments to output
-
 ###removeComments
 **type**: `boolean`
 
-Emit comments to output
+Do not emit comments to output.
+
+###comment (Obsolate)
+**type**: `boolean`
+
+Emit comments to output.
 
 ###noImplicitAny
 **type**: `boolean`

@@ -1,5 +1,8 @@
 #Released
 
+## 0.4.5
+* README の option の記述を修正
+
 ## 0.4.4
 * TypeScript 1.3.0 に対応
 
