@@ -315,5 +315,5 @@ module.exports = function(grunt){
 
     grunt.registerTask("test", getTestTsTasks());
 
-    grunt.registerTask("setup", ["clean", "sitchv:1.4.0", "egen"]);
+    grunt.registerTask("setup", ["clean", "switchv:1.4.0", "egen"]);
 };
