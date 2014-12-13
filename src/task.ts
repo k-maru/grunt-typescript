@@ -87,14 +87,14 @@ module GruntTs{
         host.io.verbose("--task.compile");
 
         var start = Date.now(),
-            defaultLibFilename = host.getDefaultLibFilename(),
+            defaultLibFilename = host.getDefaultLibFilename(options.tsOpts),
             targetFiles = getTargetFiles(options, host);
 
         if(options._showNearlyTscCommand){
             writeNearlyTscCommand(targetFiles, options);
         }
 
-        var program = ts.createProgram(targetFiles, options, host),
+        var program = ts.createProgram(targetFiles, options.tsOpts, host),
             errors: ts.Diagnostic[] = program.getDiagnostics();
 
         if(writeDiagnostics(errors)){
@@ -105,7 +105,7 @@ module GruntTs{
 
         errors = checker.getGlobalDiagnostics();
         program.getSourceFiles().forEach((sourceFile) => {
-            if(!options.noLib && sourceFile.filename === defaultLibFilename) {
+            if(!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
                 return;
             }
             errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
@@ -120,7 +120,7 @@ module GruntTs{
         }
 
         errors.length = 0;
-        errors = checker.emitFiles().errors;
+        errors = checker.emitFiles().diagnostics;
 
         if(writeDiagnostics(errors)){
             return false;
@@ -185,35 +185,35 @@ module GruntTs{
         try{
             var strs: string[] = [];
             strs.push("tsc");
-            if(options.declaration){
+            if(options.tsOpts.declaration){
                 strs.push("-d");
             }
-            if(options.sourceMap){
+            if(options.tsOpts.sourceMap){
                 strs.push("--sourceMap");
             }
-            if(options.module){
+            if(options.tsOpts.module){
                 strs.push("-m");
-                strs.push(options.module === ts.ModuleKind.CommonJS ? "commonjs" : "amd");
+                strs.push(options.tsOpts.module === ts.ModuleKind.CommonJS ? "commonjs" : "amd");
             }
-            if(options.target){
+            if(options.tsOpts.target){
                 strs.push("-t");
-                strs.push(options.target === ts.ScriptTarget.ES3 ? "es3" : "es5");
+                strs.push(options.tsOpts.target === ts.ScriptTarget.ES3 ? "es3" : "es5");
             }
-            if(options.noImplicitAny){
+            if(options.tsOpts.noImplicitAny){
                 strs.push("--noImplicitAny");
             }
-            if(options.noLib){
+            if(options.tsOpts.noLib){
                 strs.push("--noLib");
             }
-            if(options.noResolve){
+            if(options.tsOpts.noResolve){
                 strs.push("--noResolve");
             }
-            if(options.removeComments){
+            if(options.tsOpts.removeComments){
                 strs.push("--removeComments");
             }
             if(options.singleFile){
                 strs.push("--out");
-                strs.push(options.out);
+                strs.push(options.tsOpts.out);
             }
             util.writeInfo(strs.concat(targetFiles).join(" "));
         }catch(e){

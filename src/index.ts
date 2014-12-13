@@ -9,6 +9,7 @@
 ///<reference path="./io.ts" />
 
 declare var module: any;
+declare var require: any;
 
 module.exports = function(grunt: IGrunt){
 
@@ -27,10 +28,23 @@ module.exports = function(grunt: IGrunt){
             grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
             return "";
         }
-        code = grunt.file.read(typeScriptPath).toString();
+        code = grunt.file.read(typeScriptPath).toString().trim();
 
         //末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
-        code = code.substr(0, code.trim().length - 32);
+        //code = code.substr(0, code.trim().length - 32);
+        //ts.executeCommandLine(ts.sys.args);
+        ////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
+
+        var lines = code.split(/\n/);
+        var pruneLength = 0;
+        if(lines[lines.length - 1].trim().match("^//")){
+            pruneLength = lines[lines.length - 1].length + 1;
+            lines.length = lines.length - 1;
+        }
+        pruneLength += lines[lines.length - 1].length + 1;
+
+        code = code.substr(0, code.length - pruneLength);
+
         _vm.runInThisContext(code, typeScriptPath);
 
         return typeScriptBinPath;

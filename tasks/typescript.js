@@ -350,23 +350,25 @@ var GruntTs;
             GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
         return {
-            removeComments: prepareRemoveComments(source),
-            sourceMap: boolOrUndef(source, "sourceMap"),
-            declaration: boolOrUndef(source, "declaration"),
             targetFiles: getTargetFiles,
             dest: dest,
             singleFile: singleFile,
             basePath: prepareBasePath(source),
-            target: prepareTarget(source),
-            module: prepareModule(source),
-            out: singleFile ? dest : undefined,
-            noLib: boolOrUndef(source, "noLib"),
-            noImplicitAny: boolOrUndef(source, "noImplicitAny"),
-            noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             references: getReferences,
-            _showNearlyTscCommand: !!grunt.option("showtsc")
+            _showNearlyTscCommand: !!grunt.option("showtsc"),
+            tsOpts: {
+                removeComments: prepareRemoveComments(source),
+                sourceMap: boolOrUndef(source, "sourceMap"),
+                declaration: boolOrUndef(source, "declaration"),
+                out: singleFile ? dest : undefined,
+                noLib: boolOrUndef(source, "noLib"),
+                noImplicitAny: boolOrUndef(source, "noImplicitAny"),
+                noResolve: boolOrUndef(source, "noResolve"),
+                target: prepareTarget(source),
+                module: prepareModule(source)
+            }
         };
     }
     GruntTs.createGruntOptions = createGruntOptions;
@@ -533,7 +535,7 @@ var GruntTs;
                 return sourceFileCache[fullName];
             }
             try {
-                var text = io.readFile(fileName, options.charset);
+                var text = io.readFile(fileName, options.tsOpts.charset);
             }
             catch (e) {
                 if (onError) {
@@ -620,8 +622,8 @@ var GruntTs;
         }
         return {
             getSourceFile: getSourceFile,
-            getDefaultLibFilename: function () {
-                return ts.combinePaths(io.binPath(), "lib.d.ts");
+            getDefaultLibFilename: function (options) {
+                return ts.combinePaths(io.binPath(), options.target === 2 /* ES6 */ ? "lib.es6.d.ts" : "lib.d.ts");
             },
             writeFile: writeFile,
             getCurrentDirectory: function () { return ts.normalizePath(_path.resolve(".")); },
@@ -711,18 +713,18 @@ var GruntTs;
     }
     function compile(options, host) {
         host.io.verbose("--task.compile");
-        var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(), targetFiles = getTargetFiles(options, host);
+        var start = Date.now(), defaultLibFilename = host.getDefaultLibFilename(options.tsOpts), targetFiles = getTargetFiles(options, host);
         if (options._showNearlyTscCommand) {
             writeNearlyTscCommand(targetFiles, options);
         }
-        var program = ts.createProgram(targetFiles, options, host), errors = program.getDiagnostics();
+        var program = ts.createProgram(targetFiles, options.tsOpts, host), errors = program.getDiagnostics();
         if (writeDiagnostics(errors)) {
             return false;
         }
         var checker = program.getTypeChecker(true);
         errors = checker.getGlobalDiagnostics();
         program.getSourceFiles().forEach(function (sourceFile) {
-            if (!options.noLib && sourceFile.filename === defaultLibFilename) {
+            if (!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
                 return;
             }
             errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
@@ -734,7 +736,7 @@ var GruntTs;
             }
         }
         errors.length = 0;
-        errors = checker.emitFiles().errors;
+        errors = checker.emitFiles().diagnostics;
         if (writeDiagnostics(errors)) {
             return false;
         }
@@ -784,35 +786,35 @@ var GruntTs;
         try {
             var strs = [];
             strs.push("tsc");
-            if (options.declaration) {
+            if (options.tsOpts.declaration) {
                 strs.push("-d");
             }
-            if (options.sourceMap) {
+            if (options.tsOpts.sourceMap) {
                 strs.push("--sourceMap");
             }
-            if (options.module) {
+            if (options.tsOpts.module) {
                 strs.push("-m");
-                strs.push(options.module === 1 /* CommonJS */ ? "commonjs" : "amd");
+                strs.push(options.tsOpts.module === 1 /* CommonJS */ ? "commonjs" : "amd");
             }
-            if (options.target) {
+            if (options.tsOpts.target) {
                 strs.push("-t");
-                strs.push(options.target === 0 /* ES3 */ ? "es3" : "es5");
+                strs.push(options.tsOpts.target === 0 /* ES3 */ ? "es3" : "es5");
             }
-            if (options.noImplicitAny) {
+            if (options.tsOpts.noImplicitAny) {
                 strs.push("--noImplicitAny");
             }
-            if (options.noLib) {
+            if (options.tsOpts.noLib) {
                 strs.push("--noLib");
             }
-            if (options.noResolve) {
+            if (options.tsOpts.noResolve) {
                 strs.push("--noResolve");
             }
-            if (options.removeComments) {
+            if (options.tsOpts.removeComments) {
                 strs.push("--removeComments");
             }
             if (options.singleFile) {
                 strs.push("--out");
-                strs.push(options.out);
+                strs.push(options.tsOpts.out);
             }
             GruntTs.util.writeInfo(strs.concat(targetFiles).join(" "));
         }
@@ -836,9 +838,19 @@ module.exports = function (grunt) {
             grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
             return "";
         }
-        code = grunt.file.read(typeScriptPath).toString();
+        code = grunt.file.read(typeScriptPath).toString().trim();
         //末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
-        code = code.substr(0, code.trim().length - 32);
+        //code = code.substr(0, code.trim().length - 32);
+        //ts.executeCommandLine(ts.sys.args);
+        ////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
+        var lines = code.split(/\n/);
+        var pruneLength = 0;
+        if (lines[lines.length - 1].trim().match("^//")) {
+            pruneLength = lines[lines.length - 1].length + 1;
+            lines.length = lines.length - 1;
+        }
+        pruneLength += lines[lines.length - 1].length + 1;
+        code = code.substr(0, code.length - pruneLength);
         _vm.runInThisContext(code, typeScriptPath);
         return typeScriptBinPath;
     }

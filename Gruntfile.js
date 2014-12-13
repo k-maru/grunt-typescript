@@ -168,6 +168,14 @@ module.exports = function(grunt){
                 "test/temp"
             ],
             expect: "test/expected"
+        },
+        switchv: {
+            "1.3.0": {
+                options: {version: "1.3.0"}
+            },
+            "1.4.0": {
+                options:{version: "1.4.0"}
+            }
         }
     });
 
@@ -291,7 +299,21 @@ module.exports = function(grunt){
         },100);
     });
 
+    grunt.registerMultiTask("switchv", "switch typescript version", function(){
+        var version = this.options({}).version,
+            targetDir = "lib/" + version,
+            moduleDir = "node_modules/typescript/bin";
+
+        grunt.file.expand(moduleDir + "/*.*").forEach(function(fileName){
+           grunt.file.delete(fileName);
+        });
+        grunt.file.expand(targetDir + "/*.*").forEach(function(fileName){
+           grunt.file.copy(fileName, moduleDir + "/" + path.basename(fileName));
+        });
+        grunt.file.copy(targetDir + "/tsc.d.ts", "typings/typescript/tsc.d.ts");
+    });
+
     grunt.registerTask("test", getTestTsTasks());
 
-    grunt.registerTask("setup", ["clean", "egen"]);
+    grunt.registerTask("setup", ["clean", "sitchv:1.4.0", "egen"]);
 };
