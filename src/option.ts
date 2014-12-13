@@ -16,7 +16,7 @@ module GruntTs {
         atBegin: boolean;
     }
 
-    export interface GruntOptions extends ts.CompilerOptions{
+    export interface GruntOptions {
         targetFiles(): string[];
         dest: string;
         singleFile: boolean;
@@ -25,6 +25,7 @@ module GruntTs {
         gWatch?: GruntWatchOptions;
         references(): string[];
         _showNearlyTscCommand: boolean;
+        tsOpts: ts.CompilerOptions;
     }
 
 
@@ -202,7 +203,7 @@ module GruntTs {
     export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap, io: GruntIO) : GruntOptions {
 
         function getTargetFiles(): string[]{
-            return grunt.file.expand(<string[]>gruntFile.orig.src);
+            return <string[]>grunt.file.expand(<string[]>gruntFile.orig.src);
         }
 
         function boolOrUndef(source: any, key: string): boolean{
@@ -249,23 +250,25 @@ module GruntTs {
         }
 
         return {
-            removeComments: prepareRemoveComments(source),
-            sourceMap: boolOrUndef(source, "sourceMap"),
-            declaration: boolOrUndef(source, "declaration"),
             targetFiles: getTargetFiles,
             dest: dest,
             singleFile: singleFile,
             basePath: prepareBasePath(source),
-            target: prepareTarget(source),
-            module: prepareModule(source),
-            out: singleFile ? dest : undefined,
-            noLib: boolOrUndef(source, "noLib"),
-            noImplicitAny: boolOrUndef(source, "noImplicitAny"),
-            noResolve: boolOrUndef(source, "noResolve"),
             ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             references: getReferences,
-            _showNearlyTscCommand: !!grunt.option("showtsc")
+            _showNearlyTscCommand: !!grunt.option("showtsc"),
+            tsOpts: {
+                removeComments: prepareRemoveComments(source),
+                sourceMap: boolOrUndef(source, "sourceMap"),
+                declaration: boolOrUndef(source, "declaration"),
+                out: singleFile ? dest : undefined,
+                noLib: boolOrUndef(source, "noLib"),
+                noImplicitAny: boolOrUndef(source, "noImplicitAny"),
+                noResolve: boolOrUndef(source, "noResolve"),
+                target: prepareTarget(source),
+                module: prepareModule(source)
+            }
         };
     }
 }

@@ -10,7 +10,7 @@
 module GruntTs{
 
     var  _fs: any = require("fs"),
-        _os = require("os"),
+        _os:any = require("os"),
         _path: any = require("path"),
         existingDirectories: ts.Map<boolean> = {};
 
@@ -116,7 +116,7 @@ module GruntTs{
                 return sourceFileCache[fullName];
             }
             try {
-                var text = io.readFile(fileName, options.charset);
+                var text = io.readFile(fileName, options.tsOpts.charset);
             }
             catch (e) {
                 if (onError) {
@@ -200,17 +200,17 @@ module GruntTs{
             }
         }
 
-        function reset(fileNames: string[]): void{
+        function reset(fileNames: string[]): void {
             io.verbose("--host.reset");
-            if(typeof fileNames === "undefined"){
+            if (typeof fileNames === "undefined") {
                 sourceFileCache = {};
             }
-            if(util.isArray(fileNames)){
+            if (util.isArray(fileNames)) {
                 fileNames.forEach((f) => {
                     var fullName = io.abs(f);
                     io.verbose("  remove: " + fullName);
 
-                    if(fullName in sourceFileCache){
+                    if (fullName in sourceFileCache) {
                         delete sourceFileCache[fullName];
                     }
                 });
@@ -222,8 +222,9 @@ module GruntTs{
 
         return {
             getSourceFile: getSourceFile,
-            getDefaultLibFilename: () => {
-                return ts.combinePaths(io.binPath(), "lib.d.ts");
+            getDefaultLibFilename: (options: ts.CompilerOptions) => {
+                return ts.combinePaths(io.binPath(),
+                    options.target === ts.ScriptTarget.ES6 ? "lib.es6.d.ts" : "lib.d.ts");
             },
             writeFile: writeFile,
             getCurrentDirectory: () => ts.normalizePath(_path.resolve(".")),
