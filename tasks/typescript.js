@@ -833,7 +833,7 @@ module.exports = function (grunt) {
     function getTsBinPathWithLoad() {
         var typeScriptBinPath = _path.dirname(require.resolve("typescript")), typeScriptPath = _path.resolve(typeScriptBinPath, "tsc.js"), code;
         if (!typeScriptBinPath) {
-            grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
+            grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
             return "";
         }
         code = grunt.file.read(typeScriptPath).toString();
