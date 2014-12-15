@@ -28,6 +28,7 @@ module.exports = function(grunt: IGrunt){
             grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
             return "";
         }
+
         code = grunt.file.read(typeScriptPath).toString().trim();
 
         //末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
