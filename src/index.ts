@@ -24,9 +24,8 @@ module.exports = function(grunt: IGrunt){
             code: string;
 
         if (!typeScriptBinPath) {
-            grunt.fail.warn("typescript.js not found. please 'npm install typescript'.");
+            grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
             return "";
-        }
 
         code = grunt.file.read(typeScriptPath).toString();
 
@@ -37,7 +36,7 @@ module.exports = function(grunt: IGrunt){
         return typeScriptBinPath;
     }
 
-    grunt.registerMultiTask('typescript', function () {
+    grunt.registerMultiTask("typescript", "Compile typescript to javascript.", function () {
 
         var self: grunt.task.IMultiTask<{src: string;}> = this,
             done = self.async(),

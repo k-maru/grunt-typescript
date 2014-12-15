@@ -1,5 +1,9 @@
 #Released
 
+## 0.4.6
+* taskにdescription を追加
+  * grunt-jsmin-sourcemap と競合？して grunt が task を実行できていなかった挙動の修正
+
 ## 0.4.5
 * README の option の記述を修正
 

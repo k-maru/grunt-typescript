@@ -842,7 +842,7 @@ module.exports = function (grunt) {
         _vm.runInThisContext(code, typeScriptPath);
         return typeScriptBinPath;
     }
-    grunt.registerMultiTask('typescript', function () {
+    grunt.registerMultiTask("typescript", "Compile typescript to javascript.", function () {
         var self = this, done = self.async(), promises, binPath = getTsBinPathWithLoad();
         promises = self.files.map(function (gruntFile) {
             var io = GruntTs.createIO(grunt, binPath), opt = GruntTs.createGruntOptions(self.options({}), grunt, gruntFile, io), host = GruntTs.createCompilerHost(opt, io);
