@@ -1,5 +1,8 @@
 #Released
 
+## 0.4.7
+* watch の時に reference で指定されているファイルが更新されていても内容が反映されない不具合を修正
+
 ## 0.4.6
 * taskにdescription を追加
   * grunt-jsmin-sourcemap と競合？して grunt が task を実行できていなかった挙動の修正
