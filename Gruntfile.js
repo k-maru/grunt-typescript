@@ -311,6 +311,7 @@ module.exports = function(grunt){
            grunt.file.copy(fileName, moduleDir + "/" + path.basename(fileName));
         });
         grunt.file.copy(targetDir + "/tsc.d.ts", "typings/typescript/tsc.d.ts");
+        grunt.file.copy(targetDir + "/typescriptServices.d.ts", "typings/typescript/typescriptServices.d.ts");
     });
 
     grunt.registerTask("test", getTestTsTasks());

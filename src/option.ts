@@ -1,6 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
 
@@ -37,7 +37,7 @@ module GruntTs {
         if(!result){
             return undefined;
         }
-        result = ts.normalizePath(result);
+        result = util.normalizePath(result);
         if(result.lastIndexOf("/") !== result.length - 1){
             result = result + "/";
         }
@@ -98,7 +98,7 @@ module GruntTs {
                             return file;
                         }
                     }
-                    return ts.normalizePath(_path.resolve(_path.dirname(file)));
+                    return util.normalizePath(_path.resolve(_path.dirname(file)));
                 });
             },
             extractPath = (files: string[]): string[] => {
@@ -107,15 +107,15 @@ module GruntTs {
                         if(!prev){
                             return curr;
                         }
-                        var left =  ts.normalizePath(_path.relative(prev, curr)),
-                            right = ts.normalizePath(_path.relative(curr, prev)),
+                        var left =  util.normalizePath(_path.relative(prev, curr)),
+                            right = util.normalizePath(_path.relative(curr, prev)),
                             match = left.match(/^(\.\.(\/)?)+/);
                         if(match){
-                            return ts.normalizePath(_path.resolve(prev, match[0]));
+                            return util.normalizePath(_path.resolve(prev, match[0]));
                         }
                         match = right.match(/^(\.\.\/)+/);
                         if(match){
-                            return ts.normalizePath( _path.resolve(curr, match[0]));
+                            return util.normalizePath( _path.resolve(curr, match[0]));
                         }
                         return prev;
                     }, undefined);
@@ -185,16 +185,16 @@ module GruntTs {
         }
         return target.map((item) => {
             if(item === "lib.core.d.ts" || item === "core"){
-                return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                return util.combinePaths(io.binPath(), "lib.core.d.ts");
             }
             if(item === "lib.dom.d.ts" || item === "dom"){
-                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                return util.combinePaths(io.binPath(), "lib.dom.d.ts");
             }
             if(item === "lib.scriptHost.d.ts" || item === "scriptHost"){
-                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                return util.combinePaths(io.binPath(), "lib.scriptHost.d.ts");
             }
             if(item === "lib.webworker.d.ts" || item === "webworker"){
-                return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                return util.combinePaths(io.binPath(), "lib.webworker.d.ts");
             }
             return item;
         });
@@ -226,23 +226,23 @@ module GruntTs {
             }
             target = target.map((item) => {
                 if(item === "lib.core.d.ts" || item === "core"){
-                    return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                    return util.combinePaths(io.binPath(), "lib.core.d.ts");
                 }
                 if(item === "lib.dom.d.ts" || item === "dom"){
-                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                    return util.combinePaths(io.binPath(), "lib.dom.d.ts");
                 }
                 if(item === "lib.scriptHost.d.ts" || item === "scriptHost"){
-                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                    return util.combinePaths(io.binPath(), "lib.scriptHost.d.ts");
                 }
                 if(item === "lib.webworker.d.ts" || item === "webworker"){
-                    return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                    return util.combinePaths(io.binPath(), "lib.webworker.d.ts");
                 }
                 return item;
             });
             return grunt.file.expand(target);
         }
 
-        var dest = ts.normalizePath(gruntFile.dest || ""),
+        var dest = util.normalizePath(gruntFile.dest || ""),
             singleFile = !!dest && _path.extname(dest) === ".js";
 
         if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){

@@ -1,7 +1,7 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 
 ///<reference path="./option.ts" />
 ///<reference path="./host.ts" />
@@ -21,34 +21,38 @@ module.exports = function(grunt: IGrunt){
     function getTsBinPathWithLoad(): string{
 
         var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
-            typeScriptPath = _path.resolve(typeScriptBinPath, "tsc.js"),
-            code: string;
-
-        if (!typeScriptBinPath) {
-            grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
-            return "";
-        }
-
-        code = grunt.file.read(typeScriptPath).toString().trim();
-
-        //末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
-        //code = code.substr(0, code.trim().length - 32);
-        //ts.executeCommandLine(ts.sys.args);
-        ////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
-
-        var lines = code.split(/\n/);
-        var pruneLength = 0;
-        if(lines[lines.length - 1].trim().match("^//")){
-            pruneLength = lines[lines.length - 1].length + 1;
-            lines.length = lines.length - 1;
-        }
-        pruneLength += lines[lines.length - 1].length + 1;
-
-        code = code.substr(0, code.length - pruneLength);
-
-        _vm.runInThisContext(code, typeScriptPath);
-
+            ts = require(_path.resolve(typeScriptBinPath, "typescriptServices.js"));
+        global.ts = ts;
         return typeScriptBinPath;
+        //var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
+        //    typeScriptPath = _path.resolve(typeScriptBinPath, "tsc.js"),
+        //    code: string;
+        //
+        //if (!typeScriptBinPath) {
+        //    grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
+        //    return "";
+        //}
+        //
+        //code = grunt.file.read(typeScriptPath).toString().trim();
+        //
+        ////末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
+        ////code = code.substr(0, code.trim().length - 32);
+        ////ts.executeCommandLine(ts.sys.args);
+        //////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
+        //
+        //var lines = code.split(/\n/);
+        //var pruneLength = 0;
+        //if(lines[lines.length - 1].trim().match("^//")){
+        //    pruneLength = lines[lines.length - 1].length + 1;
+        //    lines.length = lines.length - 1;
+        //}
+        //pruneLength += lines[lines.length - 1].length + 1;
+        //
+        //code = code.substr(0, code.length - pruneLength);
+        //
+        //_vm.runInThisContext(code, typeScriptPath);
+        //
+        //return typeScriptBinPath;
     }
 
     grunt.registerMultiTask("typescript", "Compile typescript to javascript.", function () {

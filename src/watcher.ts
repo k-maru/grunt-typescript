@@ -39,7 +39,7 @@ module GruntTs{
             if(_path.extname(path) !== ".ts"){
                 return;
             }
-            path = ts.normalizePath(path);
+            path = util.normalizePath(path);
 
             if(stats && stats.mtime){
                 events[path] = {

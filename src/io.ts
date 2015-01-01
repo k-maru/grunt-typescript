@@ -1,6 +1,6 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 
 module GruntTs {
 
@@ -21,7 +21,7 @@ module GruntTs {
 
     export function createIO(grunt:IGrunt, binPath: string):GruntIO {
 
-        var currentPath = ts.normalizePath(_path.resolve("."));
+        var currentPath = util.normalizePath(_path.resolve("."));
 
         function readFile(fileName:string, encoding?:string):string {
             if (!_fs.existsSync(fileName)) {
@@ -72,7 +72,7 @@ module GruntTs {
         }
 
         function abs(fileName: string): string{
-            return ts.normalizePath(_path.resolve(".", ts.normalizePath(fileName)));
+            return util.normalizePath(_path.resolve(".", util.normalizePath(fileName)));
         }
 
 

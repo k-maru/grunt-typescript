@@ -1,7 +1,7 @@
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
@@ -27,7 +27,7 @@ module GruntTs{
     }
 
     function directoryExists(io: GruntIO, directoryPath: string): boolean {
-        if (ts.hasProperty(existingDirectories, directoryPath)) {
+        if (util.hasProperty(existingDirectories, directoryPath)) {
             return true;
         }
         //TODO:
@@ -39,8 +39,8 @@ module GruntTs{
     }
 
     function ensureDirectoriesExist(io: GruntIO, directoryPath: string) {
-        if (directoryPath.length > ts.getRootLength(directoryPath) && !directoryExists(io, directoryPath)) {
-            var parentDirectory = ts.getDirectoryPath(directoryPath);
+        if (directoryPath.length > util.getRootLength(directoryPath) && !directoryExists(io, directoryPath)) {
+            var parentDirectory = util.getDirectoryPath(directoryPath);
             ensureDirectoriesExist(io, parentDirectory);
             //TODO:
             io.createDirectory(directoryPath);
@@ -53,7 +53,7 @@ module GruntTs{
         }
 
         var currentPath = io.currentPath(),
-            relativePath = ts.normalizePath(_path.relative(currentPath, fileName)),
+            relativePath = util.normalizePath(_path.relative(currentPath, fileName)),
             basePath = options.basePath;
 
         if(basePath){
@@ -62,7 +62,7 @@ module GruntTs{
             }
             relativePath = relativePath.substr(basePath.length);
         }
-        return ts.normalizePath(_path.resolve(currentPath, options.dest, relativePath));
+        return util.normalizePath(_path.resolve(currentPath, options.dest, relativePath));
     }
 
     function prepareSourcePath(sourceFileName: string, preparedFileName: string, contents: string, options: GruntOptions): string{
@@ -79,7 +79,7 @@ module GruntTs{
             source = mapData.sources[0];
         mapData.sources.length = 0;
         var relative = _path.relative(_path.dirname(preparedFileName), sourceFileName);
-        mapData.sources.push(ts.normalizePath(_path.join(_path.dirname(relative), source)));
+        mapData.sources.push(util.normalizePath(_path.join(_path.dirname(relative), source)));
         return JSON.stringify(mapData);
     }
 
@@ -161,7 +161,7 @@ module GruntTs{
             var targetData = prepareSourcePath(fileName, newFileName, data, options);
 
             try {
-                ensureDirectoriesExist(io, ts.getDirectoryPath(ts.normalizePath(newFileName)));
+                ensureDirectoriesExist(io, util.getDirectoryPath(util.normalizePath(newFileName)));
                 //TODO:
                 io.writeFile(newFileName, targetData, writeByteOrderMark);
                 outputFiles.push(newFileName);
@@ -223,11 +223,11 @@ module GruntTs{
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: (options: ts.CompilerOptions) => {
-                return ts.combinePaths(io.binPath(),
+                return util.combinePaths(io.binPath(),
                     options.target === ts.ScriptTarget.ES6 ? "lib.es6.d.ts" : "lib.d.ts");
             },
             writeFile: writeFile,
-            getCurrentDirectory: () => ts.normalizePath(_path.resolve(".")),
+            getCurrentDirectory: () => util.normalizePath(_path.resolve(".")),
             useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
             getCanonicalFileName: getCanonicalFileName,
             getNewLine: () => _os.EOL,

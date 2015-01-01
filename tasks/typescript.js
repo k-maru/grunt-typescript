@@ -61,16 +61,88 @@ var GruntTs;
             console.log(("-- " + str.trim().replace(/\n/g, "\n-- ")).grey);
         }
         util.writeDebug = writeDebug;
+        //ts
+        var hasOwnProperty = Object.prototype.hasOwnProperty;
+        function hasProperty(value, key) {
+            return hasOwnProperty.call(value, key);
+        }
+        util.hasProperty = hasProperty;
+        var colonCode = 0x3A;
+        var slashCode = 0x2F;
+        function getRootLength(path) {
+            if (path.charCodeAt(0) === slashCode) {
+                if (path.charCodeAt(1) !== slashCode)
+                    return 1;
+                var p1 = path.indexOf("/", 2);
+                if (p1 < 0)
+                    return 2;
+                var p2 = path.indexOf("/", p1 + 1);
+                if (p2 < 0)
+                    return p1 + 1;
+                return p2 + 1;
+            }
+            if (path.charCodeAt(1) === colonCode) {
+                if (path.charCodeAt(2) === slashCode)
+                    return 3;
+                return 2;
+            }
+            return 0;
+        }
+        util.getRootLength = getRootLength;
+        function normalizeSlashes(path) {
+            return path.replace(/\\/g, "/");
+        }
+        util.normalizeSlashes = normalizeSlashes;
+        var directorySeparator = "/";
+        function getNormalizedParts(normalizedSlashedPath, rootLength) {
+            var parts = normalizedSlashedPath.substr(rootLength).split(directorySeparator);
+            var normalized = [];
+            for (var i = 0; i < parts.length; i++) {
+                var part = parts[i];
+                if (part !== ".") {
+                    if (part === ".." && normalized.length > 0 && normalized[normalized.length - 1] !== "..") {
+                        normalized.pop();
+                    }
+                    else {
+                        normalized.push(part);
+                    }
+                }
+            }
+            return normalized;
+        }
+        function normalizePath(path) {
+            var path = normalizeSlashes(path);
+            var rootLength = getRootLength(path);
+            var normalized = getNormalizedParts(path, rootLength);
+            return path.substr(0, rootLength) + normalized.join(directorySeparator);
+        }
+        util.normalizePath = normalizePath;
+        function combinePaths(path1, path2) {
+            if (!(path1 && path1.length))
+                return path2;
+            if (!(path2 && path2.length))
+                return path1;
+            if (path2.charAt(0) === directorySeparator)
+                return path2;
+            if (path1.charAt(path1.length - 1) === directorySeparator)
+                return path1 + path2;
+            return path1 + directorySeparator + path2;
+        }
+        util.combinePaths = combinePaths;
+        function getDirectoryPath(path) {
+            return path.substr(0, Math.max(getRootLength(path), path.lastIndexOf(directorySeparator)));
+        }
+        util.getDirectoryPath = getDirectoryPath;
     })(util = GruntTs.util || (GruntTs.util = {}));
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 var GruntTs;
 (function (GruntTs) {
     var _fs = require('fs'), _os = require('os'), _path = require('path');
     function createIO(grunt, binPath) {
-        var currentPath = ts.normalizePath(_path.resolve("."));
+        var currentPath = GruntTs.util.normalizePath(_path.resolve("."));
         function readFile(fileName, encoding) {
             if (!_fs.existsSync(fileName)) {
                 return undefined;
@@ -115,7 +187,7 @@ var GruntTs;
             }
         }
         function abs(fileName) {
-            return ts.normalizePath(_path.resolve(".", ts.normalizePath(fileName)));
+            return GruntTs.util.normalizePath(_path.resolve(".", GruntTs.util.normalizePath(fileName)));
         }
         return {
             readFile: readFile,
@@ -139,7 +211,7 @@ var GruntTs;
 })(GruntTs || (GruntTs = {}));
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
 var GruntTs;
@@ -153,7 +225,7 @@ var GruntTs;
         if (!result) {
             return undefined;
         }
-        result = ts.normalizePath(result);
+        result = GruntTs.util.normalizePath(result);
         if (result.lastIndexOf("/") !== result.length - 1) {
             result = result + "/";
         }
@@ -211,20 +283,20 @@ var GruntTs;
                         return file;
                     }
                 }
-                return ts.normalizePath(_path.resolve(_path.dirname(file)));
+                return GruntTs.util.normalizePath(_path.resolve(_path.dirname(file)));
             });
         }, extractPath = function (files) {
             var dirNames = getDirNames(files), result = dirNames.reduce(function (prev, curr) {
                 if (!prev) {
                     return curr;
                 }
-                var left = ts.normalizePath(_path.relative(prev, curr)), right = ts.normalizePath(_path.relative(curr, prev)), match = left.match(/^(\.\.(\/)?)+/);
+                var left = GruntTs.util.normalizePath(_path.relative(prev, curr)), right = GruntTs.util.normalizePath(_path.relative(curr, prev)), match = left.match(/^(\.\.(\/)?)+/);
                 if (match) {
-                    return ts.normalizePath(_path.resolve(prev, match[0]));
+                    return GruntTs.util.normalizePath(_path.resolve(prev, match[0]));
                 }
                 match = right.match(/^(\.\.\/)+/);
                 if (match) {
-                    return ts.normalizePath(_path.resolve(curr, match[0]));
+                    return GruntTs.util.normalizePath(_path.resolve(curr, match[0]));
                 }
                 return prev;
             }, undefined);
@@ -293,16 +365,16 @@ var GruntTs;
         }
         return target.map(function (item) {
             if (item === "lib.core.d.ts" || item === "core") {
-                return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                return GruntTs.util.combinePaths(io.binPath(), "lib.core.d.ts");
             }
             if (item === "lib.dom.d.ts" || item === "dom") {
-                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                return GruntTs.util.combinePaths(io.binPath(), "lib.dom.d.ts");
             }
             if (item === "lib.scriptHost.d.ts" || item === "scriptHost") {
-                return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                return GruntTs.util.combinePaths(io.binPath(), "lib.scriptHost.d.ts");
             }
             if (item === "lib.webworker.d.ts" || item === "webworker") {
-                return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                return GruntTs.util.combinePaths(io.binPath(), "lib.webworker.d.ts");
             }
             return item;
         });
@@ -330,22 +402,22 @@ var GruntTs;
             }
             target = target.map(function (item) {
                 if (item === "lib.core.d.ts" || item === "core") {
-                    return ts.combinePaths(io.binPath(), "lib.core.d.ts");
+                    return GruntTs.util.combinePaths(io.binPath(), "lib.core.d.ts");
                 }
                 if (item === "lib.dom.d.ts" || item === "dom") {
-                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                    return GruntTs.util.combinePaths(io.binPath(), "lib.dom.d.ts");
                 }
                 if (item === "lib.scriptHost.d.ts" || item === "scriptHost") {
-                    return ts.combinePaths(io.binPath(), "lib.dom.d.ts");
+                    return GruntTs.util.combinePaths(io.binPath(), "lib.scriptHost.d.ts");
                 }
                 if (item === "lib.webworker.d.ts" || item === "webworker") {
-                    return ts.combinePaths(io.binPath(), "lib.webworker.d.ts");
+                    return GruntTs.util.combinePaths(io.binPath(), "lib.webworker.d.ts");
                 }
                 return item;
             });
             return grunt.file.expand(target);
         }
-        var dest = ts.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
+        var dest = GruntTs.util.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
         if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
             GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         }
@@ -399,7 +471,7 @@ var GruntTs;
             if (_path.extname(path) !== ".ts") {
                 return;
             }
-            path = ts.normalizePath(path);
+            path = GruntTs.util.normalizePath(path);
             if (stats && stats.mtime) {
                 events[path] = {
                     mtime: stats.mtime.getTime(),
@@ -456,7 +528,7 @@ var GruntTs;
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 ///<reference path="./util.ts" />
 ///<reference path="./io.ts" />
 ///<reference path="./watcher.ts" />
@@ -464,7 +536,7 @@ var GruntTs;
 (function (GruntTs) {
     var _fs = require("fs"), _os = require("os"), _path = require("path"), existingDirectories = {};
     function directoryExists(io, directoryPath) {
-        if (ts.hasProperty(existingDirectories, directoryPath)) {
+        if (GruntTs.util.hasProperty(existingDirectories, directoryPath)) {
             return true;
         }
         //TODO:
@@ -475,8 +547,8 @@ var GruntTs;
         return false;
     }
     function ensureDirectoriesExist(io, directoryPath) {
-        if (directoryPath.length > ts.getRootLength(directoryPath) && !directoryExists(io, directoryPath)) {
-            var parentDirectory = ts.getDirectoryPath(directoryPath);
+        if (directoryPath.length > GruntTs.util.getRootLength(directoryPath) && !directoryExists(io, directoryPath)) {
+            var parentDirectory = GruntTs.util.getDirectoryPath(directoryPath);
             ensureDirectoriesExist(io, parentDirectory);
             //TODO:
             io.createDirectory(directoryPath);
@@ -486,14 +558,14 @@ var GruntTs;
         if (options.singleFile || !options.dest) {
             return fileName;
         }
-        var currentPath = io.currentPath(), relativePath = ts.normalizePath(_path.relative(currentPath, fileName)), basePath = options.basePath;
+        var currentPath = io.currentPath(), relativePath = GruntTs.util.normalizePath(_path.relative(currentPath, fileName)), basePath = options.basePath;
         if (basePath) {
             if (relativePath.substr(0, basePath.length) !== basePath) {
                 throw new Error(fileName + " is not started basePath");
             }
             relativePath = relativePath.substr(basePath.length);
         }
-        return ts.normalizePath(_path.resolve(currentPath, options.dest, relativePath));
+        return GruntTs.util.normalizePath(_path.resolve(currentPath, options.dest, relativePath));
     }
     function prepareSourcePath(sourceFileName, preparedFileName, contents, options) {
         if (options.singleFile || !options.dest) {
@@ -508,7 +580,7 @@ var GruntTs;
         var mapData = JSON.parse(contents), source = mapData.sources[0];
         mapData.sources.length = 0;
         var relative = _path.relative(_path.dirname(preparedFileName), sourceFileName);
-        mapData.sources.push(ts.normalizePath(_path.join(_path.dirname(relative), source)));
+        mapData.sources.push(GruntTs.util.normalizePath(_path.join(_path.dirname(relative), source)));
         return JSON.stringify(mapData);
     }
     function createCompilerHost(options, io) {
@@ -569,7 +641,7 @@ var GruntTs;
             //map ファイルの参照先パスを変換
             var targetData = prepareSourcePath(fileName, newFileName, data, options);
             try {
-                ensureDirectoriesExist(io, ts.getDirectoryPath(ts.normalizePath(newFileName)));
+                ensureDirectoriesExist(io, GruntTs.util.getDirectoryPath(GruntTs.util.normalizePath(newFileName)));
                 //TODO:
                 io.writeFile(newFileName, targetData, writeByteOrderMark);
                 outputFiles.push(newFileName);
@@ -623,10 +695,10 @@ var GruntTs;
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFilename: function (options) {
-                return ts.combinePaths(io.binPath(), options.target === 2 /* ES6 */ ? "lib.es6.d.ts" : "lib.d.ts");
+                return GruntTs.util.combinePaths(io.binPath(), options.target === 2 /* ES6 */ ? "lib.es6.d.ts" : "lib.d.ts");
             },
             writeFile: writeFile,
-            getCurrentDirectory: function () { return ts.normalizePath(_path.resolve(".")); },
+            getCurrentDirectory: function () { return GruntTs.util.normalizePath(_path.resolve(".")); },
             useCaseSensitiveFileNames: function () { return useCaseSensitiveFileNames; },
             getCanonicalFileName: getCanonicalFileName,
             getNewLine: function () { return _os.EOL; },
@@ -640,7 +712,7 @@ var GruntTs;
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 ///<reference path="./option.ts" />
 ///<reference path="./host.ts" />
 ///<reference path="./io.ts" />
@@ -825,7 +897,7 @@ var GruntTs;
 ///<reference path="../typings/gruntjs/gruntjs.d.ts" />
 ///<reference path="../typings/node/node.d.ts" />
 ///<reference path="../typings/q/Q.d.ts" />
-///<reference path="../typings/typescript/tsc.d.ts" />
+///<reference path="../typings/typescript/typescriptServices.d.ts" />
 ///<reference path="./option.ts" />
 ///<reference path="./host.ts" />
 ///<reference path="./task.ts" />
@@ -833,26 +905,38 @@ var GruntTs;
 module.exports = function (grunt) {
     var _path = require("path"), _vm = require('vm'), _os = require('os'), Q = require('q');
     function getTsBinPathWithLoad() {
-        var typeScriptBinPath = _path.dirname(require.resolve("typescript")), typeScriptPath = _path.resolve(typeScriptBinPath, "tsc.js"), code;
-        if (!typeScriptBinPath) {
-            grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
-            return "";
-        }
-        code = grunt.file.read(typeScriptPath).toString().trim();
-        //末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
-        //code = code.substr(0, code.trim().length - 32);
-        //ts.executeCommandLine(ts.sys.args);
-        ////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
-        var lines = code.split(/\n/);
-        var pruneLength = 0;
-        if (lines[lines.length - 1].trim().match("^//")) {
-            pruneLength = lines[lines.length - 1].length + 1;
-            lines.length = lines.length - 1;
-        }
-        pruneLength += lines[lines.length - 1].length + 1;
-        code = code.substr(0, code.length - pruneLength);
-        _vm.runInThisContext(code, typeScriptPath);
+        var typeScriptBinPath = _path.dirname(require.resolve("typescript")), ts = require(_path.resolve(typeScriptBinPath, "typescriptServices.js"));
+        global.ts = ts;
         return typeScriptBinPath;
+        //var typeScriptBinPath = _path.dirname(require.resolve("typescript")),
+        //    typeScriptPath = _path.resolve(typeScriptBinPath, "tsc.js"),
+        //    code: string;
+        //
+        //if (!typeScriptBinPath) {
+        //    grunt.fail.warn("tsc.js not found. please 'npm install typescript'.");
+        //    return "";
+        //}
+        //
+        //code = grunt.file.read(typeScriptPath).toString().trim();
+        //
+        ////末尾にあるコマンドラインの実行行を削除 "ts.executeCommandLine(sys.args);"
+        ////code = code.substr(0, code.trim().length - 32);
+        ////ts.executeCommandLine(ts.sys.args);
+        //////# sourceMappingURL=file:////Users/maru/work/git/TypeScript/built/local/tsc.js.map
+        //
+        //var lines = code.split(/\n/);
+        //var pruneLength = 0;
+        //if(lines[lines.length - 1].trim().match("^//")){
+        //    pruneLength = lines[lines.length - 1].length + 1;
+        //    lines.length = lines.length - 1;
+        //}
+        //pruneLength += lines[lines.length - 1].length + 1;
+        //
+        //code = code.substr(0, code.length - pruneLength);
+        //
+        //_vm.runInThisContext(code, typeScriptPath);
+        //
+        //return typeScriptBinPath;
     }
     grunt.registerMultiTask("typescript", "Compile typescript to javascript.", function () {
         var self = this, done = self.async(), promises, binPath = getTsBinPathWithLoad();
