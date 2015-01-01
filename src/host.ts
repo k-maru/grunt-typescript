@@ -112,8 +112,14 @@ module GruntTs{
             var fullName = io.abs(fileName);
 
             if(fullName in sourceFileCache){
-                io.verbose("  cache");
-                return sourceFileCache[fullName];
+                var chechedSourceFile = sourceFileCache[fullName];
+                var newMtime = _fs.statSync(fullName).mtime.getTime();
+                if(chechedSourceFile.mtime !== newMtime){
+                    delete sourceFileCache[fullName];
+                }else{
+                    io.verbose("  cache");
+                    return sourceFileCache[fullName];
+                }
             }
             try {
                 var text = io.readFile(fileName, options.charset);
