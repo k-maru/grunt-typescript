@@ -121,6 +121,11 @@ Do not erase const enum declarations in generated code.
 Do not emit outputs if any type checking errors were reported.
 The default for this option is set to true for backwards compatibility.
 
+###suppressImplicitAnyIndexErrors
+**type**: `boolean`
+
+Suppress noImplicitAny errors for indexing objects lacking index signatures.
+
 ##Original Options
 
 ###ignoreError(obsolate)

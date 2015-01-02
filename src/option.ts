@@ -44,18 +44,18 @@ module GruntTs {
         return result;
     }
 
-    function prepareRemoveComments(opt: any): boolean{
-        var result: boolean = undefined;
-        if(!util.isUndef(opt.comment)){
-            util.writeWarn("The 'comment' option will be obsolated. Please use the 'removeComments'. (default false)");
-        }
-        if(!util.isUndef(opt.removeComments)){
-            result = !!opt.removeComments;
-        }else if(!util.isUndef(opt.comment)){
-            result = !opt.comment;
-        }
-        return result;
-    }
+    //function prepareRemoveComments(opt: any): boolean{
+    //    var result: boolean = undefined;
+    //    if(!util.isUndef(opt.comment)){
+    //        util.writeWarn("The 'comment' option will be obsolated. Please use the 'removeComments'. (default false)");
+    //    }
+    //    if(!util.isUndef(opt.removeComments)){
+    //        result = !!opt.removeComments;
+    //    }else if(!util.isUndef(opt.comment)){
+    //        result = !opt.comment;
+    //    }
+    //    return result;
+    //}
 
     function prepareTarget(opt: any): ts.ScriptTarget{
         var result:ts.ScriptTarget = undefined;
@@ -260,9 +260,9 @@ module GruntTs {
         var dest = util.normalizePath(gruntFile.dest || ""),
             singleFile = !!dest && _path.extname(dest) === ".js";
 
-        if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
-            util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
-        }
+        //if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
+        //    util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
+        //}
 
         return {
             targetFiles: getTargetFiles,
@@ -274,7 +274,8 @@ module GruntTs {
             references: getReferences,
             _showNearlyTscCommand: !!grunt.option("showtsc"),
             tsOpts: {
-                removeComments: prepareRemoveComments(source),
+                //removeComments: prepareRemoveComments(source),
+                removeComments: boolOrUndef(source, "removeComments"),
                 sourceMap: boolOrUndef(source, "sourceMap"),
                 declaration: boolOrUndef(source, "declaration"),
                 out: singleFile ? dest : undefined,
@@ -284,7 +285,8 @@ module GruntTs {
                 target: prepareTarget(source),
                 module: prepareModule(source),
                 preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
-                noEmitOnError: prepareNoEmitOnError(source)
+                noEmitOnError: prepareNoEmitOnError(source),
+                suppressImplicitAnyIndexErrors: boolOrUndef(source, "suppressImplicitAnyIndexErrors")
             }
         };
     }

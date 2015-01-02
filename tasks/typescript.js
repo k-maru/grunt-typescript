@@ -231,19 +231,18 @@ var GruntTs;
         }
         return result;
     }
-    function prepareRemoveComments(opt) {
-        var result = undefined;
-        if (!GruntTs.util.isUndef(opt.comment)) {
-            GruntTs.util.writeWarn("The 'comment' option will be obsolated. Please use the 'removeComments'. (default false)");
-        }
-        if (!GruntTs.util.isUndef(opt.removeComments)) {
-            result = !!opt.removeComments;
-        }
-        else if (!GruntTs.util.isUndef(opt.comment)) {
-            result = !opt.comment;
-        }
-        return result;
-    }
+    //function prepareRemoveComments(opt: any): boolean{
+    //    var result: boolean = undefined;
+    //    if(!util.isUndef(opt.comment)){
+    //        util.writeWarn("The 'comment' option will be obsolated. Please use the 'removeComments'. (default false)");
+    //    }
+    //    if(!util.isUndef(opt.removeComments)){
+    //        result = !!opt.removeComments;
+    //    }else if(!util.isUndef(opt.comment)){
+    //        result = !opt.comment;
+    //    }
+    //    return result;
+    //}
     function prepareTarget(opt) {
         var result = undefined;
         if (opt.target) {
@@ -430,9 +429,9 @@ var GruntTs;
             return grunt.file.expand(target);
         }
         var dest = GruntTs.util.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
-        if (source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi) {
-            GruntTs.util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
-        }
+        //if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
+        //    util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
+        //}
         return {
             targetFiles: getTargetFiles,
             dest: dest,
@@ -443,7 +442,8 @@ var GruntTs;
             references: getReferences,
             _showNearlyTscCommand: !!grunt.option("showtsc"),
             tsOpts: {
-                removeComments: prepareRemoveComments(source),
+                //removeComments: prepareRemoveComments(source),
+                removeComments: boolOrUndef(source, "removeComments"),
                 sourceMap: boolOrUndef(source, "sourceMap"),
                 declaration: boolOrUndef(source, "declaration"),
                 out: singleFile ? dest : undefined,
@@ -453,7 +453,8 @@ var GruntTs;
                 target: prepareTarget(source),
                 module: prepareModule(source),
                 preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
-                noEmitOnError: prepareNoEmitOnError(source)
+                noEmitOnError: prepareNoEmitOnError(source),
+                suppressImplicitAnyIndexErrors: boolOrUndef(source, "suppressImplicitAnyIndexErrors")
             }
         };
     }
