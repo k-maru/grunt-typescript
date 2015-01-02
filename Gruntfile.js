@@ -178,11 +178,11 @@ module.exports = function(grunt){
             expect: "test/expected"
         },
         switchv: {
-            "1.3.0": {
-                options: {version: "1.3.0"}
+            "1_3_0": {
+                options: {version: "1_3_0"}
             },
-            "1.4.0": {
-                options:{version: "1.4.0"}
+            "1_4_0": {
+                options:{version: "1_4_0"}
             }
         }
     });
@@ -325,11 +325,15 @@ module.exports = function(grunt){
         grunt.file.expand(targetDir + "/*.*").forEach(function(fileName){
            grunt.file.copy(fileName, moduleDir + "/" + path.basename(fileName));
         });
-        grunt.file.copy(targetDir + "/tsc.d.ts", "typings/typescript/tsc.d.ts");
-        grunt.file.copy(targetDir + "/typescriptServices.d.ts", "typings/typescript/typescriptServices.d.ts");
+        if(grunt.file.exists(targetDir + "/tsc.d.ts")) {
+            grunt.file.copy(targetDir + "/tsc.d.ts", "typings/typescript/tsc.d.ts");
+        }
+        if(grunt.file.exists(targetDir + "/typescriptServices.d.ts")) {
+            grunt.file.copy(targetDir + "/typescriptServices.d.ts", "typings/typescript/typescriptServices.d.ts");
+        }
     });
 
     grunt.registerTask("test", getTestTsTasks());
 
-    grunt.registerTask("setup", ["clean", "switchv:1.4.0", "egen"]);
+    grunt.registerTask("setup", ["clean", "switchv:1_4_0", "egen"]);
 };
