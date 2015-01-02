@@ -115,13 +115,13 @@ module.exports = function(grunt){
             "errorTypecheck": grunt.option("error") ? {
                 src: "test/fixtures/error-typecheck.ts",
                 options: {
-                    ignoreError: false
+                    noEmitOnError: false
                 }
             } : {},
             "errorSyntax": grunt.option("error") ? {
                 src: "test/fixtures/error-syntax.ts",
                 options: {
-                    ignoreError: true
+                    noEmitOnError: true
                 }
             } : {},
             simpleWatch: grunt.option("watch") ? {
@@ -272,6 +272,10 @@ module.exports = function(grunt){
         }).catch(function(){
             done(false);
         });
+
+        //execTsc("Preserve Const Enums", "test/fixtures/error-typecheck.ts").then(function(){
+        //    done(true);
+        //});
     });
 
     grunt.registerTask("build", "Build", function(){

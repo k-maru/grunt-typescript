@@ -21,7 +21,7 @@ module GruntTs {
         dest: string;
         singleFile: boolean;
         basePath: string;
-        ignoreError?: boolean;
+        //ignoreError?: boolean;
         gWatch?: GruntWatchOptions;
         references(): string[];
         _showNearlyTscCommand: boolean;
@@ -200,6 +200,21 @@ module GruntTs {
         });
     }
 
+    function prepareNoEmitOnError(opt: any): boolean{
+
+        if(!util.isUndef(opt.ignoreError)){
+            util.writeWarn("The 'ignoreError' option will be obsolated. Please use the 'noEmitOnError'. (default true)");
+        }
+
+        if(util.isUndef(opt.noEmitOnError)){
+            if(util.isUndef(opt.ignoreError)){
+                return true;
+            }
+            return !opt.ignoreError;
+        }
+        return !!opt.noEmitOnError;
+    }
+
     export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap, io: GruntIO) : GruntOptions {
 
         function getTargetFiles(): string[]{
@@ -254,7 +269,7 @@ module GruntTs {
             dest: dest,
             singleFile: singleFile,
             basePath: prepareBasePath(source),
-            ignoreError: boolOrUndef(source, "ignoreError"),
+            //ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             references: getReferences,
             _showNearlyTscCommand: !!grunt.option("showtsc"),
@@ -267,7 +282,9 @@ module GruntTs {
                 noImplicitAny: boolOrUndef(source, "noImplicitAny"),
                 noResolve: boolOrUndef(source, "noResolve"),
                 target: prepareTarget(source),
-                module: prepareModule(source)
+                module: prepareModule(source),
+                preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
+                noEmitOnError: prepareNoEmitOnError(source)
             }
         };
     }

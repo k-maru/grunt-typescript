@@ -103,18 +103,19 @@ module GruntTs{
 
         var checker = program.getTypeChecker(/*fullTypeCheckMode*/ true);
 
-        errors = checker.getGlobalDiagnostics();
-        program.getSourceFiles().forEach((sourceFile) => {
-            if(!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
-                return;
-            }
-            errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
-        });
+        //errors = checker.getGlobalDiagnostics();
+        //program.getSourceFiles().forEach((sourceFile) => {
+        //    if(!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
+        //        return;
+        //    }
+        //    errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
+        //});
 
-        //errors = checker.getDiagnostics();
+        errors = checker.getDiagnostics();
 
-        if(writeDiagnostics(errors, !!options.ignoreError)){
-            if(!options.ignoreError){
+        var isEmitBlocked = checker.isEmitBlocked();
+        if(writeDiagnostics(errors, !isEmitBlocked)){
+            if(!!isEmitBlocked){
                 return false;
             }
         }
@@ -211,10 +212,17 @@ module GruntTs{
             if(options.tsOpts.removeComments){
                 strs.push("--removeComments");
             }
+            if(options.tsOpts.preserveConstEnums){
+                strs.push("--preserveConstEnums");
+            }
+            if(options.tsOpts.noEmitOnError){
+                strs.push("--noEmitOnError");
+            }
             if(options.singleFile){
                 strs.push("--out");
                 strs.push(options.tsOpts.out);
             }
+
             util.writeInfo(strs.concat(targetFiles).join(" "));
         }catch(e){
 

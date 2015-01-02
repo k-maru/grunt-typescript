@@ -379,6 +379,18 @@ var GruntTs;
             return item;
         });
     }
+    function prepareNoEmitOnError(opt) {
+        if (!GruntTs.util.isUndef(opt.ignoreError)) {
+            GruntTs.util.writeWarn("The 'ignoreError' option will be obsolated. Please use the 'noEmitOnError'. (default true)");
+        }
+        if (GruntTs.util.isUndef(opt.noEmitOnError)) {
+            if (GruntTs.util.isUndef(opt.ignoreError)) {
+                return true;
+            }
+            return !opt.ignoreError;
+        }
+        return !!opt.noEmitOnError;
+    }
     function createGruntOptions(source, grunt, gruntFile, io) {
         function getTargetFiles() {
             return grunt.file.expand(gruntFile.orig.src);
@@ -426,7 +438,7 @@ var GruntTs;
             dest: dest,
             singleFile: singleFile,
             basePath: prepareBasePath(source),
-            ignoreError: boolOrUndef(source, "ignoreError"),
+            //ignoreError: boolOrUndef(source, "ignoreError"),
             gWatch: prepareWatch(source, getTargetFiles()),
             references: getReferences,
             _showNearlyTscCommand: !!grunt.option("showtsc"),
@@ -439,7 +451,9 @@ var GruntTs;
                 noImplicitAny: boolOrUndef(source, "noImplicitAny"),
                 noResolve: boolOrUndef(source, "noResolve"),
                 target: prepareTarget(source),
-                module: prepareModule(source)
+                module: prepareModule(source),
+                preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
+                noEmitOnError: prepareNoEmitOnError(source)
             }
         };
     }
@@ -801,16 +815,17 @@ var GruntTs;
             return false;
         }
         var checker = program.getTypeChecker(true);
-        errors = checker.getGlobalDiagnostics();
-        program.getSourceFiles().forEach(function (sourceFile) {
-            if (!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
-                return;
-            }
-            errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
-        });
-        //errors = checker.getDiagnostics();
-        if (writeDiagnostics(errors, !!options.ignoreError)) {
-            if (!options.ignoreError) {
+        //errors = checker.getGlobalDiagnostics();
+        //program.getSourceFiles().forEach((sourceFile) => {
+        //    if(!options.tsOpts.noLib && sourceFile.filename === defaultLibFilename) {
+        //        return;
+        //    }
+        //    errors.push.apply(errors, checker.getDiagnostics(sourceFile)); //.filter(d => d.file === sourceFile);
+        //});
+        errors = checker.getDiagnostics();
+        var isEmitBlocked = checker.isEmitBlocked();
+        if (writeDiagnostics(errors, !isEmitBlocked)) {
+            if (!!isEmitBlocked) {
                 return false;
             }
         }
@@ -890,6 +905,12 @@ var GruntTs;
             }
             if (options.tsOpts.removeComments) {
                 strs.push("--removeComments");
+            }
+            if (options.tsOpts.preserveConstEnums) {
+                strs.push("--preserveConstEnums");
+            }
+            if (options.tsOpts.noEmitOnError) {
+                strs.push("--noEmitOnError");
             }
             if (options.singleFile) {
                 strs.push("--out");

@@ -100,11 +100,6 @@ Generates corresponding .d.ts file
 
 Do not emit comments to output.
 
-###comment (Obsolate)
-**type**: `boolean`
-
-Emit comments to output.
-
 ###noImplicitAny
 **type**: `boolean`
 
@@ -115,9 +110,20 @@ Warn on expressions and declarations with an implied 'any' type.
 
 Skip resolution and preprocessing.
 
+###preserveConstEnums
+**type**: `boolean`
+
+Do not erase const enum declarations in generated code.
+
+###noEmitOnError
+**type**: `boolean`
+
+Do not emit outputs if any type checking errors were reported.
+The default for this option is set to true for backwards compatibility.
+
 ##Original Options
 
-###ignoreError
+###ignoreError(obsolate)
 **type**: `boolean`
 
 If the compiler can create a file, the task ignores the error.
@@ -215,25 +221,5 @@ grunt.initConfig({
   ...
 });
 ```
-
-###~~newLine~~
-~~**type**: `string`~~
-
-~~Specify newline code: "auto" (default) or "crlf" or "lf". This options is experimental.~~
-
-###~~indentStep~~
-~~**type**: `number`~~
-
-~~Specify space indent count for code generation: This value will be disregarded if the useTabIndent option is specified. This options is experimental.~~
-
-###~~useTabIndent~~
-~~**type**: `boolean`~~
-
-~~Specify tab indent for code generation: false (default) or true. This options is experimental.~~
-
-###~~disallowAsi~~
-~~**type**: `boolean`~~
-
-~~Do not allow auto semicolon insertion. This options is experimental.~~
 
 ※I'm sorry for poor English

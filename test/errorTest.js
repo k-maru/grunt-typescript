@@ -33,7 +33,7 @@ module.exports.errorTypescript = {
         test.expect(1);
 
         exec(["typescript:errorTypecheck", "--error"], function(results){
-            test.equal(">> ".red + "test/fixtures/error-typecheck.ts(1,1): error TS2304: Cannot find name 'foo'.", results[0].trim());
+            test.equal(">> ".yellow + "test/fixtures/error-typecheck.ts(1,1): error TS2304: Cannot find name 'foo'.", results[0].trim());
 
             //console.log(results[0].trim());
 
