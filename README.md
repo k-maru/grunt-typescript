@@ -78,7 +78,7 @@ Do not include a default lib.d.ts with global declarations
 ###target
 **type**: `string`
 
-Specify ECMAScript target version: "ES3" (default) or "ES5"
+Specify ECMAScript target version: 'ES3' (default), 'ES5', or 'ES6' (experimental)
 
 ###module
 **type**: `string`
@@ -128,11 +128,13 @@ Suppress noImplicitAny errors for indexing objects lacking index signatures.
 
 ##Original Options
 
-###ignoreError(obsolate)
+###ignoreError(obsolete)
 **type**: `boolean`
 
 If the compiler can create a file, the task ignores the error.
 Default value is false.
+
+This option is now obsolete. Please use `noEmitOnError` option.
 
 ###basePath
 **type**: `string`

@@ -47,6 +47,14 @@ module.exports = function(grunt){
                     target:"ES5"
                 }
             },
+            es6:{
+                src:"test/fixtures/es6.ts",
+                options:{
+                    target:"ES6",
+                    noLib: true,
+                    references: "core"
+                }
+            },
             amd:{
                 src:"test/fixtures/amd.ts",
                 options:{
@@ -253,6 +261,9 @@ module.exports = function(grunt){
             return execTsc("ES5", "test/fixtures/es5.ts --target ES5");
         }).then(function(){
             grunt.file.copy("test/fixtures/es5.js", "test/expected/es5.js");
+            return execTsc("ES6", "test/fixtures/es6.ts --target ES6")
+        }).then(function(){
+            grunt.file.copy("test/fixtures/es6.js", "test/expected/es6.js");
             return execTsc("AMD", "test/fixtures/amd.ts --module amd");
         }).then(function(){
             grunt.file.copy("test/fixtures/amd.js", "test/expected/amd.js");
@@ -273,7 +284,7 @@ module.exports = function(grunt){
             done(false);
         });
 
-        //execTsc("Preserve Const Enums", "test/fixtures/error-typecheck.ts").then(function(){
+        //execTsc("ES6", "test/fixtures/es6.ts --target ES6").then(function(){
         //    done(true);
         //});
     });

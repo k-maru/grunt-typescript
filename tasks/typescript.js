@@ -253,6 +253,9 @@ var GruntTs;
             else if (temp == 'es5') {
                 result = 1 /* ES5 */;
             }
+            else if (temp == "es6") {
+                result = 2 /* ES6 */;
+            }
         }
         return result;
     }
@@ -380,7 +383,7 @@ var GruntTs;
     }
     function prepareNoEmitOnError(opt) {
         if (!GruntTs.util.isUndef(opt.ignoreError)) {
-            GruntTs.util.writeWarn("The 'ignoreError' option will be obsolated. Please use the 'noEmitOnError'. (default true)");
+            GruntTs.util.writeWarn("The 'ignoreError' option will be obsoleted. Please use the 'noEmitOnError'. (default true)");
         }
         if (GruntTs.util.isUndef(opt.noEmitOnError)) {
             if (GruntTs.util.isUndef(opt.ignoreError)) {
@@ -391,6 +394,7 @@ var GruntTs;
         return !!opt.noEmitOnError;
     }
     function createGruntOptions(source, grunt, gruntFile, io) {
+        var dest = GruntTs.util.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js", targetVersion = prepareTarget(source);
         function getTargetFiles() {
             return grunt.file.expand(gruntFile.orig.src);
         }
@@ -413,7 +417,7 @@ var GruntTs;
             }
             target = target.map(function (item) {
                 if (item === "lib.core.d.ts" || item === "core") {
-                    return GruntTs.util.combinePaths(io.binPath(), "lib.core.d.ts");
+                    return GruntTs.util.combinePaths(io.binPath(), targetVersion === 2 /* ES6 */ ? "lib.core.es6.d.ts" : "lib.core.d.ts");
                 }
                 if (item === "lib.dom.d.ts" || item === "dom") {
                     return GruntTs.util.combinePaths(io.binPath(), "lib.dom.d.ts");
@@ -428,7 +432,6 @@ var GruntTs;
             });
             return grunt.file.expand(target);
         }
-        var dest = GruntTs.util.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js";
         //if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
         //    util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
         //}
@@ -450,7 +453,7 @@ var GruntTs;
                 noLib: boolOrUndef(source, "noLib"),
                 noImplicitAny: boolOrUndef(source, "noImplicitAny"),
                 noResolve: boolOrUndef(source, "noResolve"),
-                target: prepareTarget(source),
+                target: targetVersion,
                 module: prepareModule(source),
                 preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
                 noEmitOnError: prepareNoEmitOnError(source),

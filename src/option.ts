@@ -65,6 +65,8 @@ module GruntTs {
                 result = ts.ScriptTarget.ES3;
             } else if (temp == 'es5') {
                 result = ts.ScriptTarget.ES5;
+            } else if(temp == "es6") {
+                result = ts.ScriptTarget.ES6;
             }
         }
         return result;
@@ -203,7 +205,7 @@ module GruntTs {
     function prepareNoEmitOnError(opt: any): boolean{
 
         if(!util.isUndef(opt.ignoreError)){
-            util.writeWarn("The 'ignoreError' option will be obsolated. Please use the 'noEmitOnError'. (default true)");
+            util.writeWarn("The 'ignoreError' option will be obsoleted. Please use the 'noEmitOnError'. (default true)");
         }
 
         if(util.isUndef(opt.noEmitOnError)){
@@ -216,6 +218,10 @@ module GruntTs {
     }
 
     export function createGruntOptions(source: any, grunt: IGrunt, gruntFile: grunt.file.IFileMap, io: GruntIO) : GruntOptions {
+
+        var dest = util.normalizePath(gruntFile.dest || ""),
+            singleFile = !!dest && _path.extname(dest) === ".js",
+            targetVersion = prepareTarget(source);
 
         function getTargetFiles(): string[]{
             return <string[]>grunt.file.expand(<string[]>gruntFile.orig.src);
@@ -241,7 +247,8 @@ module GruntTs {
             }
             target = target.map((item) => {
                 if(item === "lib.core.d.ts" || item === "core"){
-                    return util.combinePaths(io.binPath(), "lib.core.d.ts");
+                    return util.combinePaths(io.binPath(),
+                        targetVersion === ts.ScriptTarget.ES6 ? "lib.core.es6.d.ts" : "lib.core.d.ts");
                 }
                 if(item === "lib.dom.d.ts" || item === "dom"){
                     return util.combinePaths(io.binPath(), "lib.dom.d.ts");
@@ -256,9 +263,6 @@ module GruntTs {
             });
             return grunt.file.expand(target);
         }
-
-        var dest = util.normalizePath(gruntFile.dest || ""),
-            singleFile = !!dest && _path.extname(dest) === ".js";
 
         //if(source.newLine || source.indentStep || source.useTabIndent || source.disallowAsi){
         //    util.writeWarn("The 'newLine', 'indentStep', 'useTabIndent' and 'disallowAsi' options is not implemented. It is because a function could not be accessed with a new compiler or it was deleted.");
@@ -282,7 +286,7 @@ module GruntTs {
                 noLib: boolOrUndef(source, "noLib"),
                 noImplicitAny: boolOrUndef(source, "noImplicitAny"),
                 noResolve: boolOrUndef(source, "noResolve"),
-                target: prepareTarget(source),
+                target: targetVersion,
                 module: prepareModule(source),
                 preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
                 noEmitOnError: prepareNoEmitOnError(source),

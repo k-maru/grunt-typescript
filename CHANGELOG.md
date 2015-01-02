@@ -1,5 +1,14 @@
 #Released
 
+## 0.6
+* Typescript 1.4.0 に対応
+  * preserveConstEnums オプションの追加
+  * noEmitOnError オプションの追加と ignoreError オプションの obsolete 化
+  * suppressImplicitAnyIndexErrors オプションの追加
+  * target オプションに ES6 を追加
+* comment オプションの削除
+* コンパイルのコードファイルをコマンドライン用の tsc.js から typescriptService.js に変更
+
 ## 0.4.7
 * watch の時に reference で指定されているファイルが更新されていても内容が反映されない不具合を修正
 
