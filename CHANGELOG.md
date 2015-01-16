@@ -1,6 +1,10 @@
 #Released
 
-## 0.6
+##0.6.1
+* 不具合修正
+  * 内部処理でScriptTargetが設定されていない場合に例外が発生することがある不具合？に初期値を設定しておくことで対応
+
+## 0.6.0
 * Typescript 1.4.1 に対応
   * preserveConstEnums オプションの追加
   * noEmitOnError オプションの追加と ignoreError オプションの obsolete 化

@@ -58,7 +58,7 @@ module GruntTs {
     //}
 
     function prepareTarget(opt: any): ts.ScriptTarget{
-        var result:ts.ScriptTarget = undefined;
+        var result:ts.ScriptTarget = ts.ScriptTarget.ES3;
         if (opt.target) {
             var temp = (opt.target + "").toLowerCase();
             if (temp === 'es3') {

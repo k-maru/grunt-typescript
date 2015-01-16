@@ -244,7 +244,7 @@ var GruntTs;
     //    return result;
     //}
     function prepareTarget(opt) {
-        var result = undefined;
+        var result = 0 /* ES3 */;
         if (opt.target) {
             var temp = (opt.target + "").toLowerCase();
             if (temp === 'es3') {
