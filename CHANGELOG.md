@@ -1,7 +1,7 @@
 #Released
 
 ## 0.6
-* Typescript 1.4.0 に対応
+* Typescript 1.4.1 に対応
   * preserveConstEnums オプションの追加
   * noEmitOnError オプションの追加と ignoreError オプションの obsolete 化
   * suppressImplicitAnyIndexErrors オプションの追加
