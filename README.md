@@ -68,67 +68,67 @@ grunt.initConfig({
 });
 ```
 
-##Options
+## Options
 
-###noLib
+### noLib
 **type**: `boolean`
 
 Do not include a default lib.d.ts with global declarations
 
-###target
+### target
 **type**: `string`
 
 Specify ECMAScript target version: 'ES3' (default), 'ES5', or 'ES6' (experimental)
 
-###module
+### module
 **type**: `string`
 
 Specify module code generation: "commonjs" (default) or "amd"
 
-###sourceMap
+### sourceMap
 **type**: `boolean`
 
 Generates corresponding .map files
 
-###declaration
+### declaration
 **type**: `boolean`
 
 Generates corresponding .d.ts file
 
-###removeComments
+### removeComments
 **type**: `boolean`
 
 Do not emit comments to output.
 
-###noImplicitAny
+### noImplicitAny
 **type**: `boolean`
 
 Warn on expressions and declarations with an implied 'any' type.
 
-###noResolve
+### noResolve
 **type**: `boolean`
 
 Skip resolution and preprocessing.
 
-###preserveConstEnums
+### preserveConstEnums
 **type**: `boolean`
 
 Do not erase const enum declarations in generated code.
 
-###noEmitOnError
+### noEmitOnError
 **type**: `boolean`
 
 Do not emit outputs if any type checking errors were reported.
 The default for this option is set to true for backwards compatibility.
 
-###suppressImplicitAnyIndexErrors
+### suppressImplicitAnyIndexErrors
 **type**: `boolean`
 
 Suppress noImplicitAny errors for indexing objects lacking index signatures.
 
-##Original Options
+## Original Options
 
-###ignoreError(obsolete)
+### ignoreError(obsolete)
 **type**: `boolean`
 
 If the compiler can create a file, the task ignores the error.
@@ -136,12 +136,12 @@ Default value is false.
 
 This option is now obsolete. Please use `noEmitOnError` option.
 
-###basePath
+### basePath
 **type**: `string`
 
 Path component to cut off when mapping the source files to dest files.
 
-###references
+### references
 **type**: <`string` | `string[]`>
 
 Set auto reference libraries.
@@ -167,7 +167,7 @@ grunt.initConfig({
 });
 ```
 
-###watch
+### watch
 **type**: <`string` | `boolean` | { path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }>
 
 Watch .ts files.
