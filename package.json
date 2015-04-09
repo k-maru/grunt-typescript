@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "q": "~2.0.2",
-    "chokidar": "~0.10.2"
+    "chokidar": "^1.0.0"
   },
   "peerDependencies": {
     "grunt": "~0.4.5",
