@@ -115,7 +115,7 @@ module GruntTs {
                         if(match){
                             return util.normalizePath(_path.resolve(prev, match[0]));
                         }
-                        match = right.match(/^(\.\.\/)+/);
+                        match = right.match(/^(\.\.(\/)?)+/);
                         if(match){
                             return util.normalizePath( _path.resolve(curr, match[0]));
                         }
