@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "grunt": "~0.4.5",
-    "Q": "",
+    "q": "^1.4.0",
     "grunt-contrib-nodeunit": "~0.4.1",
     "grunt-contrib-clean": "~0.6.0"
   },
