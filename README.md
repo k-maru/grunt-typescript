@@ -8,6 +8,12 @@ Compile TypeScript in Grunt
 
 [Release Note](CHANGELOG.md)
 
+Important!
+----------
+``
+BasePath option has been deprecated. Method for determining an output directory has been changed in the same way as the TSC. Please re-set output directory with the new rootDir option or use keepDirectoryHierachy option.However, keepDirectoryHierachy option would not be available long.
+``
+
 ## Documentation
 You'll need to install `grunt-typescript` first:
 
@@ -128,21 +134,59 @@ Suppress noImplicitAny errors for indexing objects lacking index signatures.
 
 ## Original Options
 
-### ignoreError(obsolete)
-**type**: `boolean`
-
-If the compiler can create a file, the task ignores the error.
-Default value is false.
-
-This option is now obsolete. Please use `noEmitOnError` option.
-
-### basePath
+### basePath(obsolete)
 **type**: `string`
 
 Path component to cut off when mapping the source files to dest files.
 
+### keepDirectoryHierarchy(obsolete)
+**type**: `boolean`
+
+Path component to cut off when mapping the source files to dest files.
+
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      dest: 'bin'
+      options: {
+        keepDirectoryHierarchy: true
+      }
+    }
+  },
+  ...
+});
+```
+
+If keepDirectoryHierarchy option is true, it is output as follows.
+
+```
+/bin
+- /path
+--- /to
+----- /typescript
+------- /files
+--------- *.ts 
+```
+
+If keepDirectoryHierarchy option is false or not set, it is output as follows.
+It is same way as the tsc.
+
+```
+/bin
+- *.ts 
+```
+
+###generateTsConfig
+**type**: `string` | `boolean`
+
+generateTsConfig option will generate the content and equivalent tsconfig.json that are specified in the option.
+The value specify the directory name to be output. It is output to the current directory when you specify true.
+
 ### references
-**type**: <`string` | `string[]`>
+**type**: `string` | `string[]`
 
 Set auto reference libraries.
 
@@ -168,7 +212,7 @@ grunt.initConfig({
 ```
 
 ### watch
-**type**: <`string` | `boolean` | { path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }>
+**type**: `string` | `boolean` | { path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }
 
 Watch .ts files.
 It runs very quickly the second time since the compilation. It is because you only want to read and output file is limited.

@@ -1,5 +1,15 @@
 #Released
 
+##0.6.2
+
+* コンパイルのコードファイルをtypescriptService.js から typescript.js に変更
+* Typescript 1.5-beta に対応
+  * dest でディレクトリを指定した際のディレクトリ階層の保持方法をtscと同じ動きに変更
+  * 以前のディレクトリ階層の保持ができるように keepDirectoryHierarchy オプションを追加
+  * basePath オプションをobsoluteに変更
+  * rootDir オプションに対応
+  * generateTsConfig オプションを追加
+
 ##0.6.1
 * 不具合修正
   * 内部処理でScriptTargetが設定されていない場合に例外が発生することがある不具合？に初期値を設定しておくことで対応
