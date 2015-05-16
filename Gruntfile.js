@@ -12,13 +12,17 @@ module.exports = function(grunt){
             },
             dest:{
                 src:"test/fixtures/dest.ts",
-                dest: "test/temp/dest"
+                dest: "test/temp/dest",
+                options: {
+                    keepDirectoryHierarchy: true
+                }
             },
             basePath:{
                 src:"test/fixtures/basepath.ts",
                 dest: "test/temp/basepath",
                 options: {
-                    basePath: "test/fixtures"
+                    basePath: "test/fixtures",
+                    keepDirectoryHierarchy: true
                 }
             },
             declaration:{
@@ -37,6 +41,7 @@ module.exports = function(grunt){
                 src:"test/fixtures/sourcemap.ts",
                 dest:"test/temp/sourcemap/",
                 options:{
+                    keepDirectoryHierarchy: true,
                     basePath: "test/fixtures/",
                     sourceMap:true
                 }
@@ -283,7 +288,7 @@ module.exports = function(grunt){
 
     grunt.registerTask("build", "Build", function(){
         var done = this.async();
-        tsc("src/index.ts" + " --noImplicitAny --out tasks/typescript.js").then(function(){
+        tsc("").then(function(){
             done(true);
         }).catch(function(){
             done(false);

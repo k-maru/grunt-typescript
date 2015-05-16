@@ -11,7 +11,7 @@ function exec(arg, done){
         results = [];
     command.stdout.on("data", function(data){
         //results.push(data.toString());
-        var text = data.toString().trim();
+        var text = trim(data);
         results.push.apply(results, text.split("\n"));
     });
     command.on("close", function(){
@@ -21,8 +21,12 @@ function exec(arg, done){
             results.pop();
             results.pop();
             done(results);
-        }, 500)
+        }, 500);
     });
+}
+
+function trim(val){
+    return ((val || "") + "").trim();
 }
 
 
@@ -33,7 +37,7 @@ module.exports.errorTypescript = {
         test.expect(1);
 
         exec(["typescript:errorTypecheck", "--error"], function(results){
-            test.equal(">> ".yellow + "test/fixtures/error-typecheck.ts(1,1): error TS2304: Cannot find name 'foo'.", results[0].trim());
+            test.equal(">> ".red + "test/fixtures/error-typecheck.ts(1,1): error TS2304: Cannot find name 'foo'.", trim(results[0]));
 
             //console.log(results[0].trim());
 
@@ -41,42 +45,32 @@ module.exports.errorTypescript = {
 
         });
     },
-
     errorSyntax: function (test) {
         "use strict";
-
         test.expect(1);
-
         exec(["typescript:errorSyntax", "--error"], function(results){
-
-            test.equal(">> ".red + "test/fixtures/error-syntax.ts(1,9): error TS1005: ';' expected.", results[0].trim());
-
+            test.equal(">> ".red + "test/fixtures/error-syntax.ts(1,9): error TS1005: ';' expected.", trim(results[0]));
             test.done();
-
         });
     },
 
     noLib: function(test){
         "use strict";
 
-        test.expect(10);
+        test.expect(8);
 
         exec(["typescript:noLib", "--error"], function(results){
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'Array'.", results[0].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'Boolean'.", results[1].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'Function'.", results[2].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'IArguments'.", results[3].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'Number'.", results[4].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'Object'.", results[5].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'RegExp'.", results[6].trim());
-            test.equal(">> ".red + "error TS2318: Cannot find global type 'String'.", results[7].trim());
-            test.equal(">> ".red + "test/fixtures/noLib.ts(2,11): error TS2304: Cannot find name 'parseInt'.", results[8].trim());
-            test.equal(">> ".red + "test/fixtures/noLib.ts(4,10): error TS2304: Cannot find name 'document'.", results[9].trim());
-
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'Array'.", trim(results[0]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'Boolean'.", trim(results[1]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'Function'.", trim(results[2]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'IArguments'.", trim(results[3]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'Number'.", trim(results[4]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'Object'.", trim(results[5]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'RegExp'.", trim(results[6]));
+            test.equal(">> ".red + "error TS2318: Cannot find global type 'String'.", trim(results[7]));
             test.done();
         });
     },
-
     noLibCore: function(test){
 
         "use strict";
@@ -84,7 +78,7 @@ module.exports.errorTypescript = {
         test.expect(1);
 
         exec(["typescript:noLibCore", "--error"], function(results){
-            test.equal(">> ".red + "test/fixtures/noLib.ts(4,10): error TS2304: Cannot find name 'document'.", results[0].trim());
+            test.equal(">> ".red + "test/fixtures/noLib.ts(4,10): error TS2304: Cannot find name 'document'.", trim(results[0]));
 
             test.done();
         });
