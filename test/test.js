@@ -129,6 +129,50 @@ module.exports.typescript = {
 
         test.done();
     },
+    umd:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/umd.js");
+        var expected = grunt.file.read("test/expected/umd.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    system:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/system.js");
+        var expected = grunt.file.read("test/expected/system.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    crlf:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/crlf.js");
+        var expected = grunt.file.read("test/expected/crlf.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    lf:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/crlf.js");
+        var expected = grunt.file.read("test/expected/crlf.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
     single:function(test){
         "use strict";
 

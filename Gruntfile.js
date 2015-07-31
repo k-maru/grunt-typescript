@@ -3,7 +3,7 @@ module.exports = function(grunt){
     var fs = require("fs"),
         path = require("path"),
         cp = require("child_process"),
-        Q = require("q");
+        Promise = require("bluebird");
 
     grunt.initConfig({
         typescript: {
@@ -72,12 +72,36 @@ module.exports = function(grunt){
                     module:"commonjs"
                 }
             },
+            umd: {
+                src: "test/fixtures/umd.ts",
+                options: {
+                    module: "umd"
+                }
+            },
+            system: {
+                src: "test/fixtures/system.ts",
+                options: {
+                    module: "system"
+                }
+            },
             single:{
                 src: "test/fixtures/single/**/*.ts",
                 dest: "test/temp/single.js",
                 options: {
                     declaration: true,
                     sourceMap: true
+                }
+            },
+            crlf: {
+                src: "test/fixtures/crlf.ts",
+                options: {
+                    newLine: "crlf"
+                }
+            },
+            lf: {
+                src: "test/fixtures/lf.ts",
+                options: {
+                    newLine: "lf"
                 }
             },
             "comment default": {
@@ -194,7 +218,7 @@ module.exports = function(grunt){
             return res;
         }, [])
 
-        return Q.Promise(function(resolve, reject){
+        return new Promise(function(resolve, reject){
             var childProcess = cp.exec(command + " " + tsfile + " " + optArray.join(" "), {});
             childProcess.stdout.on('data', function (d) { grunt.log.writeln(d); });
             childProcess.stderr.on('data', function (d) { grunt.log.error(d); });
@@ -267,6 +291,18 @@ module.exports = function(grunt){
             return execTsc("CommonJS", "test/fixtures/commonjs.ts --module commonjs");
         }).then(function(){
             grunt.file.copy("test/fixtures/commonjs.js", "test/expected/commonjs.js");
+            return execTsc("UMD", "test/fixtures/umd.ts --module umd");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/umd.js", "test/expected/umd.js");
+            return execTsc("System", "test/fixtures/system.ts --module system");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/system.js", "test/expected/system.js");
+            return execTsc("CrLf", "test/fixtures/crlf.ts --newline crlf");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/crlf.js", "test/expected/crlf.js");
+            return execTsc("Lf", "test/fixtures/lf.ts --newline lf");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/lf.js", "test/expected/lf.js");
             return execTsc("Single", "test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js --sourceMap");
         }).then(function(){
             grunt.file.copy("test/temp/single.js", "test/expected/single.js");

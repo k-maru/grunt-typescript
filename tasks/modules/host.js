@@ -62,6 +62,16 @@ function prepareSourcePath(sourceFileName, preparedFileName, contents, options) 
     mapData.sources.push(util.normalizePath(_path.join(_path.dirname(relative), source)));
     return JSON.stringify(mapData);
 }
+function getNewLineChar(options) {
+    var optValue = options.tsOptions.newLine;
+    if (optValue === 0 /* CarriageReturnLineFeed */) {
+        return "\r\n";
+    }
+    else if (optValue === 1 /* LineFeed */) {
+        return "\n";
+    }
+    return _os.EOL;
+}
 function createHost(grunt, options, logger) {
     var platform = _os.platform(), 
     // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
@@ -188,6 +198,7 @@ function createHost(grunt, options, logger) {
         outputFiles.length = 0;
         newSourceFiles = [];
     }
+    var newLineChar = getNewLineChar(options);
     return {
         getSourceFile: getSourceFile,
         getDefaultLibFileName: function (options) {
@@ -198,7 +209,7 @@ function createHost(grunt, options, logger) {
         getCurrentDirectory: function () { return util.getCurrentDirectory(); },
         useCaseSensitiveFileNames: function () { return useCaseSensitiveFileNames; },
         getCanonicalFileName: getCanonicalFileName,
-        getNewLine: function () { return _os.EOL; },
+        getNewLine: function () { return newLineChar; },
         writeResult: writeResult,
         reset: reset,
     };

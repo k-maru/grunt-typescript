@@ -82,6 +82,16 @@ function prepareSourcePath(sourceFileName: string, preparedFileName: string, con
     return JSON.stringify(mapData);
 }
 
+function getNewLineChar(options: gts.CompilerOptions): string{
+    let optValue = options.tsOptions.newLine;
+    if(optValue === ts.NewLineKind.CarriageReturnLineFeed) {
+        return "\r\n";
+    } else if(optValue === ts.NewLineKind.LineFeed) {
+        return "\n";
+    }
+    return _os.EOL;
+}
+
 export function createHost(grunt: IGrunt, options: gts.CompilerOptions, logger: gts.Logger): gts.CompilerHost{
 
     let platform: string = _os.platform(),
@@ -237,6 +247,7 @@ export function createHost(grunt: IGrunt, options: gts.CompilerOptions, logger: 
         newSourceFiles = [];
     }
 
+    let newLineChar = getNewLineChar(options);
 
 	return {
         getSourceFile,
@@ -248,7 +259,7 @@ export function createHost(grunt: IGrunt, options: gts.CompilerOptions, logger: 
         getCurrentDirectory: () => util.getCurrentDirectory(),
         useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
         getCanonicalFileName,
-        getNewLine: () => _os.EOL,
+        getNewLine: () => newLineChar,
         
         writeResult,
         reset,

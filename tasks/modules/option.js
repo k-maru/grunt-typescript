@@ -122,11 +122,30 @@ function prepareModule(opt) {
     var result = 0 /* None */;
     if (opt.module) {
         var temp = (opt.module + "").toLowerCase();
-        if (temp === 'commonjs' || temp === 'node') {
+        if (temp === "commonjs" || temp === "node") {
             result = 1 /* CommonJS */;
         }
-        else if (temp === 'amd') {
+        else if (temp === "amd") {
             result = 2 /* AMD */;
+        }
+        else if (temp === "system") {
+            result = 4 /* System */;
+        }
+        else if (temp === "umd") {
+            result = 3 /* UMD */;
+        }
+    }
+    return result;
+}
+function prepareNewLine(opt) {
+    var result = undefined;
+    if (opt.newLine) {
+        var temp = (opt.newLine + "").toLowerCase();
+        if (temp === "crlf") {
+            result = 0 /* CarriageReturnLineFeed */;
+        }
+        else if (temp === "lf") {
+            result = 1 /* LineFeed */;
         }
     }
     return result;
@@ -221,7 +240,8 @@ function createGruntOption(source, grunt, gruntFile, logger) {
             preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
             noEmitOnError: boolOrUndef(source, "noEmitOnError", true),
             suppressImplicitAnyIndexErrors: boolOrUndef(source, "suppressImplicitAnyIndexErrors"),
-            emitDecoratorMetadata: boolOrUndef(source, "emitDecoratorMetadata")
+            emitDecoratorMetadata: boolOrUndef(source, "emitDecoratorMetadata"),
+            newLine: prepareNewLine(source)
         }
     };
     logger.verbose("--option");
