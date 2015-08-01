@@ -104,6 +104,21 @@ module.exports = function(grunt){
                     newLine: "lf"
                 }
             },
+            deco: {
+                src: "test/fixtures/decorator.ts",
+                options: {
+                    experimentalDecorators: true,
+                    target: "ES5"
+                }  
+            },
+            deco2: {
+                src: "test/fixtures/decorator2.ts",
+                options: {
+                    experimentalDecorators: true,
+                    emitDecoratorMetadata: true,
+                    target: "ES5"
+                }  
+            },
             "comment default": {
                 src: "test/fixtures/comments.ts",
                 dest: "test/temp/comments.js"
@@ -303,6 +318,12 @@ module.exports = function(grunt){
             return execTsc("Lf", "test/fixtures/lf.ts --newline lf");
         }).then(function(){
             grunt.file.copy("test/fixtures/lf.js", "test/expected/lf.js");
+            return execTsc("Decorator", "test/fixtures/decorator.ts --experimentalDecorators --target ES5");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/decorator.js", "test/expected/decorator.js");
+            return execTsc("Decorator2", "test/fixtures/decorator2.ts --experimentalDecorators --target ES5 --emitDecoratorMetadata");
+        }).then(function(){
+            grunt.file.copy("test/fixtures/decorator2.js", "test/expected/decorator2.js");
             return execTsc("Single", "test/fixtures/single/dir/single2.ts test/fixtures/single/single1.ts --out test/temp/single.js --sourceMap");
         }).then(function(){
             grunt.file.copy("test/temp/single.js", "test/expected/single.js");

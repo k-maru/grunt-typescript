@@ -272,8 +272,9 @@ export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.f
             preserveConstEnums: boolOrUndef(source, "preserveConstEnums"),
             noEmitOnError: boolOrUndef(source, "noEmitOnError", true),
             suppressImplicitAnyIndexErrors: boolOrUndef(source, "suppressImplicitAnyIndexErrors"),
+            experimentalDecorators: boolOrUndef(source, "experimentalDecorators"),
             emitDecoratorMetadata: boolOrUndef(source, "emitDecoratorMetadata"),
-            newLine: prepareNewLine(source)
+            newLine: prepareNewLine(source),
         }
     };
 

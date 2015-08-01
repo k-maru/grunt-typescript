@@ -136,6 +136,7 @@ function compile(task: gts.Task): boolean{
 	writeTsConfig(options, targetFiles, task);
 	
 	task.verbose("- create program");
+    
 	let program = ts.createProgram(targetFiles, options.tsOptions, host);
 	let diagnostics = program.getSyntacticDiagnostics();
     

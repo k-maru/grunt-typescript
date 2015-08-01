@@ -173,6 +173,17 @@ module.exports.typescript = {
 
         test.done();
     },
+    deco:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/decorator.js");
+        var expected = grunt.file.read("test/expected/decorator.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
     single:function(test){
         "use strict";
 

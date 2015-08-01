@@ -5,7 +5,8 @@
         "module": "commonjs",
         "noEmitOnError": true,
         "diagnostics": true,
-        "noLib": true
+        "noLib": true,
+        "experimentalDecorators": true
     },
     "files": [
         "src/index.ts",
