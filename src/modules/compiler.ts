@@ -243,16 +243,23 @@ function writeTsConfig(options: gts.CompilerOptions, targetFiles: string[], logg
             noLib: tsOpts.noLib,
             noImplicitAny: tsOpts.noImplicitAny,
             noResolve: tsOpts.noResolve,
-            target: tsOpts.target === ts.ScriptTarget.ES3 ? "ES3" :
-					tsOpts.target === ts.ScriptTarget.ES5 ? "ES5" :
-					tsOpts.target === ts.ScriptTarget.ES6 ? "ES6" : undefined,
+            target: tsOpts.target === ts.ScriptTarget.ES3 ? "es3" :
+					tsOpts.target === ts.ScriptTarget.ES5 ? "es5" :
+					tsOpts.target === ts.ScriptTarget.ES6 ? "es6" : undefined,
             rootDir: tsOpts.rootDir,
             module: tsOpts.module === ts.ModuleKind.AMD ? "amd" :
-					tsOpts.module === ts.ModuleKind.CommonJS ? "commonjs" : undefined ,
+					tsOpts.module === ts.ModuleKind.CommonJS ? "commonjs" : 
+                    tsOpts.module === ts.ModuleKind.System ? "system" :
+                    tsOpts.module === ts.ModuleKind.UMD ? "umd" : undefined ,
             preserveConstEnums: tsOpts.preserveConstEnums,
             noEmitOnError: tsOpts.noEmitOnError,
             suppressImplicitAnyIndexErrors: tsOpts.suppressImplicitAnyIndexErrors,
-            emitDecoratorMetadata: tsOpts.emitDecoratorMetadata
+            emitDecoratorMetadata: tsOpts.emitDecoratorMetadata,
+            newLine: tsOpts.newLine === ts.NewLineKind.CarriageReturnLineFeed ? "crlf" :
+                     tsOpts.newLine === ts.NewLineKind.LineFeed ? "lf" : undefined,
+            inlineSourceMap: tsOpts.inlineSourceMap,
+            inlineSources: tsOpts.inlineSources,
+            noEmitHelper: tsOpts.noEmitHelpers
 		},
 		files: targetFiles.map(targetFile => util.normalizePath(util.relativePath(outputDir, targetFile)))
 	};

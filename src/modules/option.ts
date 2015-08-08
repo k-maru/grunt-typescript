@@ -249,14 +249,11 @@ export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.f
         dest: dest,
         singleFile: singleFile,
         basePath: basePath,
-        //ignoreError: boolOrUndef(source, "ignoreError"),
         keepDirectoryHierarchy: keepDirectoryHierarchy,
         watch: prepareWatch(source, getTargetFiles()),
         references: getReferences,
         generateTsConfig: prepareGenerateTsConfig(source),
-        //_showNearlyTscCommand: !!grunt.option("showtsc"),
         tsOptions: {
-            //removeComments: prepareRemoveComments(source),
             removeComments: boolOrUndef(source, "removeComments"),
             sourceMap: boolOrUndef(source, "sourceMap"),
             declaration: boolOrUndef(source, "declaration"),
@@ -275,6 +272,9 @@ export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.f
             experimentalDecorators: boolOrUndef(source, "experimentalDecorators"),
             emitDecoratorMetadata: boolOrUndef(source, "emitDecoratorMetadata"),
             newLine: prepareNewLine(source),
+            inlineSourceMap: boolOrUndef(source, "inlineSourceMap"),
+            inlineSources: boolOrUndef(source, "inlineSources"),
+            noEmitHelpers: boolOrUndef(source, "noEmitHelpers")
         }
     };
 
