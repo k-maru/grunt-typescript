@@ -196,13 +196,13 @@ export function writeAbort(str: string): void{
 }
 
 export function writeError(str: string): void{
-    console.log(">> ".red + str.trim().replace(/\n/g, "\n>> ".red));
+    console.log(">> ".red + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".red));
 }
 
 export function writeInfo(str: string): void{
-    console.log(">> ".cyan + str.trim().replace(/\n/g, "\n>> ".cyan));
+    console.log(">> ".cyan + str.trim().replace(/\r/g, '').replace.replace(/\n/g, "\n>> ".cyan));
 }
 
 export function writeWarn(str: string): void{
-    console.log(">> ".yellow + str.trim().replace(/\n/g, "\n>> ".yellow));
+    console.log(">> ".yellow + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".yellow));
 }
