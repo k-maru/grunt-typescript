@@ -186,16 +186,23 @@ function writeTsConfig(options, targetFiles, logger) {
             noLib: tsOpts.noLib,
             noImplicitAny: tsOpts.noImplicitAny,
             noResolve: tsOpts.noResolve,
-            target: tsOpts.target === 0 /* ES3 */ ? "ES3" :
-                tsOpts.target === 1 /* ES5 */ ? "ES5" :
-                    tsOpts.target === 2 /* ES6 */ ? "ES6" : undefined,
+            target: tsOpts.target === 0 /* ES3 */ ? "es3" :
+                tsOpts.target === 1 /* ES5 */ ? "es5" :
+                    tsOpts.target === 2 /* ES6 */ ? "es6" : undefined,
             rootDir: tsOpts.rootDir,
             module: tsOpts.module === 2 /* AMD */ ? "amd" :
-                tsOpts.module === 1 /* CommonJS */ ? "commonjs" : undefined,
+                tsOpts.module === 1 /* CommonJS */ ? "commonjs" :
+                    tsOpts.module === 4 /* System */ ? "system" :
+                        tsOpts.module === 3 /* UMD */ ? "umd" : undefined,
             preserveConstEnums: tsOpts.preserveConstEnums,
             noEmitOnError: tsOpts.noEmitOnError,
             suppressImplicitAnyIndexErrors: tsOpts.suppressImplicitAnyIndexErrors,
-            emitDecoratorMetadata: tsOpts.emitDecoratorMetadata
+            emitDecoratorMetadata: tsOpts.emitDecoratorMetadata,
+            newLine: tsOpts.newLine === 0 /* CarriageReturnLineFeed */ ? "crlf" :
+                tsOpts.newLine === 1 /* LineFeed */ ? "lf" : undefined,
+            inlineSourceMap: tsOpts.inlineSourceMap,
+            inlineSources: tsOpts.inlineSources,
+            noEmitHelper: tsOpts.noEmitHelpers
         },
         files: targetFiles.map(function (targetFile) { return util.normalizePath(util.relativePath(outputDir, targetFile)); })
     };

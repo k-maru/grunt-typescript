@@ -197,14 +197,14 @@ function writeAbort(str) {
 }
 exports.writeAbort = writeAbort;
 function writeError(str) {
-    console.log(">> ".red + str.trim().replace(/\n/g, "\n>> ".red));
+    console.log(">> ".red + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".red));
 }
 exports.writeError = writeError;
 function writeInfo(str) {
-    console.log(">> ".cyan + str.trim().replace(/\n/g, "\n>> ".cyan));
+    console.log(">> ".cyan + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".cyan));
 }
 exports.writeInfo = writeInfo;
 function writeWarn(str) {
-    console.log(">> ".yellow + str.trim().replace(/\n/g, "\n>> ".yellow));
+    console.log(">> ".yellow + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".yellow));
 }
 exports.writeWarn = writeWarn;

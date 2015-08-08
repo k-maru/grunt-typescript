@@ -200,7 +200,7 @@ export function writeError(str: string): void{
 }
 
 export function writeInfo(str: string): void{
-    console.log(">> ".cyan + str.trim().replace(/\r/g, '').replace.replace(/\n/g, "\n>> ".cyan));
+    console.log(">> ".cyan + str.trim().replace(/\r/g, '').replace(/\n/g, "\n>> ".cyan));
 }
 
 export function writeWarn(str: string): void{
