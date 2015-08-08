@@ -76,116 +76,37 @@ grunt.initConfig({
 
 ## Options
 
-### noLib
-**type**: `boolean`
+### typescript options
 
-Do not include a default lib.d.ts with global declarations
+| name                           | type    | description                                                                                                                           |
+|--------------------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------|
+| noLib                          | boolean | Do not include a default lib.d.ts with global declarations                                                                            |
+| target                         | string  | Specify ECMAScript target version: 'ES3' (default), 'ES5', or 'ES6'                                                                   |
+| module                         | string  | Specify module code generation: "commonjs" (default), "amd", "system" or "umd"                                                        |
+| sourceMap                      | boolean | Generates corresponding .map files                                                                                                    |
+| declaration                    | boolean | Generates corresponding .d.ts file                                                                                                    |
+| removeComments                 | boolean | Do not emit comments to output.                                                                                                       |
+| noImplicitAny                  | boolean | Warn on expressions and declarations with an implied 'any' type.                                                                      |
+| noResolve                      | boolean | Skip resolution and preprocessing.                                                                                                    |
+| preserveConstEnums             | boolean | Do not erase const enum declarations in generated code.                                                                               |
+| noEmitOnError                  | boolean | Do not emit outputs if any type checking errors were reported.The default for this option is set to true for backwards compatibility. |
+| suppressImplicitAnyIndexErrors | boolean | Suppress noImplicitAny errors for indexing objects lacking index signatures.                                                          |
+| experimentalDecorators         | boolean |                                                                                                                                       |
+| emitDecoratorMetadata          | boolean |                                                                                                                                       |
+| newLine                        | string  |                                                                                                                                       |
+| inlineSourceMap                | boolean |                                                                                                                                       |
+| inlineSources                  | boolean |                                                                                                                                       |
+| noEmitHelpers                  | boolean |                                                                                                                                       |
 
-### target
-**type**: `string`
+### original options
 
-Specify ECMAScript target version: 'ES3' (default), 'ES5', or 'ES6' (experimental)
-
-### module
-**type**: `string`
-
-Specify module code generation: "commonjs" (default) or "amd"
-
-### sourceMap
-**type**: `boolean`
-
-Generates corresponding .map files
-
-### declaration
-**type**: `boolean`
-
-Generates corresponding .d.ts file
-
-### removeComments
-**type**: `boolean`
-
-Do not emit comments to output.
-
-### noImplicitAny
-**type**: `boolean`
-
-Warn on expressions and declarations with an implied 'any' type.
-
-### noResolve
-**type**: `boolean`
-
-Skip resolution and preprocessing.
-
-### preserveConstEnums
-**type**: `boolean`
-
-Do not erase const enum declarations in generated code.
-
-### noEmitOnError
-**type**: `boolean`
-
-Do not emit outputs if any type checking errors were reported.
-The default for this option is set to true for backwards compatibility.
-
-### suppressImplicitAnyIndexErrors
-**type**: `boolean`
-
-Suppress noImplicitAny errors for indexing objects lacking index signatures.
-
-## Original Options
-
-### basePath(obsolete)
-**type**: `string`
-
-Path component to cut off when mapping the source files to dest files.
-
-### keepDirectoryHierarchy(obsolete)
-**type**: `boolean`
-
-Path component to cut off when mapping the source files to dest files.
-
-```js
-grunt.initConfig({
-  ...
-  typescript: {
-    base: {
-      src: ['path/to/typescript/files/**/*.ts'],
-      dest: 'bin'
-      options: {
-        keepDirectoryHierarchy: true
-      }
-    }
-  },
-  ...
-});
-```
-
-If keepDirectoryHierarchy option is true, it is output as follows.
-
-```
-/bin
-- /path
---- /to
------ /typescript
-------- /files
---------- *.ts 
-```
-
-If keepDirectoryHierarchy option is false or not set, it is output as follows.
-It is same way as the tsc.
-
-```
-/bin
-- *.ts 
-```
-
-###generateTsConfig
+####generateTsConfig
 **type**: `string` | `boolean`
 
 generateTsConfig option will generate the content and equivalent tsconfig.json that are specified in the option.
 The value specify the directory name to be output. It is output to the current directory when you specify true.
 
-### references
+#### references
 **type**: `string` | `string[]`
 
 Set auto reference libraries.
@@ -211,7 +132,7 @@ grunt.initConfig({
 });
 ```
 
-### watch
+#### watch
 **type**: `string` | `boolean` | { path?:<`string` | `string[]``>; before?: <`string` | `string[]``>; after?: <`string` | `string[]``>; atBegin: `boolean` }
 
 Watch .ts files.
@@ -272,5 +193,51 @@ grunt.initConfig({
   ...
 });
 ```
+
+#### basePath(obsolete)
+**type**: `string`
+
+Path component to cut off when mapping the source files to dest files.
+
+#### keepDirectoryHierarchy(obsolete)
+**type**: `boolean`
+
+Path component to cut off when mapping the source files to dest files.
+
+```js
+grunt.initConfig({
+  ...
+  typescript: {
+    base: {
+      src: ['path/to/typescript/files/**/*.ts'],
+      dest: 'bin'
+      options: {
+        keepDirectoryHierarchy: true
+      }
+    }
+  },
+  ...
+});
+```
+
+If keepDirectoryHierarchy option is true, it is output as follows.
+
+```
+/bin
+- /path
+--- /to
+----- /typescript
+------- /files
+--------- *.ts 
+```
+
+If keepDirectoryHierarchy option is false or not set, it is output as follows.
+It is same way as the tsc.
+
+```
+/bin
+- *.ts 
+```
+
 
 ※I'm sorry for poor English

@@ -1,7 +1,16 @@
 #Released
 
-##0.6.2
+##0.7
+* Typescript 1.5.3 に対応
+  * module の system と umd に対応
+  * emitDecoratorMetadata オプションに対応
+  * experimentalDecorators オプションに対応
+  * newLine オプションに対応
+  * inlineSourceMap オプションに対応
+  * inlineSources オプションに対応
+  * noEmitHelpers オプションに対応
 
+##0.6.2
 * コンパイルのコードファイルをtypescriptService.js から typescript.js に変更
 * Typescript 1.5-beta に対応
   * dest でディレクトリを指定した際のディレクトリ階層の保持方法をtscと同じ動きに変更
