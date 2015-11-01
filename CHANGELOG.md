@@ -1,5 +1,10 @@
 #Released
 
+##0.8
+* Typescript 1.6.2 に対応
+  * experimentalAsyncFunctions オプションに対応
+  * jsx オプションに対応
+
 ##0.7
 * Typescript 1.5.3 に対応
   * module の system と umd に対応

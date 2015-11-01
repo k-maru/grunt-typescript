@@ -11,3 +11,4 @@ src
 /Gruntfile.js
 /.npmignore
 /lib
+/.vscode
