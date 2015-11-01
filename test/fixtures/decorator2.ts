@@ -1,20 +1,32 @@
-function deco(option?: string) {
-  var arg = arguments;
+function classdeco(option: string) {
   
-  return function(target: Function){
+  return function(target: any): void{
     
   };
 };
 
-@deco("class")
+function methodPropDeco(option: string){
+  return function(target, key, descriptor): void{
+    
+  }
+}
+
+function propDeco(option: string){
+  return function(target, index): void{
+    
+  }
+}
+
+
+@classdeco("class")
 class Sample {
   
-  @deco("prop")
+  @propDeco("prop")
   message: string;
 
-  @deco("method")
-  greeting(@deco("param") p: string): void {}
+  @methodPropDeco("method")
+  greeting(p: string): void {}
 
-  @deco("static")
+  @methodPropDeco("static")
   static sayHello(): void {}
 }
