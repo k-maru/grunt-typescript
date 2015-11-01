@@ -217,6 +217,17 @@ module.exports.typescript = {
 
         test.done();
     },
+    async:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/async.js");
+        var expected = grunt.file.read("test/expected/async.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
     single:function(test){
         "use strict";
 

@@ -281,7 +281,8 @@ export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.f
             inlineSourceMap: boolOrUndef(source, "inlineSourceMap"),
             inlineSources: boolOrUndef(source, "inlineSources"),
             noEmitHelpers: boolOrUndef(source, "noEmitHelpers"),
-            jsx: prepareJsx(source)
+            jsx: prepareJsx(source),
+            experimentalAsyncFunctions: boolOrUndef(source, "experimentalAsyncFunctions")
         }
     };
 
