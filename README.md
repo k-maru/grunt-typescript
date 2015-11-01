@@ -96,7 +96,10 @@ grunt.initConfig({
 | newLine                        | string  |                                                                                                                                       |
 | inlineSourceMap                | boolean |                                                                                                                                       |
 | inlineSources                  | boolean |                                                                                                                                       |
-| noEmitHelpers                  | boolean |                                                                                                                                       |
+| noEmitHelpers                  | boolean | Do not generate custom helper functions like __extends in compiled output.                                                            |
+| jsx                            | string  | Support JSX in '.tsx' files: 'React' or 'Preserve'.                                                                                   |
+| experimentalAsyncFunctions     | boolean | Support ES7-proposed asynchronous functions using the async/await keywords.                                                           |
+| rootDir                        | string  | Specifies the root directory of input files. Only use to control the output directory structure with outDir option.                   |
 
 ### original options
 
