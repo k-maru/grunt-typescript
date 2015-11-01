@@ -173,13 +173,46 @@ module.exports.typescript = {
 
         test.done();
     },
-    deco:function(test){
+    decorator:function(test){
         "use strict";
 
         test.expect(1);
 
         var actual = grunt.file.read("test/fixtures/decorator.js");
         var expected = grunt.file.read("test/expected/decorator.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    decorator2:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/decorator2.js");
+        var expected = grunt.file.read("test/expected/decorator2.js");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    jsxpreserve:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/jsxpreserve.jsx");
+        var expected = grunt.file.read("test/expected/jsxpreserve.jsx");
+        test.equal(expected, actual);
+
+        test.done();
+    },
+    jsxreact:function(test){
+        "use strict";
+
+        test.expect(1);
+
+        var actual = grunt.file.read("test/fixtures/jsxreact.js");
+        var expected = grunt.file.read("test/expected/jsxreact.js");
         test.equal(expected, actual);
 
         test.done();

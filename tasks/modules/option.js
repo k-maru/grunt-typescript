@@ -170,6 +170,11 @@ function prepareGenerateTsConfig(opt) {
     }
     return result;
 }
+function prepareJsx(opt) {
+    var jsx = (opt.jsx + "").toLowerCase();
+    return jsx === "react" ? 2 /* React */ :
+        jsx === "preserve" ? 1 /* Preserve */ : undefined;
+}
 function createGruntOption(source, grunt, gruntFile, logger) {
     var dest = util.normalizePath(gruntFile.dest || ""), singleFile = !!dest && _path.extname(dest) === ".js", targetVersion = prepareTarget(source), basePath = checkBasePath(source), rootDir = util.isStr(source.rootDir) ? source.rootDir : undefined, keepDirectoryHierarchy = boolOrUndef(source, "keepDirectoryHierarchy");
     function getTargetFiles() {
@@ -242,7 +247,8 @@ function createGruntOption(source, grunt, gruntFile, logger) {
             newLine: prepareNewLine(source),
             inlineSourceMap: boolOrUndef(source, "inlineSourceMap"),
             inlineSources: boolOrUndef(source, "inlineSources"),
-            noEmitHelpers: boolOrUndef(source, "noEmitHelpers")
+            noEmitHelpers: boolOrUndef(source, "noEmitHelpers"),
+            jsx: prepareJsx(source)
         }
     };
     logger.verbose("--option");

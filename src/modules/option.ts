@@ -189,6 +189,12 @@ function prepareGenerateTsConfig(opt: any): boolean | string{
     return result;
 }
 
+function prepareJsx(opt: any): ts.JsxEmit {
+    let jsx = (opt.jsx + "").toLowerCase();
+    return jsx === "react" ? ts.JsxEmit.React :
+           jsx === "preserve" ? ts.JsxEmit.Preserve: undefined;
+}
+
 export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.file.IFilesConfig, logger: gts.Logger): gts.CompilerOptions {
 
     let dest = util.normalizePath(gruntFile.dest || ""),
@@ -274,7 +280,8 @@ export function createGruntOption(source: any, grunt: IGrunt, gruntFile: grunt.f
             newLine: prepareNewLine(source),
             inlineSourceMap: boolOrUndef(source, "inlineSourceMap"),
             inlineSources: boolOrUndef(source, "inlineSources"),
-            noEmitHelpers: boolOrUndef(source, "noEmitHelpers")
+            noEmitHelpers: boolOrUndef(source, "noEmitHelpers"),
+            jsx: prepareJsx(source)
         }
     };
 

@@ -32,7 +32,7 @@ export function createWatcher(watchPaths: string[], callback: (targets: {[key: s
     }
 
     function add(path: string, eventName: string, stats: any){
-        if(_path.extname(path) !== ".ts"){
+        if(_path.extname(path) !== ".ts" || _path.extname(path) !== ".tsx"){
             return;
         }
         path = util.normalizePath(path);
