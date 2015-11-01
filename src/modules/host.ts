@@ -260,8 +260,9 @@ export function createHost(grunt: IGrunt, options: gts.CompilerOptions, logger: 
         useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
         getCanonicalFileName,
         getNewLine: () => newLineChar,
-        
+        fileExists: path => util.fileExists(path),
+        readFile: fileName => util.readFile(fileName),
         writeResult,
-        reset,
+        reset
     };
 }

@@ -210,6 +210,8 @@ function createHost(grunt, options, logger) {
         useCaseSensitiveFileNames: function () { return useCaseSensitiveFileNames; },
         getCanonicalFileName: getCanonicalFileName,
         getNewLine: function () { return newLineChar; },
+        fileExists: function (path) { return util.fileExists(path); },
+        readFile: function (fileName) { return util.readFile(fileName); },
         writeResult: writeResult,
         reset: reset,
     };

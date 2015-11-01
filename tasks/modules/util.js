@@ -157,6 +157,10 @@ function abs(fileName) {
     return normalizePath(_path.resolve(".", normalizePath(fileName)));
 }
 exports.abs = abs;
+function fileExists(path) {
+    return _fs.existsSync(path);
+}
+exports.fileExists = fileExists;
 function directoryExists(path) {
     return _fs.existsSync(path) && _fs.statSync(path).isDirectory();
 }

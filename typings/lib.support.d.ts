@@ -1,20 +1,20 @@
 interface ArrayBuffer {
-    byteLength: number;
+    //byteLength: number;
     slice(begin:number, end?:number): ArrayBuffer;
 }
 
 interface ArrayBufferConstructor {
-    prototype: ArrayBuffer;
+    //prototype: ArrayBuffer;
     new (byteLength: number): ArrayBuffer;
     isView(arg: any): boolean;
 }
 declare var ArrayBuffer: ArrayBufferConstructor;
 
 interface Uint8Array {
-    BYTES_PER_ELEMENT: number;
-    buffer: ArrayBuffer;
-    byteLength: number;
-    byteOffset: number;
+    // BYTES_PER_ELEMENT: number;
+    // buffer: ArrayBuffer;
+    // byteLength: number;
+    // byteOffset: number;
     copyWithin(target: number, start: number, end?: number): Uint8Array;
     every(callbackfn: (value: number, index: number, array: Uint8Array) => boolean, thisArg?: any): boolean;
     fill(value: number, start?: number, end?: number): Uint8Array;
@@ -25,7 +25,7 @@ interface Uint8Array {
     indexOf(searchElement: number, fromIndex?: number): number;
     join(separator?: string): string;
     lastIndexOf(searchElement: number, fromIndex?: number): number;
-    length: number;
+    // length: number;
     map(callbackfn: (value: number, index: number, array: Uint8Array) => number, thisArg?: any): Uint8Array;
     reduce(callbackfn: (previousValue: number, currentValue: number, currentIndex: number, array: Uint8Array) => number, initialValue?: number): number;
     reduce<U>(callbackfn: (previousValue: U, currentValue: number, currentIndex: number, array: Uint8Array) => U, initialValue: U): U;
@@ -40,16 +40,16 @@ interface Uint8Array {
     subarray(begin: number, end?: number): Uint8Array;
     toLocaleString(): string;
     toString(): string;
-    [index: number]: number;
+    //[index: number]: number;
 }
 
 interface Uint8ArrayConstructor {
-    prototype: Uint8Array;
+    // prototype: Uint8Array;
     new (length: number): Uint8Array;
     new (array: Uint8Array): Uint8Array;
     new (array: number[]): Uint8Array;
     new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Uint8Array;
-    BYTES_PER_ELEMENT: number;
+    // BYTES_PER_ELEMENT: number;
     of(...items: number[]): Uint8Array;
 }
 declare var Uint8Array: Uint8ArrayConstructor;
